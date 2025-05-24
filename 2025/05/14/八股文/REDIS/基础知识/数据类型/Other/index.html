@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="详细解析Redis的BitMap、HyperLogLog、GEO和Stream等高级数据类型的实现原理、操作命令及应用场景，包括签到统计、用户在线状态、去重计数、地理位置服务和消息队列等实际应用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis BitMap及其他高级数据类型详解">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/14/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Other/index.html">
+<meta property="og:site_name" content="小王的blog">
+<meta property="og:description" content="详细解析Redis的BitMap、HyperLogLog、GEO和Stream等高级数据类型的实现原理、操作命令及应用场景，包括签到统计、用户在线状态、去重计数、地理位置服务和消息队列等实际应用">
+<meta property="og:locale">
+<meta property="og:image" content="https://cdn.xiaolincoding.com/gh/xiaolincoder/redis/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/bitmap.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/14/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Other/1747324335058.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/14/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Other/1747324344772.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/14/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Other/1747324361948.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/14/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Other/1747324379560.png">
+<meta property="article:published_time" content="2025-05-14T23:56:54.000Z">
+<meta property="article:modified_time" content="2025-05-24T06:03:23.774Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="REDIS">
+<meta property="article:tag" content="数据类型">
+<meta property="article:tag" content="Bitmap">
+<meta property="article:tag" content="HyperLogLog">
+<meta property="article:tag" content="GEO">
+<meta property="article:tag" content="Stream">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.xiaolincoding.com/gh/xiaolincoder/redis/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/bitmap.png">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/05/14/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Other/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>Redis BitMap及其他高级数据类型详解 | 小王的blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小王的blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Adrian Wang's blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/05/14/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Other/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis BitMap及其他高级数据类型详解
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-05-14 23:56:54" itemprop="dateCreated datePublished" datetime="2025-05-14T23:56:54+00:00">2025-05-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/" itemprop="url" rel="index"><span itemprop="name">REDIS</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>13k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>12 mins.</span>
+            </span>
+            <div class="post-description">详细解析Redis的BitMap、HyperLogLog、GEO和Stream等高级数据类型的实现原理、操作命令及应用场景，包括签到统计、用户在线状态、去重计数、地理位置服务和消息队列等实际应用</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="BitMap">BitMap</h2>
+<h3 id="介绍">介绍</h3>
+<p>Bitmap，你可以把它想象成一个<strong>超级迷你的小本本</strong>，这个本本上只记录两种状态：要么是&quot;√&quot;（表示 1），要么是&quot;×&quot;（表示 0）。我们通过一个&quot;页码&quot;（也就是偏移量 offset）就能快速找到对应位置的状态是&quot;√&quot;还是&quot;×&quot;。</p>
+<p>这种小本本最大的好处就是<strong>超级节省空间</strong>。因为计算机里最小的信息单位就是 bit（比特），一个 bit 就能表示一个&quot;√&quot;或一个&quot;×&quot;。所以，当我们有很多很多只需要记录两种状态的事情时（比如用户今天签到了没？某个功能打开了没？），用 Bitmap 就特别合适，能省下好多地方。我们把这种只需要记录两种状态的场景，叫做&quot;<strong>二值统计</strong>&quot;。</p>
+<p><img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/redis/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/bitmap.png" alt></p>
+<h3 id="内部实现">内部实现</h3>
+<p>你可能会好奇这个 Bitmap 小本本在 Redis 里是怎么存放的。其实，它巧妙地利用了 Redis 中我们已经认识的 <code>String</code> 类型。</p>
+<p>我们知道 <code>String</code> 类型在 Redis 内部其实是以一串二进制数字（0和1）的形式存储的。Bitmap 就借用了这一点，把 <code>String</code> 里的每一个 bit 位都当成小本本上的一页，用来记录一个&quot;√&quot;或&quot;×&quot;。所以，你可以简单地理解为：<strong>Bitmap 就是一个由 bit 组成的大数组，而这个大数组被藏在了 String 类型里面</strong>。</p>
+<h3 id="常用命令">常用命令</h3>
+<p>bitmap 基本操作：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">设置值，其中value只能是 0 和 1</span></span><br><span class="line">SETBIT key offset value</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">获取值</span></span><br><span class="line">GETBIT key offset</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">获取指定范围内值为 1 的个数</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">start 和 end 以字节为单位</span></span><br><span class="line">BITCOUNT key start end</span><br></pre></td></tr></table></figure>
+<p>bitmap 运算操作：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">BitMap间的运算</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">operations 位移操作符，枚举值</span></span><br><span class="line">  AND 与运算 &amp;</span><br><span class="line">  OR 或运算 |</span><br><span class="line">  XOR 异或 ^</span><br><span class="line">  NOT 取反 ~</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">result 计算的结果，会存储在该key中</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">key1 … keyn 参与运算的key，可以有多个，空格分割，not运算只能一个key</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">当 BITOP 处理不同长度的字符串时，较短的那个字符串所缺少的部分会被看作 0。返回值是保存到 destkey 的字符串的长度（以字节byte为单位），和输入 key 中最长的字符串长度相等。</span></span><br><span class="line">BITOP [operations] [result] [key1] [keyn…]</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">返回指定key中第一次出现指定value(0/1)的位置</span></span><br><span class="line">BITPOS [key] [value]</span><br></pre></td></tr></table></figure>
+<h3 id="应用场景">应用场景</h3>
+<p>Bitmap 类型非常适合二值状态统计的场景，这里的二值状态就是指集合元素的取值就只有 0 和 1 两种，在记录海量数据时，Bitmap 能够有效地节省内存空间。</p>
+<h4 id="签到统计">签到统计</h4>
+<p>在签到打卡的场景中，我们只用记录签到（1）或未签到（0），所以它就是非常典型的二值状态。</p>
+<p>签到统计时，每个用户一天的签到用 1 个 bit 位就能表示，一个月（假设是 31 天）的签到情况用 31 个 bit 位就可以，而一年的签到也只需要用 365 个 bit 位，根本不用太复杂的集合类型。</p>
+<p>假设我们要统计 ID 100 的用户在 2022 年 6 月份的签到情况，就可以按照下面的步骤进行操作。</p>
+<p>第一步，执行下面的命令，记录该用户 6 月 3 号已签到。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SETBIT uid:sign:100:202206 2 1</span><br></pre></td></tr></table></figure>
+<p>第二步，检查该用户 6 月 3 日是否签到。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GETBIT uid:sign:100:202206 2</span><br></pre></td></tr></table></figure>
+<p>第三步，统计该用户在 6 月份的签到次数。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BITCOUNT uid:sign:100:202206</span><br></pre></td></tr></table></figure>
+<p>这样，我们就知道该用户在 6 月份的签到情况了。</p>
+<blockquote>
+<p>如何统计这个月首次打卡时间呢？</p>
+</blockquote>
+<p>Redis 提供了 <code>BITPOS key bitValue [start] [end]</code>指令，返回数据表示 Bitmap 中第一个值为 <code>bitValue</code> 的 offset 位置。</p>
+<p>在默认情况下，命令将检测整个位图，用户可以通过可选的 <code>start</code> 参数和 <code>end</code> 参数指定要检测的范围。所以我们可以通过执行这条命令来获取 userID = 100 在 2022 年 6 月份<strong>首次打卡</strong>日期：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">BITPOS</span> uid:sign:<span class="number">100</span>:<span class="number">202206</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+<p>需要注意的是，因为 offset 从 0 开始的，所以我们需要将返回的 value + 1。</p>
+<h4 id="判断用户登录态">判断用户登录态</h4>
+<p>Bitmap 提供了 <code>GETBIT、SETBIT</code> 操作，通过一个偏移值 offset 对 bit 数组的 offset 位置的 bit 位进行读写操作，需要注意的是 offset 从 0 开始。</p>
+<p>只需要一个 key = login_status 表示存储用户登录状态集合数据，将用户 ID 作为 offset，在线就设置为 1，下线设置 0。通过 <code>GETBIT</code>判断对应的用户是否在线。50000 万 用户只需要 6 MB 的空间。</p>
+<p>假如我们要判断 ID = 10086 的用户的登录情况：</p>
+<p>第一步，执行以下指令，表示用户已登录。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SETBIT login_status 10086 1</span><br></pre></td></tr></table></figure>
+<p>第二步，检查该用户是否登录，返回值 1 表示已登录。</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">GETBIT</span> login_status <span class="number">10086</span></span><br></pre></td></tr></table></figure>
+<p>第三步，登出，将 offset 对应的 value 设置成 0。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SETBIT login_status 10086 0</span><br></pre></td></tr></table></figure>
+<h4 id="连续签到用户总数">连续签到用户总数</h4>
+<p>如何统计连续 7 天都签到的用户总数？这里我们可以巧妙地使用 Bitmap 和位运算来实现。</p>
+<p><strong>基本思路</strong>：</p>
+<ol>
+<li>
+<p>为每天创建一个 Bitmap，其中：</p>
+<ul>
+<li>Bitmap 的 key 是日期（例如：<code>sign:20250508</code>）</li>
+<li>用户 ID 作为 offset 位置</li>
+<li>用户签到则将对应位置设为 1，未签到则为 0</li>
+</ul>
+</li>
+<li>
+<p>当我们需要统计连续 7 天都签到的用户时：</p>
+<ul>
+<li>对这 7 天的 Bitmap 执行&quot;按位与&quot;（AND）操作</li>
+<li>结果中，只有 7 天都签到（即 7 个 Bitmap 对应位置都是 1）的用户，在最终结果中才会是 1</li>
+</ul>
+</li>
+<li>
+<p>统计结果 Bitmap 中值为 1 的位数，就得到了连续签到 7 天的用户总数</p>
+</li>
+</ol>
+<p>Redis 提供了 <code>BITOP</code>命令来实现这种位操作：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BITOP operation destkey key [key ...]</span><br></pre></td></tr></table></figure>
+<p>其中：</p>
+<ul>
+<li><code>operation</code>可以是 <code>AND</code>（与）、<code>OR</code>（或）、<code>XOR</code>（异或）、<code>NOT</code>（非）</li>
+<li><code>destkey</code>是存储结果的键名</li>
+<li>后面跟着参与运算的键名列表</li>
+</ul>
+<p>当使用 <code>AND</code>操作时，只有在所有输入 Bitmap 的相同位置都为 1 时，结果才为 1，这正好符合我们&quot;连续签到&quot;的逻辑。</p>
+<p><strong>实例说明</strong>：</p>
+<p>假设要统计最近 3 天（5 月 12 日、13 日和 14 日）连续签到的用户数：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">执行AND位操作，将结果存入destmap</span></span><br><span class="line">BITOP AND destmap sign:20250512 sign:20250513 sign:20250514</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">统计结果中位值为1的数量（即连续签到用户数）</span></span><br><span class="line">BITCOUNT destmap</span><br></pre></td></tr></table></figure>
+<p>执行上述命令后，<code>BITCOUNT destmap</code>返回的结果就是连续 3 天都签到的用户总数。</p>
+<p><strong>内存占用分析</strong>：</p>
+<ul>
+<li>即使用户数量达到 1 亿，一个 Bitmap 的内存占用也只有约 12 MB<br>
+(计算方式：10^8 位 ÷ 8 位/字节 ÷ 1024 字节/KB ÷ 1024KB/MB ≈ 12 MB)</li>
+<li>存储 7 天的签到数据约需 84 MB 内存</li>
+</ul>
+<p><strong>最佳实践</strong>：</p>
+<ul>
+<li>为 Bitmap 设置合理的过期时间，自动清理历史签到数据</li>
+<li>对于大型应用，可以按月或按周设计键名，便于管理和清理</li>
+<li>可结合 Redis 的计划任务，定期合并计算连续签到的统计结果</li>
+</ul>
+<h2 id="HyperLogLog">HyperLogLog</h2>
+<h3 id="介绍-2">介绍</h3>
+<p>想象一下，你想知道一个超级大的网站，比如微博或者知乎，一天有多少<strong>不同的人</strong>访问了它。直接去数的话，如果每个人都记录下来，那得用掉多少存储空间啊！</p>
+<p>Redis 的 HyperLogLog 就是来解决这个问题的&quot;神器&quot;。它是一种专门用来做&quot;<strong>去重计数</strong>&quot;（专业点叫「统计基数」）的工具。简单来说，就是帮你估算出一大堆数据里，到底有多少个不重复的元素。</p>
+<p>最厉害的是，HyperLogLog <strong>超级节省内存</strong>！不管你要统计的数据有多少（几百万、几亿甚至更多），它基本上都只用固定的、非常非常小的内存（在 Redis 里大约是 12KB）。就能给你一个八九不离十的估计值。当然，它也不是百分百精确的，会有一点点小误差（标准错误率大约是 0.81%），但对于很多场景来说，这点误差完全可以接受。</p>
+<p><strong>举个例子让你感受下它有多省内存</strong>：</p>
+<p>如果我们不用 HyperLogLog，而是用传统方法（比如 Java 里的 <code>long</code> 类型数字）来记录每一个独立访客的 ID。假设有几百亿个访客，每个访客 ID 都需要占用一定的存储空间（比如 8 个字节）。那总共需要的内存就会是一个天文数字，可能比你电脑的硬盘还要大得多！而 HyperLogLog 只需要大约 12KB 就能搞定这个估算任务，是不是很神奇？</p>
+<p>所以，简单来说，当你需要<strong>大概知道有多少不重复的东西，而且这些东西数量巨大，又不想太占内存</strong>时，HyperLogLog 就是你的好帮手。</p>
+<h3 id="内部实现-2">内部实现</h3>
+<p>HyperLogLog 的实现涉及到很多数学问题，太费脑子了，我也没有搞懂，如果你想了解一下，课下可以看看这个：<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/HyperLogLog">HyperLogLog</a>。</p>
+<h3 id="常见命令">常见命令</h3>
+<p>HyperLogLog 命令很少，就三个。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">添加指定元素到 HyperLogLog 中</span></span><br><span class="line">PFADD key element [element ...]</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">返回给定 HyperLogLog 的基数估算值。</span></span><br><span class="line">PFCOUNT key [key ...]</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">将多个 HyperLogLog 合并为一个 HyperLogLog</span></span><br><span class="line">PFMERGE destkey sourcekey [sourcekey ...]</span><br></pre></td></tr></table></figure>
+<h3 id="应用场景-2">应用场景</h3>
+<h4 id="百万级网页-UA-User-Agent-计数">百万级网页 UA (User Agent) 计数</h4>
+<p>Redis HyperLogLog 优势在于只需要花费 12 KB 内存，就可以计算接近 2^64 个元素的基数，和元素越多就越耗费内存的 Set 和 Hash 类型相比，HyperLogLog 就非常节省空间。</p>
+<p>所以，非常适合统计百万级以上的网页 UA 的场景。</p>
+<p>在统计 UA 时，你可以用 PFADD 命令（用于向 HyperLogLog 中添加新元素）把访问页面的每个用户都添加到 HyperLogLog 中。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">PFADD page1:ua user1 user2 user3 user4 user5</span><br></pre></td></tr></table></figure>
+<p>接下来，就可以用 PFCOUNT 命令直接获得 page1 的 UA 值了，这个命令的作用就是返回 HyperLogLog 的统计结果。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">PFCOUNT page1:ua</span><br></pre></td></tr></table></figure>
+<p>不过，有一点需要你注意一下，HyperLogLog 的统计规则是基于概率完成的，所以它给出的统计结果是有一定误差的，标准误算率是 0.81%。</p>
+<p>这也就意味着，你使用 HyperLogLog 统计的 UA 是 100 万，但实际的 UA 可能是 101 万。虽然误差率不算大，但是，如果你需要精确统计结果的话，最好还是继续用 Set 或 Hash 类型。</p>
+<h2 id="GEO">GEO</h2>
+<p>Redis GEO 是 Redis 3.2 版本引入的一个新功能，专门用来帮你<strong>存储和查询地理位置信息</strong>。</p>
+<p>想象一下我们平时用的地图软件，比如你要找&quot;我附近的餐馆&quot;，或者打车软件帮你匹配最近的司机，这些都离不开地理位置服务（我们常说的 LBS - Location-Based Service）。GEO 类型就是为了方便实现这类功能而生的。它可以帮你存储很多地点（比如餐馆、车辆、用户）的经度和纬度，并且能快速找出某个地点附近的其他地点。</p>
+<h3 id="内部实现-3">内部实现</h3>
+<p>你可能会想，Redis 是怎么做到这么神奇的地理位置存储和查询的呢？它是不是又发明了一种全新的、复杂的数据结构？</p>
+<p>答案是：并没有！GEO 类型非常聪明，它<strong>巧妙地借用了我们之前学过的 <code>Sorted Set</code>（有序集合）</strong>.</p>
+<p>它是这样工作的：</p>
+<ol>
+<li><strong>GeoHash 编码</strong>：首先，对于每一个地理位置（经度和纬度），GEO 会用一种叫做 “GeoHash” 的方法，把这个二维的经纬度信息转换成一个<strong>一维的数字</strong>（你可以把它想象成给地图上的每个小区域编了一个号）。这个数字就代表了这个位置所在的区域。</li>
+<li><strong>存入 Sorted Set</strong>：然后，GEO 把这个转换后的一维数字作为 <code>Sorted Set</code> 中每个元素的&quot;分数&quot;（score），而地点本身的名字（比如餐馆名、车辆ID）就是元素的值。</li>
+</ol>
+<p>这样一来，所有的地理位置信息就被转换成了 <code>Sorted Set</code> 里带着分数的元素。因为 <code>Sorted Set</code> 本身就是有序的，而且支持按照分数范围来查找，所以我们就能很方便地利用这个特性来找到某个分数（也就是某个地理区域）附近的其他元素了，从而实现&quot;搜索附近&quot;的功能。</p>
+<p>简单来说，<strong>GEO 就是用 GeoHash 把地图上的点&quot;拍扁&quot;成一维的数字，然后用 Sorted Set 来管理这些数字，从而实现高效的地理位置查询</strong>。</p>
+<h3 id="常用命令-2">常用命令</h3>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">存储指定的地理空间位置，可以将一个或多个经度(longitude)、纬度(latitude)、位置名称(member)添加到指定的 key 中。</span></span><br><span class="line">GEOADD key longitude latitude member [longitude latitude member ...]</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">从给定的 key 里返回所有指定名称(member)的位置（经度和纬度），不存在的返回 nil。</span></span><br><span class="line">GEOPOS key member [member ...]</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">返回两个给定位置之间的距离。</span></span><br><span class="line">GEODIST key member1 member2 [m|km|ft|mi]</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">根据用户给定的经纬度坐标来获取指定范围内的地理位置集合。</span></span><br><span class="line">GEORADIUS key longitude latitude radius m|km|ft|mi [WITHCOORD] [WITHDIST] [WITHHASH] [COUNT count] [ASC|DESC] [STORE key] [STOREDIST key]</span><br></pre></td></tr></table></figure>
+<h3 id="应用场景-3">应用场景</h3>
+<h4 id="滴滴叫车">滴滴叫车</h4>
+<p>这里以滴滴叫车的场景为例，介绍下具体如何使用 GEO 命令：GEOADD 和 GEORADIUS 这两个命令。</p>
+<p>假设车辆 ID 是 33，经纬度位置是（116.034579，39.030452），我们可以用一个 GEO 集合保存所有车辆的经纬度，集合 key 是 cars:locations。</p>
+<p>执行下面的这个命令，就可以把 ID 号为 33 的车辆的当前经纬度位置存入 GEO 集合中：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GEOADD cars:locations 116.034579 39.030452 33</span><br></pre></td></tr></table></figure>
+<p>当用户想要寻找自己附近的网约车时，LBS 应用就可以使用 GEORADIUS 命令。</p>
+<p>例如，LBS 应用执行下面的命令时，Redis 会根据输入的用户的经纬度信息（116.054579，39.030452），查找以这个经纬度为中心的 5 公里内的车辆信息，并返回给 LBS 应用。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GEORADIUS cars:locations 116.054579 39.030452 5 km ASC COUNT 10</span><br></pre></td></tr></table></figure>
+<h2 id="Stream">Stream</h2>
+<h3 id="介绍-3">介绍</h3>
+<p>Redis Stream 是 Redis 5.0 版本专门为&quot;<strong>消息队列</strong>&quot;量身打造的一种新数据类型。</p>
+<p><strong>什么是消息队列呢？</strong></p>
+<p>你可以把它想象成一个<strong>智能的公告板或者任务清单</strong>。有人（生产者）往上面贴条子（发布消息），另外一些人（消费者）则从公告板上取条子去处理（消费消息）。</p>
+<p><strong>为什么需要 Stream？</strong></p>
+<p>在 Stream 出现之前，大家也尝试用 Redis 的其他功能（比如 <code>List</code> 或者发布订阅模式）来模拟消息队列，但它们都有一些天生的&quot;小毛病&quot;：</p>
+<ul>
+<li><strong>发布订阅模式</strong>：这种模式像个&quot;广播&quot;，消息发出去了就没了，<strong>不能保存</strong>。如果某个消费者当时不在线，它就错过了这些消息，之后也找不回来。</li>
+<li><strong><code>List</code> 类型</strong>：用 <code>List</code> 来做消息队列，消息倒是能存下来。但是，一条消息被一个消费者取走后，别的消费者就看不到了（<strong>不能重复消费</strong>）。而且，谁先发消息谁后发消息，这个顺序的管理也比较麻烦，生产者需要自己想办法给每条消息编个号。</li>
+</ul>
+<p>为了解决这些问题，Stream 横空出世！它就像一个<strong>超级增强版的消息队列</strong>，拥有很多高级功能：</p>
+<ul>
+<li><strong>消息持久化</strong>：消息会被稳稳地存起来，不用担心丢了。</li>
+<li><strong>自动生成唯一ID</strong>：每条消息都会自动获得一个独一无二的编号，管理起来很方便。</li>
+<li><strong>消息确认机制（ACK）</strong>：消费者拿到消息处理完后，可以告诉 Stream “我搞定了！”，这样 Stream 才知道这条消息被成功处理了。</li>
+<li><strong>消费组模式</strong>：这是 Stream 的一大亮点！允许多个消费者组成一个&quot;小组&quot;，共同来处理消息。一个小组里的消息只会被其中一个成员领走，避免了重复劳动。而且，不同的小组可以独立消费同样的消息，互不影响。</li>
+</ul>
+<p>有了这些特性，用 Stream 来做消息队列就变得非常<strong>稳定和可靠</strong>了。</p>
+<h3 id="常见命令-2">常见命令</h3>
+<p>Stream 消息队列操作命令：</p>
+<ul>
+<li>XADD：插入消息，保证有序，可以自动生成全局唯一 ID；</li>
+<li>XLEN：查询消息长度；</li>
+<li>XREAD：用于读取消息，可以按 ID 读取数据；</li>
+<li>XDEL：根据消息 ID 删除消息；</li>
+<li>DEL：删除整个 Stream；</li>
+<li>XRANGE：读取区间消息</li>
+<li>XREADGROUP：按消费组形式读取消息；</li>
+<li>XPENDING 和 XACK：
+<ul>
+<li>XPENDING 命令可以用来查询每个消费组内所有消费者「已读取、但尚未确认」的消息；</li>
+<li>XACK 命令用于向消息队列确认消息处理已完成；</li>
+</ul>
+</li>
+</ul>
+<h3 id="应用场景-4">应用场景</h3>
+<h4 id="消息队列">消息队列</h4>
+<p>生产者（发消息的人）用 <code>XADD</code> 命令把一条消息放进队列：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">这里的 * 号表示让 Redis 自动给这条消息生成一个全局唯一的 ID</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">意思是：往一个叫做 mymq 的消息队列里，放一条内容是 name=xiaolin 的消息</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XADD mymq * name xiaolin</span></span><br><span class="line">&quot;1654254953808-0&quot; # 这是 Redis 返回的消息 ID</span><br></pre></td></tr></table></figure>
+<p>这个返回的 ID 很特别，它由两部分组成：</p>
+<ul>
+<li>第一部分（例如 <code>1654254953808</code>）：是消息被存入时，服务器的时间戳（精确到毫秒）。</li>
+<li>第二部分（例如 <code>0</code>）：表示在同一毫秒内，这条消息是第几条（从0开始数）。</li>
+</ul>
+<p>消费者（处理消息的人）用 <code>XREAD</code> 命令来读消息。你可以告诉它从哪个 ID 开始读，它就会把那个 ID 之后的新消息都给你。这样设计的好处是，消费者只需要记住上次读到哪里，下次就能接着读，非常方便。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">从 ID 号为 1654254953807-0 的消息之后开始读取，返回所有更新的消息</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XREAD STREAMS mymq 1654254953807-0</span></span><br><span class="line">1) 1) &quot;mymq&quot;</span><br><span class="line">   2) 1) 1) &quot;1654254953808-0&quot; # 消息ID</span><br><span class="line">         2) 1) &quot;name&quot;      # 消息内容</span><br><span class="line">            2) &quot;xiaolin&quot;</span><br></pre></td></tr></table></figure>
+<p>如果希望<strong>没有新消息时，让 <code>XREAD</code> 命令先别急着返回，而是等一会儿</strong>（比如等几秒钟），看看有没有新消息进来，可以加上 <code>BLOCK</code> 参数。这就像你去窗口办事，如果暂时没人，你会等一下而不是立刻离开。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">命令最后的<span class="string">&quot;$&quot;</span>符号表示我想读取最新的消息</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">BLOCK 10000 表示如果没有新消息，就阻塞等待10000毫秒（10秒）</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XREAD BLOCK 10000 STREAMS mymq $</span></span><br><span class="line">(nil) # 10秒内没有新消息，就返回空</span><br><span class="line">(10.00s)</span><br></pre></td></tr></table></figure>
+<p>用 <code>XADD</code> 发消息，用 <code>XREAD</code> 收消息，这样最基本的消息队列就搭起来了。流程就像下面这张图：</p>
+<p><img src="/2025/05/14/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Other/1747324335058.png" alt="1747324335058"></p>
+<blockquote>
+<p>前面这些基本操作，用 <code>List</code> 其实也能勉强做到。Stream 真正的厉害之处在于它的&quot;消费组&quot;功能。</p>
+</blockquote>
+<p>Stream 可以用 <strong><code>XGROUP CREATE</code> 创建消费组</strong>。创建了消费组之后，就可以用 <code>XREADGROUP</code> 命令让组里的消费者来读消息了。</p>
+<p>比如，我们创建一个名叫 <code>group1</code> 的消费组，让它从消息队列 <code>mymq</code> 的第一条消息（用 <code>0-0</code> 表示）开始读：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">创建一个名为 group1 的消费组，0-0 表示从第一条消息开始读取。</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XGROUP CREATE mymq group1 0-0</span></span><br><span class="line">OK</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">同样，再创建一个 group2</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XGROUP CREATE mymq group2 0-0</span></span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+<p>然后，<code>group1</code> 里的一个消费者 <code>consumer1</code> 可以这样来读消息：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">命令最后的参数<span class="string">&quot;&gt;&quot;</span>，表示我想从第一条<span class="string">&quot;还没有被组里其他消费者拿走&quot;</span>的消息开始读。</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XREADGROUP GROUP group1 consumer1 STREAMS mymq &gt;</span></span><br><span class="line">1) 1) &quot;mymq&quot;</span><br><span class="line">   2) 1) 1) &quot;1654254953808-0&quot;</span><br><span class="line">         2) 1) &quot;name&quot;</span><br><span class="line">            2) &quot;xiaolin&quot;</span><br></pre></td></tr></table></figure>
+<p><strong>重点来了：同一个消费组里的消息，一旦被一个消费者取走了，组里的其他消费者就拿不到了。</strong> 这确保了同一条消息不会被同一个小组的人重复处理。</p>
+<p>比如，<code>consumer1</code> 刚读了一条消息，如果它再用同样的命令去读，就会发现没新消息了（除非队列里又来了别的未被读取的消息）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XREADGROUP GROUP group1 consumer1 STREAMS mymq &gt;</span></span><br><span class="line">(nil)</span><br></pre></td></tr></table></figure>
+<p>但是，<strong>不同消费组之间是独立的</strong>。如果它们都设置了从同一个地方开始读消息，那么它们都可以读到相同的消息。</p>
+<p>比如，刚才 <code>group1</code> 的 <code>consumer1</code> 读了 <code>1654254953808-0</code> 这条消息。现在我们让 <code>group2</code> 里的 <code>consumer1</code> (注意，这是另一个组的同名消费者，或者不同名的消费者都行) 去读，它也能读到这条消息：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XREADGROUP GROUP group2 consumer1 STREAMS mymq &gt;</span></span><br><span class="line">1) 1) &quot;mymq&quot;</span><br><span class="line">   2) 1) 1) &quot;1654254953808-0&quot;</span><br><span class="line">         2) 1) &quot;name&quot;</span><br><span class="line">            2) &quot;xiaolin&quot;</span><br></pre></td></tr></table></figure>
+<p>消费组的主要目的就是让组里的多个消费者<strong>分工合作，共同处理消息</strong>，提高效率。通常我们会让每个消费者领一部分消息。</p>
+<p>比如，我们可以让 <code>group2</code> 里的三个消费者 <code>consumer1</code>、<code>consumer2</code>、<code>consumer3</code> 各自去领一条消息来处理：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">让 group2 的 consumer1 领一条消息</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XREADGROUP GROUP group2 consumer1 COUNT 1 STREAMS mymq &gt;</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">... (consumer1 领到的消息)</span></span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">让 group2 的 consumer2 领一条消息</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XREADGROUP GROUP group2 consumer2 COUNT 1 STREAMS mymq &gt;</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">... (consumer2 领到的消息)</span></span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">让 group2 的 consumer3 领一条消息</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XREADGROUP GROUP group2 consumer3 COUNT 1 STREAMS mymq &gt;</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">... (consumer3 领到的消息)</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>那么问题来了：如果一个消费者领了条消息，但它自己处理的时候出错了（比如程序崩了），那这条消息不就丢了吗？Stream 是怎么保证消息被可靠处理的呢？</p>
+</blockquote>
+<p>这就是 Stream 的<strong>消息确认机制</strong>和 <strong>Pending List（待处理列表）</strong> 的作用了。</p>
+<p>当一个消费者通过 <code>XREADGROUP</code> 拿到消息后，Stream 会默默地把这些&quot;已被认领但还没说处理完&quot;的消息记录在一个内部的&quot;<strong>待处理列表</strong>&quot;（Pending List）里。只有当消费者处理完消息，并且明确地用 <code>XACK</code> 命令告诉 Stream &quot;这条消息我处理好了！&quot;之后，Stream 才会认为这条消息被成功消费了，然后从 Pending List 里移除它。</p>
+<p>这个过程就像这样：</p>
+<p><img src="/2025/05/14/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Other/1747324344772.png" alt="1747324344772"></p>
+<p>如果消费者拿了消息但一直没发 <code>XACK</code>（比如因为它自己出故障了），那么这条消息就会一直待在 Pending List 里。当这个消费者恢复后（或者其他备用消费者介入时），可以用 <code>XPENDING</code> 命令来查看哪些消息是&quot;之前领了但还没确认处理完的&quot;。</p>
+<p>例如，查看 <code>group2</code> 里，所有消费者加起来总共有多少条&quot;待处理&quot;的消息，以及这些消息的 ID 范围：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; XPENDING mymq group2</span><br><span class="line">1) (integer) 3 # 总共有3条待处理消息</span><br><span class="line">2) &quot;1654254953808-0&quot;  # 这些待处理消息中，ID最小的那个</span><br><span class="line">3) &quot;1654256271337-0&quot;  # 这些待处理消息中，ID最大的那个</span><br><span class="line">4) 1) 1) &quot;consumer1&quot;   # consumer1 有几条待处理的</span><br><span class="line">      1) &quot;1&quot;</span><br><span class="line">   1) 1) &quot;consumer2&quot;   # consumer2 有几条待处理的</span><br><span class="line">      1) &quot;1&quot;</span><br><span class="line">   2) 1) &quot;consumer3&quot;   # consumer3 有几条待处理的</span><br><span class="line">      1) &quot;1&quot;</span><br></pre></td></tr></table></figure>
+<p>如果想看某个消费者（比如 <code>consumer2</code>）具体有哪些待处理的消息，可以这样：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看 group2 里的 consumer2 有哪些待处理的消息（最多看10条，从最早的开始）</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XPENDING mymq group2 - + 10 consumer2</span></span><br><span class="line">1) 1) &quot;1654256265584-0&quot;   # 消息ID</span><br><span class="line">   2) &quot;consumer2&quot;       # 哪个消费者领的</span><br><span class="line">   3) (integer) 410700  # 这条消息被认领后，空闲了多久（毫秒）</span><br><span class="line">   4) (integer) 1         # 这条消息被传递了几次（如果发生过重新认领）</span><br></pre></td></tr></table></figure>
+<p>一旦 <code>consumer2</code> 把消息 <code>1654256265584-0</code> 处理完了，它就应该用 <code>XACK</code> 命令告诉 Stream：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XACK mymq group2 1654256265584-0</span></span><br><span class="line">(integer) 1 # 表示成功确认了1条消息</span><br></pre></td></tr></table></figure>
+<p>之后再用 <code>XPENDING</code> 去查 <code>consumer2</code>，就会发现它没有待处理的消息了：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">XPENDING mymq group2 - + 10 consumer2</span></span><br><span class="line">(empty array)</span><br></pre></td></tr></table></figure>
+<p>好了，关于 Stream 实现消息队列的关键点小结一下：</p>
+<ul>
+<li><strong>保证消息顺序</strong>：用 <code>XADD</code> 添加，ID 本身就带有时间戳和序号。</li>
+<li><strong>可以阻塞等待新消息</strong>：<code>XREAD</code> 或 <code>XREADGROUP</code> 加上 <code>BLOCK</code> 参数。</li>
+<li><strong>避免重复消息</strong>：<code>XADD</code> 自动生成全局唯一 ID。</li>
+<li><strong>保证消息可靠性</strong>：通过消费组、Pending List 和 <code>XACK</code> 确认机制，确保消息至少被成功处理一次。</li>
+<li><strong>支持消费组协同工作</strong>：多个消费者可以一起干活，提高效率。</li>
+</ul>
+<blockquote>
+<p>Redis Stream 这么厉害，那它和那些专业的&quot;消息队列中间件&quot;（比如 Kafka、RabbitMQ）比起来怎么样呢？</p>
+</blockquote>
+<p>一个专业的消息队列，通常要重点解决两个问题：</p>
+<ol>
+<li><strong>消息不能丢</strong>。</li>
+<li><strong>消息能大量堆积</strong>（比如生产者发得很快，消费者处理得慢，消息不能因为堆太多而丢了）。</li>
+</ol>
+<p><em>1、Redis Stream 的消息会丢失吗？</em></p>
+<p>一个完整的消息传递过程包括三个环节：<strong>生产者发消息 -&gt; 消息队列中间件存消息 -&gt; 消费者收消息</strong>。</p>
+<p><img src="/2025/05/14/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Other/1747324361948.png" alt="1747324361948"></p>
+<p>我们来看看 Redis Stream 在这三个环节的表现：</p>
+<ul>
+<li><strong>生产者发消息会不会丢？</strong> 这个主要看生产者程序写得好不好。如果生产者发完消息后，能正确检查 Stream 返回的确认（表示 Stream 已经收到），并且在出错时能重新发送，那么这个环节一般不会丢消息。</li>
+<li><strong>消费者收消息会不会丢？</strong> 一般也不会。因为 Stream 有 Pending List 和 <code>XACK</code> 确认机制。消费者处理完消息才发确认，如果中途挂了，消息还在 Pending List 里，重启后可以继续处理。</li>
+<li><strong>消息在 Stream（也就是 Redis 自己作为中间件）里会不会丢？</strong> <strong>这个是有可能的！</strong> 主要在两种情况下：
+<ul>
+<li>如果 Redis 的持久化策略（比如 AOF）配置成每秒写一次硬盘，那么在两次写盘间隔内如果 Redis 突然挂了，这一秒内收到的消息就可能丢了。</li>
+<li>如果 Redis 做了主从复制，但复制是异步的，那么在主节点挂了、从节点还没同步完数据的时候切换，也可能丢一部分数据。</li>
+</ul>
+</li>
+</ul>
+<p>所以，<strong>在&quot;中间件&quot;这个环节，Redis Stream 本身并不能像专业消息队列那样做到绝对不丢消息</strong>。专业的消息队列（如 Kafka）通常会把消息写到集群里的多个节点（多个副本），一个节点挂了也不影响数据。</p>
+<p><em>2、Redis Stream 消息能大量堆积吗？</em></p>
+<p>Redis 的数据主要是存在内存里的。如果消息产生得非常快，消费却很慢，导致大量消息堆积在 Stream 里，就会不断消耗 Redis 的内存。如果内存耗尽，Redis 就可能崩溃（OOM）。</p>
+<p>为了避免这种情况，Stream 允许你设置一个队列的最大长度。超过这个长度后，老的消息就会被自动删除，只保留最新的消息。这样虽然能防止内存爆炸，但也意味着<strong>在消息严重堆积时，Stream 可能会主动丢弃老消息</strong>。</p>
+<p>而专业的 Kafka、RabbitMQ 通常把消息存在磁盘上，磁盘空间一般比内存大得多，所以它们更能抗住大量的消息堆积。</p>
+<p>因此，总结一下，用 Redis Stream 做消息队列时要注意：</p>
+<ul>
+<li><strong>Redis 自身的原因（持久化、主从切换）可能导致少量数据丢失。</strong></li>
+<li><strong>消息大量堆积时，内存可能成为瓶颈，并可能导致老消息被丢弃。</strong></li>
+</ul>
+<p>那么，到底能不能用 Redis Stream 做消息队列呢？关键看你的业务场景：</p>
+<ul>
+<li>如果你的业务<strong>对偶尔丢失几条消息不那么敏感</strong>，并且<strong>消息积压的风险不高</strong>，那么用 Redis Stream 是个简单方便的选择。</li>
+<li>但如果你的业务要求<strong>消息绝对不能丢</strong>，或者<strong>可能产生海量消息并长时间堆积</strong>，那还是选择 Kafka、RabbitMQ 这类更专业的消息队列中间件更稳妥。</li>
+</ul>
+<blockquote>
+<p>补充：为什么不直接用 Redis 的&quot;发布/订阅&quot;机制做消息队列？</p>
+</blockquote>
+<p>虽然发布/订阅听起来也像消息传递，但它有几个硬伤，不适合做正经的消息队列：</p>
+<ol>
+<li><strong>不存消息</strong>：发布/订阅是纯粹的&quot;阅后即焚&quot;，消息发出去就没了，Redis 不会为它做持久化（写 RDB 或 AOF）。Redis 重启后，啥都没了。</li>
+<li><strong>离线消费者收不到</strong>：如果一个订阅者当时不在线，它就永远错过了那些消息，之后也补不回来。</li>
+<li><strong>消费者慢了会被踢掉</strong>：如果生产者发太快，某个消费者处理不过来，导致它那边的消息缓冲区满了（默认超过32MB，或者60秒内持续占着8MB以上），Redis 会把这个&quot;拖后腿&quot;的消费者直接踢下线。</li>
+</ol>
+<p>所以，发布/订阅机制更适合做一些<strong>即时性的通知</strong>，比如 Redis 哨兵集群内部的通信，而不是需要可靠传递和存储的消息队列。</p>
+<h2 id="总结">总结</h2>
+<p>Redis 常见的五种数据类型：<strong>String（字符串），Hash（哈希），List（列表），Set（集合）及 Zset(sorted set：有序集合)</strong>。</p>
+<p>这五种数据类型都由多种数据结构实现的，主要是出于时间和空间的考虑，当数据量小的时候使用更简单的数据结构，有利于节省内存，提高性能。</p>
+<p>这五种数据类型与底层数据结构对应关系图如下，左边是 Redis 3.0 版本的，也就是《Redis 设计与实现》这本书讲解的版本，现在看还是有点过时了，右边是现在 Github 最新的 Redis 代码的。</p>
+<p><img src="/2025/05/14/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Other/1747324379560.png" alt="1747324379560"></p>
+<p>可以看到，Redis 数据类型的底层数据结构随着版本的更新也有所不同，比如：</p>
+<ul>
+<li>在 Redis 3.0 版本中 List 对象的底层数据结构由「双向链表」或「压缩表列表」实现，但是在 3.2 版本之后，List 数据类型底层数据结构是由 quicklist 实现的；</li>
+<li>在最新的 Redis 代码中，压缩列表数据结构已经废弃了，交由 listpack 数据结构来实现了。</li>
+</ul>
+<p>Redis 五种数据类型的应用场景：</p>
+<ul>
+<li>String 类型的应用场景：缓存对象、常规计数、分布式锁、共享 session 信息等。</li>
+<li>List 类型的应用场景：消息队列（有两个问题：1. 生产者需要自行实现全局唯一 ID；2. 不能以消费组形式消费数据）等。</li>
+<li>Hash 类型：缓存对象、购物车等。</li>
+<li>Set 类型：聚合计算（并集、交集、差集）场景，比如点赞、共同关注、抽奖活动等。</li>
+<li>Zset 类型：排序场景，比如排行榜、电话和姓名排序等。</li>
+</ul>
+<p>Redis 后续版本又支持四种数据类型，它们的应用场景如下：</p>
+<ul>
+<li>BitMap（2.2 版新增）：二值状态统计的场景，比如签到、判断用户登录状态、连续签到用户总数等；</li>
+<li>HyperLogLog（2.8 版新增）：海量数据基数统计的场景，比如百万级网页 UV 计数等；</li>
+<li>GEO（3.2 版新增）：存储地理位置信息的场景，比如滴滴叫车；</li>
+<li>Stream（5.0 版新增）：消息队列，相比于基于 List 类型实现的消息队列，有这两个特有的特性：自动生成全局唯一消息 ID，支持以消费组形式消费数据。</li>
+</ul>
+<p>针对 Redis 是否适合做消息队列，关键看你的业务场景：</p>
+<ul>
+<li>如果你的业务场景足够简单，对于数据丢失不敏感，而且消息积压概率比较小的情况下，把 Redis 当作队列是完全可以的。</li>
+<li>如果你的业务有海量消息，消息积压的概率比较大，并且不能接受数据丢失，那么还是用专业的消息队列中间件吧。</li>
+</ul>
+<hr>
+<p>参考资料：</p>
+<ul>
+<li>《Redis 核心技术与实战》</li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/hunternet/p/12742390.html">https://www.cnblogs.com/hunternet/p/12742390.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/qdhxhz/p/15669348.html">https://www.cnblogs.com/qdhxhz/p/15669348.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/bbgs-xc/p/14376109.html">https://www.cnblogs.com/bbgs-xc/p/14376109.html</a></li>
+<li><a target="_blank" rel="noopener" href="http://kaito-kidd.com/2021/04/19/can-redis-be-used-as-a-queue/">http://kaito-kidd.com/2021/04/19/can-redis-be-used-as-a-queue/</a></li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/REDIS/" rel="tag"># REDIS</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/" rel="tag"># 数据类型</a>
+              <a href="/tags/Bitmap/" rel="tag"># Bitmap</a>
+              <a href="/tags/HyperLogLog/" rel="tag"># HyperLogLog</a>
+              <a href="/tags/GEO/" rel="tag"># GEO</a>
+              <a href="/tags/Stream/" rel="tag"># Stream</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/05/14/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-295-%E6%95%B0%E6%8D%AE%E6%B5%81%E7%9A%84%E4%B8%AD%E4%BD%8D%E6%95%B0/" rel="prev" title="LeetCode 295 - 数据流的中位数（Find Median from Data Stream）">
+      <i class="fa fa-chevron-left"></i> LeetCode 295 - 数据流的中位数（Find Median from Data Stream）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/05/15/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-45-%E8%B7%B3%E8%B7%83%E6%B8%B8%E6%88%8F-II/" rel="next" title="LeetCode 45 - 跳跃游戏 II (Jump Game II)">
+      LeetCode 45 - 跳跃游戏 II (Jump Game II) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#BitMap"><span class="nav-number">1.</span> <span class="nav-text">BitMap</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E9%83%A8%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.2.</span> <span class="nav-text">内部实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="nav-number">1.3.</span> <span class="nav-text">常用命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.4.</span> <span class="nav-text">应用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AD%BE%E5%88%B0%E7%BB%9F%E8%AE%A1"><span class="nav-number">1.4.1.</span> <span class="nav-text">签到统计</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%A4%E6%96%AD%E7%94%A8%E6%88%B7%E7%99%BB%E5%BD%95%E6%80%81"><span class="nav-number">1.4.2.</span> <span class="nav-text">判断用户登录态</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%9E%E7%BB%AD%E7%AD%BE%E5%88%B0%E7%94%A8%E6%88%B7%E6%80%BB%E6%95%B0"><span class="nav-number">1.4.3.</span> <span class="nav-text">连续签到用户总数</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HyperLogLog"><span class="nav-number">2.</span> <span class="nav-text">HyperLogLog</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D-2"><span class="nav-number">2.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E9%83%A8%E5%AE%9E%E7%8E%B0-2"><span class="nav-number">2.2.</span> <span class="nav-text">内部实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E5%91%BD%E4%BB%A4"><span class="nav-number">2.3.</span> <span class="nav-text">常见命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF-2"><span class="nav-number">2.4.</span> <span class="nav-text">应用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%99%BE%E4%B8%87%E7%BA%A7%E7%BD%91%E9%A1%B5-UA-User-Agent-%E8%AE%A1%E6%95%B0"><span class="nav-number">2.4.1.</span> <span class="nav-text">百万级网页 UA (User Agent) 计数</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GEO"><span class="nav-number">3.</span> <span class="nav-text">GEO</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E9%83%A8%E5%AE%9E%E7%8E%B0-3"><span class="nav-number">3.1.</span> <span class="nav-text">内部实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4-2"><span class="nav-number">3.2.</span> <span class="nav-text">常用命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF-3"><span class="nav-number">3.3.</span> <span class="nav-text">应用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%BB%B4%E6%BB%B4%E5%8F%AB%E8%BD%A6"><span class="nav-number">3.3.1.</span> <span class="nav-text">滴滴叫车</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Stream"><span class="nav-number">4.</span> <span class="nav-text">Stream</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D-3"><span class="nav-number">4.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E5%91%BD%E4%BB%A4-2"><span class="nav-number">4.2.</span> <span class="nav-text">常见命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF-4"><span class="nav-number">4.3.</span> <span class="nav-text">应用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="nav-number">4.3.1.</span> <span class="nav-text">消息队列</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">100</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">123</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">417k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">6:19</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : 'a6fe81a8d846cd40c1d5e39d89d6d367',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2025-04-18",2],["2025-04-19",3],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-26",1],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",9],["2025-05-22",2],["2025-05-24",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2025-04","2025-05"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [33,67],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"Hot100","value":58},{"name":"LeetCode","value":51},{"name":"Medium","value":45},{"name":"数组","value":22},{"name":"❌错题集","value":22},{"name":"MySQL","value":19},{"name":"动态规划","value":14},{"name":"深度优先搜索","value":14}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"Hot100","value":58},{"name":"LeetCode","value":51},{"name":"Medium","value":45},{"name":"数组","value":22},{"name":"❌错题集","value":22},{"name":"MySQL","value":19},{"name":"动态规划","value":14},{"name":"深度优先搜索","value":14}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":64},{"name":"LeetCode","value":64},{"name":"Hot100","value":63},{"name":"八股文","value":33},{"name":"基础知识","value":19}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":64},{"name":"LeetCode","value":64},{"name":"Hot100","value":63},{"name":"八股文","value":33},{"name":"基础知识","value":19}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[],"count":1,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":64,"path":"算法刷题/LeetCode"}],"count":64,"path":"算法刷题"},{"name":"八股文","children":[{"name":"REDIS","children":[{"name":"基础知识","children":[{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":15,"path":"八股文/REDIS/基础知识"}],"count":15,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"锁","children":[],"count":3,"path":"八股文/MySQL/锁"},{"name":"索引","children":[],"count":8,"path":"八股文/MySQL/索引"},{"name":"锁机制","children":[],"count":1,"path":"八股文/MySQL/锁机制"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"基础知识","children":[],"count":4,"path":"八股文/MySQL/基础知识"}],"count":18,"path":"八股文/MySQL"}],"count":33,"path":"八股文"},{"name":"技术八股","children":[{"name":"MySQL","children":[{"name":"锁","children":[],"count":1,"path":"技术八股/MySQL/锁"}],"count":1,"path":"技术八股/MySQL"}],"count":1,"path":"技术八股"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>

@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta property="og:type" content="website">
+<meta property="og:title" content="小王的blog">
+<meta property="og:url" content="https://adrianwangs.github.io/page/9/index.html">
+<meta property="og:site_name" content="小王的blog">
+<meta property="og:locale">
+<meta property="article:author" content="Adrian Wang">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://adrianwangs.github.io/page/9/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : true,
+    isPost : false,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>小王的blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小王的blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Adrian Wang's blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content index posts-expand">
+            
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-138-Copy-List-with-Random-Pointer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-138-Copy-List-with-Random-Pointer/" class="post-title-link" itemprop="url">LeetCode 138 - 随机链表的复制 (Copy List with Random Pointer)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-25 15:27:03" itemprop="dateCreated datePublished" datetime="2025-04-25T15:27:03+00:00">2025-04-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>4.3k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            问题描述 给你一个长度为 n 的链表，每个节点包含一个额外增加的随机指针 random ，该指针可以指向链表中的任何节点或空节点。 构造这个链表的深拷贝。深拷贝应该正好由 n 个全新节点组成，其中每个新节点的值都设为其对应的原节点的值。新节点的 next 指针和 random 指针也都应指向复制链表中的新节点，并使原链表和复制链表中的这些指针能够表示相同的链表状态。复制链表中的指针都不应指向原链表中的节点。 例如，如果原链表中有 X 和 Y 两个节点，其中 X.random --&gt; Y 。那么在复制链表中对应的两个节点 x 和 y ，同样有 x.random --&gt; y 。 返回复制链表的头节点。 用一个由 n 个节点组成的链表来表示输入/输出中的链表。每个节点用一个 [val, random_index] 表示： val：一个表示 Node.val 的整数。 random_index：随机指针指向的节点索引（范围从 0 到 n-1）；如果不指向任何节点，则为 null 。 你的代码只接受原链表的头节点 head 作为传入参数。 示例 示例 1: 12输入：head = [[7,null],[13,0],[11,4],[10,2],[1,0]]输出：[[7,null],[13,0],[11,4],[10,2],[1,0]] 示例 2: 12输入：head = [[1,1],[2,1]]输出：[[1,1],[2,1]] 示例 3: 12输入：head = [[3,null],[3,0],[3,null]]输出：[[3,null],[3,0],[3,null]] 约束条件 0 &lt;= n &lt;= 1000 -10^4 &lt;= Node.val &lt;= 10^4 Node.random 为 null 或指向链表中的节点。 节点数目不超过 1000 。 解决方案 这个问题可以通过几种不同的方法解决，下面介绍三种主要的解法： 方法一：哈希表映射 + 两次遍历 最直观的方法是使用哈希表建立原节点到新节点的映射关系。 实现步骤： 第一次遍历：创建所有新节点，并建立原节点到新节点的映射 第二次遍历：根据映射关系设置新节点的 next 和 random 指针 12345678910111213141516171819202122232425func copyRandomList(head *Node) *Node &#123; if head == nil &#123; return nil &#125; // 创建原始节点到复制节点的映射 nodeMap := make(map[*Node]*Node) // 第一次遍历：创建所有新节点 cur := head for cur != nil &#123; nodeMap[cur] = &amp;Node&#123;Val: cur.Val&#125; cur = cur.Next &#125; // 第二次遍历：设置新节点的next和random指针 cur = head for cur != nil &#123; nodeMap[cur].Next = nodeMap[cur.Next] nodeMap[cur].Random = nodeMap[cur.Random] cur = cur.Next &#125; return nodeMap[head]&#125; 方法二：原地修改 + 拆分（O(1)空间解法） 这种方法不使用额外的哈希表，而是通过修改原链表结构来实现深拷贝。 实现步骤： 第一步：在每个原节点后插入对应的复制节点，形成 A-&gt;A’-&gt;B-&gt;B’-&gt;… 的链表结构 第二步：设置复制节点的 random 指针，利用 cur.Random.Next 来获取对应的复制节点 第三步：将交错的链表拆分成原链表和复制链表 1234567891011121314151617181920212223242526272829303132333435363738394041func copyRandomList(head *Node) *Node &#123; if head == nil &#123; return nil &#125; // 第一步：在每个原节点后创建一个新节点 cur := head for cur != nil &#123; copyNode := &amp;Node&#123; Val: cur.Val, Next: cur.Next, &#125; cur.Next = copyNode cur = copyNode.Next &#125; // 第二步：设置新节点的random指针 cur = head for cur != nil &#123; if cur.Random != nil &#123; cur.Next.Random = cur.Random.Next &#125; cur = cur.Next.Next &#125; // 第三步：分离原链表和复制链表 cur = head copyHead := head.Next for cur != nil &#123; copyNode := cur.Next cur.Next = copyNode.Next if copyNode.Next != nil &#123; copyNode.Next = copyNode.Next.Next &#125; cur = cur.Next &#125; return copyHead&#125; 方法三：递归 + 哈希表 这种方法使用递归和哈希表结合的方式解决问题。 123456789101112131415161718192021222324252627func copyRandomList(head *Node) *Node &#123; visited := make(map[*Node]*Node) var deepCopy func(node *Node) *Node deepCopy = func(node *Node) *Node &#123; if node == nil &#123; return nil &#125; // 如果已经创建过该节点，直接返回 if copy, ok := visited[node]; ok &#123; return copy &#125; // 创建新节点 copy := &amp;Node&#123;Val: node.Val&#125; visited[node] = copy // 递归设置next和random指针 copy.Next = deepCopy(node.Next) copy.Random = deepCopy(node.Random) return copy &#125; return deepCopy(head)&#125; 错误分析 常见错误点和易错模式 在实现方法二（原地修改 + 拆分）时，有几个容易出错的地方： 错误实现 1234567891011121314151617181920212223242526272829303132func copyRandomList(head *Node) *Node &#123; cur := head // 第一步：创建交错链表 for cur != nil &#123; copyNode := &amp;Node&#123; Next: cur.Next, Val: cur.Val, &#125; cur.Next = copyNode cur = copyNode.Next &#125; // 第二步：设置random指针 cur = head for cur != nil &#123; cur.Next.Random = cur.Random.Next // 错误：没有检查cur.Random是否为nil cur = cur.Next.Next &#125; // 第三步：拆分链表 cur = head copy1 := cur.Next for cur != nil &#123; tmpNext := cur.Next cur.Next = tmpNext.Next tmpNext.Next = cur.Next.Next // 错误：没有检查cur.Next是否为nil cur = cur.Next &#125; return copy1&#125; 错误分析 上述实现有三个主要问题： 没有处理空链表：当 head == nil 时，应该直接返回 nil 没有处理 Random 指针为空：在设置 cur.Next.Random 时，如果 cur.Random 为 nil，会导致空指针异常 链表拆分处理不当：在拆分链表最后阶段，没有正确处理尾节点的情况，可能导致 nil 指针解引用 修正实现 1234567891011121314151617181920212223242526272829303132333435363738394041func copyRandomList(head *Node) *Node &#123; if head == nil &#123; return nil &#125; // 第一步：创建交错链表 cur := head for cur != nil &#123; copyNode := &amp;Node&#123; Next: cur.Next, Val: cur.Val, &#125; cur.Next = copyNode cur = copyNode.Next &#125; // 第二步：设置random指针 cur = head for cur != nil &#123; if cur.Random != nil &#123; cur.Next.Random = cur.Random.Next &#125; cur = cur.Next.Next &#125; // 第三步：拆分链表 cur = head copyHead := head.Next for cur != nil &#123; copyNode := cur.Next cur.Next = copyNode.Next if copyNode.Next != nil &#123; copyNode.Next = copyNode.Next.Next &#125; cur = cur.Next &#125; return copyHead&#125; 复杂度分析 方法 时间复杂度 空间复杂度 优点 缺点 推荐度 哈希表映射 O(n) O(n) 实现简单，直观易懂 需要额外空间 ★★★★☆ 原地修改 + 拆分 O(n) O(1) 常数空间复杂度 实现复杂，易出错 ★★★★★ 递归 + 哈希表 O(n) O(n) 代码精简，逻辑清晰 递归栈可能导致栈溢出 ★★★☆☆ 关键学习点 链表操作的边界条件处理：在链表问题中，始终要考虑空链表、单节点链表等边界情况 空指针检查的重要性：对可能为空的指针进行操作前，必须进行非空检查 不使用额外空间的技巧：如何通过修改原数据结构来避免使用额外空间 深拷贝与浅拷贝的区别：深拷贝需要复制所有相关联的对象，而不仅仅是直接引用 这道题是链表操作的经典问题，掌握它对理解更复杂的链表操作有很大帮助。原地修改的方法虽然实现复杂，但通过在原链表上巧妙地构建信息来降低空间复杂度，是一种值得学习的高级技巧。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-138-Copy-List-with-Random-Pointer/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/24/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%A1%8C%E6%BA%A2%E5%87%BA%E7%9A%84%E5%A4%84%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/24/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%A1%8C%E6%BA%A2%E5%87%BA%E7%9A%84%E5%A4%84%E7%90%86/" class="post-title-link" itemprop="url">MySQL行溢出的处理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-24 20:34:04" itemprop="dateCreated datePublished" datetime="2025-04-24T20:34:04+00:00">2025-04-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>396</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>1 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            行溢出 MYSQL 中磁盘和内存交互的基本单位是页，一页的大小为 16KB。 如果一个字段存储的内容超过了 16KB，那么这个字段就会发生行溢出。 比如之前说过 VARCHAR 类型的最大长度是 65532（允许为 NULL），那么 Varchar 的长度明显是会超过一页的大小的，那么就会发生行溢出。 VARCHAR 类型最大取值 行溢出的处理 Compact 行格式 当在使用 Compact 行格式时，如果发生行溢出，MYSQL 会使用溢出页来存储溢出的数据。它会在真实数据处只会存储一部分数据，剩余的数据会存储在溢出页中。然后在真实数据处的最后 20 个字节存储溢出页的地址，从而方便快速定位到溢出页。 Compressed 和 Dynamic 行格式 Compressed 和 Dynamic 行格式与 Compact 行格式类似，但是在溢出的处理上有所不同。它不会在真实数据处存储部分数据，而是完全只存储溢出页的地址。真实数据完全存储在溢出页中。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/24/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%A1%8C%E6%BA%A2%E5%87%BA%E7%9A%84%E5%A4%84%E7%90%86/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-25-Reverse-Nodes-in-k-Group/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-25-Reverse-Nodes-in-k-Group/" class="post-title-link" itemprop="url">LeetCode 25: K 个一组翻转链表（Reverse Nodes in k-Group）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-24 19:39:38" itemprop="dateCreated datePublished" datetime="2025-04-24T19:39:38+00:00">2025-04-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.3k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            问题描述 给你一个链表，每 k 个节点一组进行翻转，请你返回修改后的链表。 k 是一个正整数，它的值小于或等于链表的长度。如果节点总数不是 k 的整数倍，那么请将最后剩余的节点保持原有顺序。 你不能只是单纯的改变节点内部的值，而是需要实际进行节点交换。 示例 1: 12输入: head = [1,2,3,4,5], k = 2输出: [2,1,4,3,5] 示例 2: 12输入: head = [1,2,3,4,5], k = 3输出: [3,2,1,4,5] 约束条件: 链表中节点的数目为 n 1 &lt;= k &lt;= n &lt;= 5000 0 &lt;= Node.val &lt;= 1000 解题思路 本题要求我们以 k 个节点为一组进行翻转，如果最后剩余的节点不足 k 个，则保持原样。这是链表操作中的一个典型问题，主要涉及链表的翻转操作。 解决这个问题的核心思想是： 确定每组 k 个节点的范围 翻转这 k 个节点 将翻转后的组与前后部分连接起来 移动到下一组继续操作 我们使用迭代的方式来解决这个问题，通过一个循环来处理每组 k 个节点。 实现细节 错误版本分析 首先，让我们看看出错的代码版本： 123456789101112131415161718192021222324252627282930313233343536373839404142func reverseKGroup(head *ListNode, k int) *ListNode &#123; if head == nil || head.Next == nil || k == 1 &#123; return head &#125; dummyHead := &amp;ListNode&#123; Next: head, &#125; first := dummyHead var prev, end *ListNode cur := dummyHead.Next for &#123; end = first for i := 0; i &lt; k; i++ &#123; end = end.Next if end == nil &#123; break &#125; &#125; if end == nil &#123; break &#125; tmp := first.Next cur = tmp.Next prev = tmp for cur != nil &amp;&amp; cur != end.Next &#123; tmp2 := cur.Next cur.Next = prev prev = cur cur = tmp2 &#125; first.Next = end tmp.Next = cur first = tmp &#125; return dummyHead.Next&#125; 这个版本的主要问题出现在翻转链表的循环条件中： 123456for cur != nil &amp;&amp; cur != end.Next &#123; tmp2 := cur.Next cur.Next = prev prev = cur cur = tmp2&#125; 错误原因: 在翻转链表的过程中，我们修改了节点的 Next 指针。当我们在循环中检查 cur != end.Next 这个条件时，由于 end 是链表中的一个节点，其 Next 指针可能在循环过程中被修改，导致循环终止条件不符合预期。 修复版本 修复后的代码版本： 12345678910111213141516171819202122232425262728293031323334353637383940414243func reverseKGroup(head *ListNode, k int) *ListNode &#123; if head == nil || head.Next == nil || k == 1 &#123; return head &#125; dummyHead := &amp;ListNode&#123; Next: head, &#125; first := dummyHead var prev, end *ListNode cur := dummyHead.Next for &#123; end = first for i := 0; i &lt; k; i++ &#123; end = end.Next if end == nil &#123; break &#125; &#125; if end == nil &#123; break &#125; tmp := first.Next cur = tmp.Next prev = tmp afterEnd := end.Next for cur != nil &amp;&amp; cur != afterEnd &#123; tmp2 := cur.Next cur.Next = prev prev = cur cur = tmp2 &#125; first.Next = end tmp.Next = cur first = tmp &#125; return dummyHead.Next&#125; 修复点: 通过在开始翻转前保存 end.Next 到 afterEnd 变量，我们确保了循环的终止条件不会受到链表结构变化的影响。这样，即使在翻转过程中修改了节点间的连接关系，我们仍然能正确地确定何时停止翻转当前组的节点。 优化版本 虽然修复后的代码能够正确工作，但我们可以进一步优化代码，使其逻辑更清晰： 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748func reverseKGroup(head *ListNode, k int) *ListNode &#123; // 处理特殊情况 if head == nil || head.Next == nil || k == 1 &#123; return head &#125; // 创建虚拟头节点简化边界处理 dummy := &amp;ListNode&#123;Next: head&#125; // groupPrev 指向当前待翻转组的前一个节点 groupPrev := dummy // 持续处理每组 k 个节点 for &#123; // 1. 检查剩余节点是否有 k 个 groupEnd := groupPrev for i := 0; i &lt; k; i++ &#123; groupEnd = groupEnd.Next if groupEnd == nil &#123; // 剩余节点不足 k 个，不再翻转 return dummy.Next &#125; &#125; // 2. 获取分组的起始和结束位置 groupStart := groupPrev.Next groupNext := groupEnd.Next // 3. 翻转 k 个节点 prev := groupNext // 翻转后尾节点指向的位置 curr := groupStart // 经典链表翻转算法 for curr != groupNext &#123; next := curr.Next curr.Next = prev prev = curr curr = next &#125; // 4. 连接翻转后的组与之前的链表 groupPrev.Next = groupEnd // 前一个节点连接到翻转后的头 groupStart.Next = groupNext // 翻转后的尾连接到下一组的开始 // 5. 更新 groupPrev 为下一组的前节点 groupPrev = groupStart &#125;&#125; 在这个优化版本中： 使用了更有描述性的变量名（如 groupStart, groupEnd, groupNext, groupPrev） 添加了清晰的注释，解释每个步骤的目的 简化了链表翻转的实现，使用标准的三指针翻转方法 分离了不同的逻辑部分，使代码更易理解 直接返回 dummy.Next 而不是使用 break 和额外的控制变量 复杂度分析 时间复杂度: O(n)，其中 n 是链表的长度。虽然有嵌套循环，但每个节点最多被访问两次。 空间复杂度: O(1)，只使用了常数个额外变量，没有使用额外的数据结构。 关键要点 链表修改的注意点: 在修改链表结构时，需要特别注意那些依赖于链表当前结构的条件判断。在本例中，我们学到了在开始修改前保存关键节点引用的重要性。 变量命名的重要性: 优化版代码通过使用更有描述性的变量名，极大地提高了代码的可读性，使人更容易理解算法的逻辑。 分组处理的思想: 这种按组处理的思想在很多链表和数组问题中都很有用，可以将一个复杂问题分解为处理单个组和组之间连接的子问题。 这个问题是链表操作的典型例子，掌握了这里的翻转技巧，可以应用到很多其他的链表问题中，如链表的部分翻转、两两交换节点等。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-25-Reverse-Nodes-in-k-Group/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-24-Swap-Nodes-in-Pairs/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-24-Swap-Nodes-in-Pairs/" class="post-title-link" itemprop="url">LeetCode 24 - 两两交换链表中的节点 (Swap Nodes in Pairs)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-24 17:30:40" itemprop="dateCreated datePublished" datetime="2025-04-24T17:30:40+00:00">2025-04-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            Problem Description 给你一个链表，两两交换其中相邻的节点，并返回交换后链表的头节点。你必须在不修改节点内部的值的情况下完成本题（即，只能进行节点交换）。 示例 示例 1: 12输入：head = [1,2,3,4]输出：[2,1,4,3] 示例 2: 12输入：head = []输出：[] 示例 3: 12输入：head = [1]输出：[1] 约束条件 链表中节点的数目在范围 [0, 100] 内 0 &lt;= Node.val &lt;= 100 Solution Approach 这是一个典型的链表操作问题，我们需要两两交换相邻节点。有两种常见的解决方法：迭代法和递归法。 迭代法 迭代法的核心思想是使用三个指针来完成相邻节点的交换。我们需要： 一个哑节点（dummy node）作为新链表的起点 一个前置指针（prev）指向已处理部分的最后一个节点 一个当前指针（curr）指向待处理的第一个节点 关键步骤: 创建一个哑节点指向原链表头 初始化 prev 为哑节点，curr 为链表头 当 curr 和 curr.next 都非空时进行交换： 临时保存 curr.next.next 调整指针完成交换 移动 prev 和 curr 指针继续处理下一对节点 返回哑节点的下一个节点作为新链表的头节点 以示例 1 为例，交换过程可视化： 1234567891011121314dummy -&gt; 1 -&gt; 2 -&gt; 3 -&gt; 4prev curr交换后dummy -&gt; 2 -&gt; 1 -&gt; 3 -&gt; 4 | | | curr (新的 curr) | prev (新的 prev)继续交换dummy -&gt; 2 -&gt; 1 -&gt; 4 -&gt; 3 | curr=nil (结束) Code Implementation 1. 迭代解法 12345678910111213141516171819202122232425262728293031323334353637383940/** * Definition for singly-linked list. * type ListNode struct &#123; * Val int * Next *ListNode * &#125; */func swapPairs(head *ListNode) *ListNode &#123; // 处理边界情况：空链表或只有一个节点 if head == nil || head.Next == nil &#123; return head &#125; // 创建哑节点指向链表头 dummyHead := &amp;ListNode&#123; Next: head, &#125; // 初始化指针 prev, curr := dummyHead, head // 当有一对节点可交换时进行交换 for curr != nil &amp;&amp; curr.Next != nil &#123; // 保存下一对节点的起始位置 nextPair := curr.Next.Next // 交换当前一对节点 // 1-&gt;2-&gt;3-&gt;4 变为 2-&gt;1-&gt;3-&gt;4 second := curr.Next // second = 2 second.Next = curr // 2-&gt;1 curr.Next = nextPair // 1-&gt;3 prev.Next = second // dummy-&gt;2 // 移动指针，准备处理下一对节点 prev = curr // prev = 1 curr = nextPair // curr = 3 &#125; return dummyHead.Next&#125; 2. 递归解法 递归法更简洁，但需要理解递归思想： 123456789101112131415161718func swapPairs(head *ListNode) *ListNode &#123; // 基本情况：空链表或只有一个节点 if head == nil || head.Next == nil &#123; return head &#125; // 保存第二个节点 second := head.Next // 递归处理剩余部分，从第三个节点开始 head.Next = swapPairs(second.Next) // 交换前两个节点 second.Next = head // 返回新的头节点（原来的第二个节点） return second&#125; Complexity Analysis 迭代法 时间复杂度: O(n)，其中 n 是链表的长度。我们需要遍历一次链表，每次处理两个节点。 空间复杂度: O(1)，只使用了常数个额外变量。 递归法 时间复杂度: O(n)，同样需要处理每个节点一次。 空间复杂度: O(n/2) ≈ O(n)，递归栈的深度为链表长度的一半（每次递归处理两个节点）。 方法比较 方面 迭代法 递归法 时间复杂度 O(n) O(n) 空间复杂度 O(1) O(n) 代码复杂度 中等 简洁 优点 节省空间 代码简洁易懂 缺点 需要处理多个指针 大链表可能导致栈溢出 推荐度 ★★★★☆ ★★★★★ Key Learnings 链表操作的关键在于指针管理：在处理链表时，合理使用指针变量可以极大简化操作。 哑节点（Dummy Node）的使用：在许多链表问题中，使用哑节点可以统一操作，避免处理头节点的特殊情况。 迭代vs递归：链表问题通常可以用这两种方法解决。递归往往代码更简洁，但空间复杂度更高。 画图辅助理解：对于复杂的链表操作，画出节点和指针的变化过程有助于理解和调试。 这个问题是链表操作的基础练习，掌握它对理解更复杂的链表问题很有帮助。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-24-Swap-Nodes-in-Pairs/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/24/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/Varchar%E6%9C%80%E5%A4%A7%E5%8F%96%E5%80%BC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/24/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/Varchar%E6%9C%80%E5%A4%A7%E5%8F%96%E5%80%BC/" class="post-title-link" itemprop="url">Mysql中Varchar最大取值</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-24 09:59:05" itemprop="dateCreated datePublished" datetime="2025-04-24T09:59:05+00:00">2025-04-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>892</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>1 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            在看这篇文章之前，需要先了解 Mysql 的记录存储方式，可以看这篇文章：Mysql 记录存储方式 然后，我们需要先知道一个知识点:MYSQL 中规定，除了 Text、Blob类型，其他类型其他所有的列（不包括隐藏列和记录头信息）占用的字节长度加起来不能超过 65535 个字节，这里注意一下，65535 是一行的最大字节数，而不是一个列的最大字节数。 需要说明的是，varchar 最大的长度其实是达不到 65535的，因为这一行中除了 varchar的真实数据，还包含了变长字段长度列表、NULL 值列表所占用的字节数 在我们创建一个 varchar类型的时候,实际上创建了三个部分: 真实数据 真实数据占用的字节数 NULL 标识(如果不允许为 NULL，则不需要) 比如我们在创建下面的表的时候: 123CREATE TABLE test( name VARCHAR(65532) NULL)ENGINE=InnoDB DEFAULT CHARACTER SET = ascii ROW_FORMAT = Compact; 就比如我们创建上面这个表的时候，由于允许为 NULL，所以需要（因为不满 8 位，所以需要一个字节来标识）一个字节来标识 紧接着，变长字段长度列表，需要占用 2 个字节来标识，因为它的规则是： 1.如果变长字段允许存储的最大字节数小于等于 255 字节，就会用 1 字节表示「变长字段长度」； 2.如果变长字段允许存储的最大字节数大于 255 字节，就会用 2 字节表示「变长字段长度」； 我们这个例子里面的 varchar(65532)，所以需要用 2 个字节来标识，所以这一行总共占用的字节数为：1+2+65532=65535，正好达到 65535 的限制。 因此我们可以得知，varchar 在可以为 NULL 的情况下，最大长度为 65532。 在不允许为 NULL 的情况下，由于不需要 NULL 标识字节，所以只需要 2 个字节来表示变长字段长度列表。因此实际可存储的最大数据字节数为 65535 - 2 = 65533 字节，即 VARCHAR(65533) 达到上限。 如果有多个字段的话，要保证所有字段的长度 + 变长字段字节数列表所占用的字节数 + NULL 值列表所占用的字节数 &lt;= 65535。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/24/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/Varchar%E6%9C%80%E5%A4%A7%E5%8F%96%E5%80%BC/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/23/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-2-%E4%B8%A4%E6%95%B0%E7%9B%B8%E5%8A%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/23/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-2-%E4%B8%A4%E6%95%B0%E7%9B%B8%E5%8A%A0/" class="post-title-link" itemprop="url">LeetCode 2 - 两数相加（Add Two Numbers）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-23 15:02:33" itemprop="dateCreated datePublished" datetime="2025-04-23T15:02:33+00:00">2025-04-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            问题描述 给你两个非空的链表，表示两个非负的整数。它们每位数字都是按照逆序的方式存储的，并且每个节点只能存储一位数字。 请你将两个数相加，并以相同形式返回一个表示和的链表。 你可以假设除了数字 0 之外，这两个数都不会以 0 开头。 示例 1： 123输入：l1 = [2,4,3], l2 = [5,6,4]输出：[7,0,8]解释：342 + 465 = 807. 示例 2： 12输入：l1 = [0], l2 = [0]输出：[0] 示例 3： 12输入：l1 = [9,9,9,9,9,9,9], l2 = [9,9,9,9]输出：[8,9,9,9,0,0,0,1] 提示： 每个链表中的节点数在范围 [1, 100] 内 0 &lt;= Node.val &lt;= 9 题目数据保证列表表示的数字不含前导零 解题思路 这道题考察的是链表操作和数字加法。由于两个链表已经是逆序存储，与我们正常从低位到高位进行加法计算的顺序相同，所以可以直接对两个链表进行遍历并相加。主要需要处理的点是： 两个数字相加可能产生进位 两个链表可能长度不同 最高位相加后可能还有进位，需要额外增加一个节点 解题的核心思想是模拟加法运算的过程，按位相加并处理进位。 初始实现分析（有待优化的代码） 下面是一个可以通过但有待优化的实现： 1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465func addTwoNumbers(l1 *ListNode, l2 *ListNode) *ListNode &#123; oneFlag := false res := &amp;ListNode&#123;&#125; var prev *ListNode cur := res for l1 != nil &amp;&amp; l2 != nil &#123; tmp := l1.Val + l2.Val if oneFlag &#123; tmp += 1 &#125; cur.Val = tmp % 10 if tmp &gt;= 10 &#123; oneFlag = true &#125; else &#123; oneFlag = false &#125; cur.Next = &amp;ListNode&#123;&#125; prev = cur cur = cur.Next l1 = l1.Next l2 = l2.Next &#125; for l1 != nil &#123; tmp := l1.Val if oneFlag &#123; tmp += 1 &#125; cur.Val = tmp % 10 if tmp &gt;= 10 &#123; oneFlag = true &#125; else &#123; oneFlag = false &#125; cur.Next = &amp;ListNode&#123;&#125; prev = cur cur = cur.Next l1 = l1.Next &#125; for l2 != nil &#123; tmp := l2.Val if oneFlag &#123; tmp += 1 &#125; cur.Val = tmp % 10 if tmp &gt;= 10 &#123; oneFlag = true &#125; else &#123; oneFlag = false &#125; cur.Next = &amp;ListNode&#123;&#125; prev = cur cur = cur.Next l2 = l2.Next &#125; if oneFlag &#123; cur.Val = 1 prev = cur &#125; prev.Next = nil return res&#125; 存在的问题 这段代码虽然可以解决问题，但存在以下几个问题： 代码冗余：有三个几乎相同的循环，处理逻辑重复 效率不高：每次循环都创建了新节点，包括可能无用的节点 可读性差：变量名不够直观（如 oneFlag 表示进位） 代码结构：循环后的收尾处理逻辑不够清晰 优化实现 我们可以通过以下几点优化代码： 合并重复的三个循环，使用一个循环处理所有情况 使用更清晰的变量名（如 carry 代替 oneFlag） 只在确实需要新节点时才创建 简化进位的处理逻辑 优化后的代码 12345678910111213141516171819202122232425262728func addTwoNumbers(l1 *ListNode, l2 *ListNode) *ListNode &#123; // 创建虚拟头节点，简化操作 dummy := &amp;ListNode&#123;&#125; current := dummy carry := 0 // 只要有一个链表还有节点或者有进位，就继续循环 for l1 != nil || l2 != nil || carry &gt; 0 &#123; sum := carry // 添加当前节点的值（如果存在） if l1 != nil &#123; sum += l1.Val l1 = l1.Next &#125; if l2 != nil &#123; sum += l2.Val l2 = l2.Next &#125; // 计算进位和当前位的值 carry = sum / 10 current.Next = &amp;ListNode&#123;Val: sum % 10&#125; current = current.Next &#125; return dummy.Next&#125; 优化说明 使用虚拟头节点（dummy head）：通过创建一个虚拟头节点，我们可以简化链表操作，避免处理头节点为空的特殊情况。 合并循环：将三个循环合并为一个循环，只要有一个链表还有节点或者有进位，就继续循环。 改进变量命名：使用 carry 代替 oneFlag，使代码更易理解。 按需创建节点：只在确实需要添加新节点时才创建，而不是提前创建可能无用的节点。 简化进位计算：使用 sum / 10 计算进位，sum % 10 计算当前位的值，代码更简洁清晰。 复杂度分析 时间复杂度：O(max(n, m))，其中 n 和 m 分别是两个链表的长度。我们需要遍历两个链表的全部位置，而处理每个位置只需要 O(1) 的时间。 空间复杂度：O(max(n, m))，新链表的长度最多为 max(n, m) + 1（当有进位时）。不考虑返回值所占用的空间，空间复杂度为 O(1)。 优化前后对比 方面 优化前 优化后 代码行数 ~50 行 ~20 行 循环次数 3个循环 1个循环 可读性 较差 良好 变量命名 不直观 清晰明了 节点创建 可能创建无用节点 按需创建 时间复杂度 O(max(n, m)) O(max(n, m)) 空间复杂度 O(max(n, m)) O(max(n, m)) 学习要点 代码简化：通过合并相似的逻辑，可以大幅减少代码量，提高可读性。 虚拟头节点技巧：在处理链表问题时，使用虚拟头节点可以简化边界情况的处理。 条件合并：将多个条件合并到一个循环中，使代码更加简洁。 变量命名：使用清晰的变量名可以提高代码可读性，如使用 carry 表示进位。 按需分配内存：只在必要时创建新的节点，避免无用的内存分配和释放。 这种链表加法的模式在处理大数加法等问题时也很常见，掌握这种模式对解决类似问题很有帮助。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/23/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-2-%E4%B8%A4%E6%95%B0%E7%9B%B8%E5%8A%A0/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/23/%E5%89%8D%E6%B2%BF%E6%8A%80%E6%9C%AF/AI%E5%B7%A5%E7%A8%8B/2025-04-23-Introduction-to-MCP/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/23/%E5%89%8D%E6%B2%BF%E6%8A%80%E6%9C%AF/AI%E5%B7%A5%E7%A8%8B/2025-04-23-Introduction-to-MCP/" class="post-title-link" itemprop="url">Model Context Protocol (MCP) 介绍</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-23 11:46:39" itemprop="dateCreated datePublished" datetime="2025-04-23T11:46:39+00:00">2025-04-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%89%8D%E6%B2%BF%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">前沿技术</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%89%8D%E6%B2%BF%E6%8A%80%E6%9C%AF/AI%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">AI工程</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>5.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            Model Context Protocol (MCP) 介绍 为什么我们需要MCP 当今的大型语言模型(LLM)虽然功能强大，但在与外部世界交互时仍面临诸多挑战： 上下文窗口限制：模型能接收的信息量有限，导致处理大型代码库或数据集困难 数据隐私问题：敏感数据需要发送到云端处理，增加了隐私和安全风险 工具集成碎片化：每个LLM提供商有不同的工具集成方式，导致开发者需维护多套代码 本地资源访问受限：很难让LLM安全地访问本地文件系统、数据库或应用程序 多系统协作困难：让LLM与多个不同服务协同工作缺乏统一标准 Model Context Protocol (MCP)正是为解决这些问题而诞生的技术标准，它提供了一种统一、安全、灵活的方式，让语言模型能够与各种外部系统和资源进行交互。 MCP是什么 Model Context Protocol (MCP) 是一种用于构建LLM（大型语言模型）应用程序的客户端-服务器架构协议，它允许AI模型与外部数据源和工具进行交互。 名词解释： 客户端-服务器架构：一种计算模型，其中一个程序(客户端)请求服务，另一个程序(服务器)提供服务。就像餐厅中顾客(客户端)点餐，厨房(服务器)准备食物。 协议：一套规则，定义了系统间如何交换信息。类似于人们交流的语言和礼仪规范。 API(应用程序接口)：软件组件之间的连接点，允许不同程序相互通信。就像电源插座是电器与电网的接口。 MCP的核心思想是通过标准化的协议，让语言模型能够安全、灵活地访问各种本地和远程资源。这不仅仅是一个简单的API或函数调用系统，而是一个完整的架构模式，具有以下核心特征： 协议驱动: MCP 定义了客户端和服务器之间通信的标准协议，使不同组件能够无缝协作 资源抽象: 将各种数据源、工具和服务抽象为统一的资源接口 分布式设计: 支持多个服务器并行提供不同功能，实现功能解耦 安全隔离: 明确的安全边界，数据保持在服务器端，只有结果返回给客户端 可组合性: 不同MCP服务器可以组合使用，形成复杂的工作流 日常使用场景：MCP如何改变我们使用AI的方式 场景一：本地文档助手 问题：王先生有大量存储在本地电脑上的工作文档，他想让AI助手帮忙整理和总结，但又担心文档内容上传到云端会有安全风险。 MCP解决方案： 王先生在电脑上安装了支持MCP的Claude Desktop应用和文件系统MCP服务器 当他询问&quot;帮我总结所有2025年第一季度的会议记录&quot;时 Claude会通过MCP服务器安全地搜索本地文件系统 文档内容不会离开王先生的电脑，只有搜索结果返回给Claude Claude根据获取的会议内容生成总结报告 这一过程对王先生来说完全透明，他只需正常与AI交谈，但所有数据处理都在本地完成，保证了信息安全。 场景二：代码开发助手 问题：张女士是一名软件开发人员，使用AI助手编写代码，但发现AI无法访问她的本地代码库、运行测试或执行Git操作。 MCP解决方案： 张女士在IDE中使用支持MCP的AI编码助手 IDE运行多个MCP服务器，分别处理代码访问、测试运行和版本控制 当张女士要求&quot;根据单元测试结果修复这个bug&quot;时 AI通过代码访问MCP服务器读取相关文件 通过测试MCP服务器运行测试并获取结果 分析问题并生成修复方案 通过Git MCP服务器创建修复分支和提交更改 整个过程在张女士的本地环境完成，无需将完整代码库上传到云端，同时AI助手能够与她的开发工具流完美集成。 详细协议结构 MCP协议主要包含以下关键组件： 连接管理: 建立和维护客户端与服务器之间的连接 资源发现: 允许客户端发现服务器提供的资源和功能 资源请求: 客户端向服务器请求特定资源 资源响应: 服务器处理请求并返回结果 元数据交换: 交换有关资源和功能的元数据 安全机制: 保护传输中的数据并验证请求的合法性 基本原理与架构 MCP采用客户端-服务器架构，其中： MCP主机（Hosts）：如Claude Desktop、IDE或AI工具，希望通过MCP访问数据的程序 MCP客户端（Clients）：维护与服务器1:1连接的协议客户端，负责发送请求和接收响应 MCP服务器（Servers）：通过标准化的Model Context Protocol公开特定功能的轻量级程序，负责处理请求并返回结果 本地数据源：MCP服务器可以安全访问的计算机文件、数据库和服务 远程服务：MCP服务器可以连接的外部系统（如通过API） 这种架构可以通过以下Mermaid图表表示： MCP通信流程 MCP通信过程是如何实现LLM与各种资源交互的关键。以下是一个典型的MCP通信流程： sequenceDiagram participant User as 用户 participant LLM as 语言模型 participant Host as 主机应用 participant Client as MCP客户端 participant Server as MCP服务器 participant DataSource as 数据源 User-&gt;&gt;Host: 提出请求 Host-&gt;&gt;LLM: 转发用户请求 LLM--&gt;&gt;Host: 需要访问外部资源 Host-&gt;&gt;Client: 资源请求 Client-&gt;&gt;Server: 发送MCP请求 Server-&gt;&gt;DataSource: 数据访问 DataSource--&gt;&gt;Server: 返回数据 Server--&gt;&gt;Client: MCP响应 Client--&gt;&gt;Host: 返回资源 Host-&gt;&gt;LLM: 提供资源 LLM--&gt;&gt;Host: 基于资源的响应 Host-&gt;&gt;User: 显示结果 资源接口设计 MCP定义了一套资源接口，使客户端能够统一访问各种不同类型的资源： classDiagram class Resource { +String resourceId +String resourceType +Metadata metadata +request(parameters) } class FileResource { +String path +readContent() +writeContent(data) } class DatabaseResource { +String connectionString +query(sql) +update(sql) } class APIResource { +String endpoint +call(parameters) } Resource &lt;|-- FileResource Resource &lt;|-- DatabaseResource Resource &lt;|-- APIResource MCP与Function Call的区别 MCP和Function Call都是扩展LLM能力的技术，但它们在设计和实现上存在显著差异： Function Call Function Call（函数调用）是一种让LLM能够调用预定义函数的能力，主要特点： 通常在单一环境中运行 函数定义必须嵌入到模型的上下文中，占用token空间 典型的实现是在LLM生成函数调用JSON后，由应用程序执行相应函数 安全边界通常由应用程序自身定义 通常需要为每个LLM提供商实现不同的集成方式 sequenceDiagram participant User as 用户 participant App as 应用程序 participant LLM as 语言模型 participant Functions as 函数库 User-&gt;&gt;App: 提出请求 App-&gt;&gt;LLM: 请求(包含函数定义) Note over App,LLM: 函数定义占用上下文空间 LLM-&gt;&gt;App: 函数调用JSON App-&gt;&gt;Functions: 执行函数 Functions-&gt;&gt;App: 返回结果 App-&gt;&gt;LLM: 结果作为新上下文 LLM-&gt;&gt;App: 生成最终响应 App-&gt;&gt;User: 显示结果 MCP MCP则提供了一个更加分布式、标准化的架构： 采用客户端-服务器架构，明确分离责任 多个专用服务器可以并行提供不同功能，支持横向扩展 通过标准协议实现互操作性，与LLM提供商无关 明确的安全边界，数据保持在服务器端 可以跨应用程序和环境重用，提高代码复用性 资源动态发现，无需预先定义所有功能 sequenceDiagram participant User as 用户 participant Host as 主机应用 participant LLM as 语言模型 participant Client as MCP客户端 participant ServerA as MCP服务器A participant ServerB as MCP服务器B participant DataA as 数据源A participant DataB as 数据源B User-&gt;&gt;Host: 提出请求 Host-&gt;&gt;LLM: 转发请求 LLM-&gt;&gt;Host: 需要资源A Host-&gt;&gt;Client: 请求资源A Client-&gt;&gt;ServerA: MCP请求 ServerA-&gt;&gt;DataA: 访问数据 DataA--&gt;&gt;ServerA: 返回数据 ServerA--&gt;&gt;Client: MCP响应 Client--&gt;&gt;Host: 返回资源A Host-&gt;&gt;LLM: 提供资源A LLM-&gt;&gt;Host: 需要资源B Host-&gt;&gt;Client: 请求资源B Client-&gt;&gt;ServerB: MCP请求 ServerB-&gt;&gt;DataB: 访问数据 DataB--&gt;&gt;ServerB: 返回数据 ServerB--&gt;&gt;Client: MCP响应 Client--&gt;&gt;Host: 返回资源B Host-&gt;&gt;LLM: 提供资源B LLM-&gt;&gt;Host: 生成最终响应 Host-&gt;&gt;User: 显示结果 MCP的优势 MCP相比传统Function Call和其他工具集成方法有以下优势： 灵活性：可以轻松切换LLM提供商和供应商，无需重写集成 安全性：数据保持在您的基础设施内，明确的安全边界 可扩展性：可以根据需要连接多个专用服务器，支持复杂功能 互操作性：标准化协议确保不同系统间的兼容，避免供应商锁定 本地计算：可以在本地环境中执行计算，无需将敏感数据发送到云端 分布式架构：不同服务可以在不同位置运行，提高系统弹性和可用性 动态发现：客户端可以动态发现服务器提供的资源，无需硬编码 隔离性：不同服务器之间相互隔离，一个服务器的问题不会影响其他服务器 实际应用场景 MCP可以应用于多种场景： 开发环境集成：在IDE中通过MCP访问本地代码库、运行测试、执行版本控制操作 数据分析：安全访问和处理本地数据库或文件系统中的数据，执行复杂分析 企业应用：与内部系统安全集成，访问企业知识库、CRM系统、ERP系统等 个人助手：访问个人文件和应用程序，同时保持数据隐私，如日历、邮件、笔记 混合云部署：在本地和云端之间无缝集成资源，实现数据和功能的最佳分配 多模型协作：允许多个不同的LLM通过相同的接口访问相同的资源，实现模型协作 MCP实现示例 以下是一个简化的MCP服务器实现示例，展示了如何创建一个提供文件系统访问的MCP服务器： flo...
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/23/%E5%89%8D%E6%B2%BF%E6%8A%80%E6%9C%AF/AI%E5%B7%A5%E7%A8%8B/2025-04-23-Introduction-to-MCP/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/MySQL%E9%A1%B5%E7%B1%BB%E5%9E%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/MySQL%E9%A1%B5%E7%B1%BB%E5%9E%8B/" class="post-title-link" itemprop="url">MySQL 页类型详解</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-22 20:23:49" itemprop="dateCreated datePublished" datetime="2025-04-22T20:23:49+00:00">2025-04-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>1.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>详细介绍MySQL InnoDB存储引擎中的各种页类型及其作用</p>
+        
+          <div class="post-button">
+            <a class="btn" href="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/MySQL%E9%A1%B5%E7%B1%BB%E5%9E%8B/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/" class="post-title-link" itemprop="url">MYSQL 记录存储方式</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-22 19:51:40" itemprop="dateCreated datePublished" datetime="2025-04-22T19:51:40+00:00">2025-04-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>4.5k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>MYSQL 记录存储方式</p>
+        
+          <div class="post-button">
+            <a class="btn" href="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-142-Linked-List-Cycle-II/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-142-Linked-List-Cycle-II/" class="post-title-link" itemprop="url">LeetCode 142 - 环形链表 II (Linked List Cycle II)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-22 18:46:22" itemprop="dateCreated datePublished" datetime="2025-04-22T18:46:22+00:00">2025-04-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            问题描述 给定一个链表的头节点 head，返回链表开始入环的第一个节点。如果链表无环，则返回 null。 如果链表中有某个节点，可以通过连续跟踪 next 指针再次到达，则链表中存在环。为了表示给定链表中的环，评测系统内部使用整数 pos 来表示链表尾连接到链表中的位置（索引从 0 开始）。如果 pos 是 -1，则在该链表中没有环。注意：pos 不作为参数进行传递，仅仅是为了标识链表的实际情况。 不允许修改链表。 示例 示例 1： 123输入：head = [3,2,0,-4], pos = 1输出：返回索引为 1 的链表节点解释：链表中有一个环，其尾部连接到第二个节点。 链表可视化： 1233 → 2 → 0 → -4 ↑ ↓ ← ← ← ← 示例 2： 123输入：head = [1,2], pos = 0输出：返回索引为 0 的链表节点解释：链表中有一个环，其尾部连接到第一个节点。 链表可视化： 1231 → 2↑ ↓← ← ← 示例 3： 123输入：head = [1], pos = -1输出：返回 null解释：链表中没有环。 链表可视化： 11 → null 约束条件 链表中节点的数目范围在范围 [0, 10^4] 内 -10^5 &lt;= Node.val &lt;= 10^5 pos 的值为 -1 或者链表中的一个有效索引 进阶 你是否可以使用 O(1) 空间解决此题？ 解题思路 方法一：快慢指针（Floyd 判圈算法） 本题的核心思路是使用快慢指针（也称为 Floyd 判圈算法或龟兔赛跑算法）来解决。这是一种检测链表中是否存在环并找到环入口点的经典算法。 算法分析和数学证明 这个算法分为两个阶段： 检测环的存在：使用快慢指针，如果它们相遇，则存在环 寻找环的入口：通过数学关系确定环的入口点 让我们详细解析这个过程，并进行数学推导： 第一阶段：检测环的存在 设置两个指针 slow 和 fast，初始时都指向链表头节点 head slow 指针每次移动 1 步，fast 指针每次移动 2 步 如果链表中存在环，这两个指针最终会在环中某个节点相遇 如果 fast 指针到达了链表末尾（即 fast 或 fast.next 为 null），则链表不存在环 第二阶段：寻找环的入口 数学推导是这个算法的关键。假设： 链表头到环入口点的距离为 a 步 环入口点到相遇点的距离为 b 步 相遇点回到环入口点的距离为 c 步 那么环的总长度为 b + c 步。 环形链表示意图 Mermaid 图示 graph LR Head((Head)) --&gt; A((A)) A --&gt; B((B)) B --&gt; C((C)) C --&gt; D((D)) D --&gt; E((E)) E --&gt; F((F)) F --&gt; C style C fill:#f96,stroke:#333 style F fill:#69f,stroke:#333 Head -.-&gt; |&quot;链表头&quot;|A C -.-&gt; |&quot;环入口点&quot;|C F -.-&gt; |&quot;相遇点&quot;|F A -.-&gt; |&quot;距离 a&quot;|C C -.-&gt; |&quot;距离 b&quot;|F F -.-&gt; |&quot;距离 c&quot;|C 纯文本图示 123456789101112 环入口 ↓head → A → B → C → D → E ↑ ↓ ↑ ↓ ↑ ↓ G ← F ← F ← 相遇点 距离标记:head到环入口C的距离: a环入口C到相遇点F的距离: b相遇点F返回环入口C的距离: c 另一种表示方式: 1234567891011 a b +---+ +---+ ↓ ↓ ↓ ↓head → → → → → → → + ↑ ↓ ↑ ↓ ↑ ↓ + ← ← + ↑ + c 当 slow 和 fast 指针相遇时： slow 走了 a + b 步 fast 走了 a + b + n(b + c) 步，其中 n 是 fast 指针在环中绕的圈数 由于 fast 指针走的步数是 slow 指针的 2 倍，所以有： 1a + b + n(b + c) = 2(a + b) 化简： 123a + b + n(b + c) = 2a + 2bn(b + c) = a + ba = n(b + c) - b = (n-1)(b + c) + c 对于 n=1 的情况（即 fast 指针绕环一圈就与 slow 相遇），我们有： 1a = c 这个结论非常重要：从链表头到环入口的距离，等于从相遇点继续前进到环入口的距离。 基于这个发现，我们的算法第二阶段为： 将 fast 指针重新指向链表头节点 保持 slow 指针在相遇点 让两个指针每次都移动 1 步 它们最终会在环的入口点相遇 这种方法的巧妙之处在于我们不需要知道环的长度或链表的长度，也不需要额外的空间来记录已访问过的节点。 代码实现 123456789101112131415161718192021222324252627282930313233343536373839404142434445/** * Definition for singly-linked list. * type ListNode struct &#123; * Val int * Next *ListNode * &#125; */func detectCycle(head *ListNode) *ListNode &#123; // 处理边界情况 if head == nil || head.Next == nil &#123; return nil &#125; // 阶段一：检测环的存在 slow, fast := head, head for &#123; // 如果到达链表末尾，则无环 if fast == nil || fast.Next == nil &#123; return nil &#125; // 快指针移动两步，慢指针移动一步 fast = fast.Next.Next slow = slow.Next // 如果两指针相遇，则存在环 if slow == fast &#123; break &#125; &#125; // 阶段二：寻找环的入口 // 重置快指针到链表头，慢指针保持在相遇点 fast = head // 两个指针每次都移动一步 for slow != fast &#123; slow = slow.Next fast = fast.Next &#125; // 当两指针再次相遇时，就是环的入口点 return fast&#125; 复杂度分析 时间复杂度：O(n)，其中 n 是链表中节点的数量。在最坏情况下，需要遍历整个链表一次才能确定是否有环，然后再遍历部分链表找到环的入口。 空间复杂度：O(1)，只使用了两个指针，不需要额外的空间。 不同方法比较 方面 快慢指针法 哈希表法 时间复杂度 O(n) O(n) 空间复杂度 O(1) O(n) 优点 空间效率高 实现简单直观 缺点 数学分析较复杂 需要额外空间 推荐度 ★★★★★ ★★★☆☆ 关键收获 Floyd 判圈算法是解决链表环检测问题的经典算法，它不仅可以检测环的存在，还能找到环的入口点。 该算法的数学推导很巧妙：从链表头到环入口的距离等于从相遇点继续前进到环入口的距离。 我们可以用 O(1) 的空间复杂度解决此问题，这比使用哈希表需要 O(n) 空间的方法更加高效。 这种双指针的技巧在链表问题中非常常见，掌握这种思想可以帮助解决许多类似问题，如寻找链表中点、检测环、寻找倒数第 k 个节点等。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-142-Linked-List-Cycle-II/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/page/8/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><span class="page-number current">9</span><a class="page-number" href="/page/10/">10</a><a class="extend next" rel="next" href="/page/10/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+  </nav>
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">100</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">123</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">417k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">6:19</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2025-04-18",2],["2025-04-19",3],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-26",1],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",9],["2025-05-22",2],["2025-05-24",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2025-04","2025-05"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [33,67],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"Hot100","value":58},{"name":"LeetCode","value":51},{"name":"Medium","value":45},{"name":"数组","value":22},{"name":"❌错题集","value":22},{"name":"MySQL","value":19},{"name":"动态规划","value":14},{"name":"深度优先搜索","value":14}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"Hot100","value":58},{"name":"LeetCode","value":51},{"name":"Medium","value":45},{"name":"数组","value":22},{"name":"❌错题集","value":22},{"name":"MySQL","value":19},{"name":"动态规划","value":14},{"name":"深度优先搜索","value":14}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":64},{"name":"LeetCode","value":64},{"name":"Hot100","value":63},{"name":"八股文","value":33},{"name":"基础知识","value":19}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":64},{"name":"LeetCode","value":64},{"name":"Hot100","value":63},{"name":"八股文","value":33},{"name":"基础知识","value":19}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[],"count":1,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":64,"path":"算法刷题/LeetCode"}],"count":64,"path":"算法刷题"},{"name":"八股文","children":[{"name":"REDIS","children":[{"name":"基础知识","children":[{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":15,"path":"八股文/REDIS/基础知识"}],"count":15,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"锁","children":[],"count":3,"path":"八股文/MySQL/锁"},{"name":"索引","children":[],"count":8,"path":"八股文/MySQL/索引"},{"name":"锁机制","children":[],"count":1,"path":"八股文/MySQL/锁机制"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"基础知识","children":[],"count":4,"path":"八股文/MySQL/基础知识"}],"count":18,"path":"八股文/MySQL"}],"count":33,"path":"八股文"},{"name":"技术八股","children":[{"name":"MySQL","children":[{"name":"锁","children":[],"count":1,"path":"技术八股/MySQL/锁"}],"count":1,"path":"技术八股/MySQL"}],"count":1,"path":"技术八股"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>

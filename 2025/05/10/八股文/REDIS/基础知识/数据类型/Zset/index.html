@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="全面解析 Redis Zset (有序集合) 的内部实现、核心命令及排行榜、电话&#x2F;姓名排序等经典应用场景。助你深入理解 Zset 并灵活运用于实际项目中。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis 数据类型：Zset (有序集合) 深度解析与实战">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Zset/index.html">
+<meta property="og:site_name" content="小王的blog">
+<meta property="og:description" content="全面解析 Redis Zset (有序集合) 的内部实现、核心命令及排行榜、电话&#x2F;姓名排序等经典应用场景。助你深入理解 Zset 并灵活运用于实际项目中。">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Zset/1746890268561.png">
+<meta property="article:published_time" content="2025-05-10T23:15:52.000Z">
+<meta property="article:modified_time" content="2025-05-24T06:03:23.780Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="压缩列表">
+<meta property="article:tag" content="跳表">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="数据类型">
+<meta property="article:tag" content="Zset">
+<meta property="article:tag" content="Sorted Set">
+<meta property="article:tag" content="有序集合">
+<meta property="article:tag" content="排行榜">
+<meta property="article:tag" content="listpack">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Zset/1746890268561.png">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Zset/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>Redis 数据类型：Zset (有序集合) 深度解析与实战 | 小王的blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小王的blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Adrian Wang's blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Zset/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis 数据类型：Zset (有序集合) 深度解析与实战
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-05-10 23:15:52" itemprop="dateCreated datePublished" datetime="2025-05-10T23:15:52+00:00">2025-05-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-24 06:03:23" itemprop="dateModified" datetime="2025-05-24T06:03:23+00:00">2025-05-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/" itemprop="url" rel="index"><span itemprop="name">REDIS</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/" itemprop="url" rel="index"><span itemprop="name">数据类型</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>6 mins.</span>
+            </span>
+            <div class="post-description">全面解析 Redis Zset (有序集合) 的内部实现、核心命令及排行榜、电话/姓名排序等经典应用场景。助你深入理解 Zset 并灵活运用于实际项目中。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Zset">Zset</h2>
+<h3 id="介绍">介绍</h3>
+<p>想象一下，你需要一个能自动排序的列表，比如实时更新的积分排行榜、按时间先后排列的任务队列，或者任何需要根据某个&quot;分数&quot;来决定顺序的场景。Redis 的 Zset (Sorted Set，有序集合) 就是为此而生的！它和普通的 Set 一样，保证了元素的唯一性，但更强大的是，Zset 为每个元素关联了一个&quot;分数&quot;(score)，并能根据这个分数自动对元素进行排序。</p>
+<p>有序集合保留了集合不能有重复成员的特性（分值可以重复），但不同的是，有序集合中的元素可以排序。</p>
+<p><img src="/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Zset/1746890268561.png" alt="1746890268561"></p>
+<h3 id="内部实现">内部实现</h3>
+<p>Zset 如何做到既能存储唯一元素又能排序呢？Redis 在底层使用了两种精巧的数据结构：<strong>跳表 (Skip List)</strong> 和 <strong>列表打包 (Listpack)</strong>。</p>
+<p>简单来说：</p>
+<ul>
+<li>当你的 Zset 元素不多（默认小于128个），并且每个元素的值也不大（默认小于64字节）时，Redis 会优先使用 <strong>listpack</strong>。它是一种更紧凑的存储方式，非常节省内存。</li>
+<li>而当 Zset 元素增多，或者元素值较大，不满足上述条件时，Redis 则会切换到 <strong>跳表</strong>。跳表是一种非常高效的动态排序数据结构，可以快速进行添加、删除和查找操作，其平均时间复杂度接近 O(logN)。</li>
+</ul>
+<p>你无需关心 Redis 何时以及如何切换，它会自动选择最优的方式。</p>
+<p>(值得注意的是，在 Redis 7.0 之前的版本中使用的是压缩列表而非 listpack，但核心思想是类似的——在小数据量时采用内存优化结构。<strong>自 Redis 7.0 起，压缩列表已被 listpack 完全取代。</strong>)</p>
+<h3 id="常用命令">常用命令</h3>
+<p>理解 Zset 的常用命令是高效使用它的关键。以下是一些核心操作，分为几类以便理解：</p>
+<h4 id="添加与修改">添加与修改</h4>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZADD key score member [[score member]...]</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：向名为 key 的有序集合中添加一个或多个元素 (member)，并为每个元素指定一个分数 (score)。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">如果元素已存在，则更新其分数；如果元素不存在，则添加新元素。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">返回成功添加的新元素数量（不包括仅更新分数的元素）。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">示例：ZADD myzset 10 <span class="string">&quot;apple&quot;</span> 20 <span class="string">&quot;banana&quot;</span></span></span><br><span class="line">ZADD key score member [[score member]...]   </span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZINCRBY key increment member</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：为名为 key 的有序集合中指定元素 member 的分数增加 increment。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">如果 member 不存在，则添加它，其初始分数为 increment。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">increment 可以是负数，表示减分。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">示例：ZINCRBY myzset 5 <span class="string">&quot;apple&quot;</span> (apple 的分数变为 15)</span></span><br><span class="line">ZINCRBY key increment member </span><br></pre></td></tr></table></figure>
+<h4 id="删除与查询数量">删除与查询数量</h4>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZREM key member [member...]</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：从名为 key 的有序集合中删除一个或多个指定的元素 member。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">示例：ZREM myzset <span class="string">&quot;apple&quot;</span></span></span><br><span class="line">ZREM key member [member...]               </span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZCARD key</span> </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：获取名为 key 的有序集合中的元素总数 (Cardinality)。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">示例：ZCARD myzset</span></span><br><span class="line">ZCARD key </span><br></pre></td></tr></table></figure>
+<h4 id="获取分数与排序（按分数）">获取分数与排序（按分数）</h4>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZSCORE key member</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：返回名为 key 的有序集合中指定元素 member 的分数。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">如果 member 不存在或 key 不存在，则返回 nil。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">示例：ZSCORE myzset <span class="string">&quot;banana&quot;</span></span></span><br><span class="line">ZSCORE key member</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZRANGE key start stop [WITHSCORES]</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：按分数从小到大的顺序（升序），返回名为 key 的有序集合中指定排名范围内的元素。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">start 和 stop 都是从 0 开始的下标，可以是负数（-1 表示最后一个元素，-2 表示倒数第二个，以此类推）。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">WITHSCORES 选项会同时返回元素的分数。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">示例：ZRANGE myzset 0 -1 WITHSCORES (获取所有元素及其分数)</span></span><br><span class="line">ZRANGE key start stop [WITHSCORES]</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZREVRANGE key start stop [WITHSCORES]</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：按分数从大到小的顺序（降序），返回名为 key 的有序集合中指定排名范围内的元素。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">参数含义与 ZRANGE 类似。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">示例：ZREVRANGE myzset 0 2 WITHSCORES (获取分数最高的3个元素及其分数)</span></span><br><span class="line">ZREVRANGE key start stop [WITHSCORES]</span><br></pre></td></tr></table></figure>
+<h4 id="范围查询（按分数或字典序）">范围查询（按分数或字典序）</h4>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZRANGEBYSCORE key min max [WITHSCORES] [LIMIT offset count]</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：返回名为 key 的有序集合中，所有分数在 min 和 max 之间（包括 min 和 max）的元素。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">元素按分数从小到大排序。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">min 和 max 可以是 -inf (负无穷) 和 +inf (正无穷)。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">使用 ( 前缀表示不包含边界值，例如 (100 表示大于100。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">LIMIT 用于分页，offset 是起始位置，count 是数量。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">示例：ZRANGEBYSCORE myzset 10 (30 WITHSCORES LIMIT 0 5 (获取分数大于10小于等于30的前5个元素)</span></span><br><span class="line">ZRANGEBYSCORE key min max [WITHSCORES] [LIMIT offset count]</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZRANGEBYLEX key min max [LIMIT offset count]</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：当有序集合中所有元素的分数都相同时，此命令按元素的字典序（lexicographical order）返回指定范围内的元素。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">**重要前提：使用 ZRANGEBYLEX 时，目标 Zset 中的所有元素分数 *必须* 相同，否则结果可能不符合预期！**</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">min 和 max 是字典序范围。使用 - 和 + 表示负无穷和正无穷的字典序边界。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">使用 [ 表示包含边界，使用 ( 表示不包含边界。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">示例：ZRANGEBYLEX myzset <span class="string">&quot;[apple&quot;</span> <span class="string">&quot;(banana&quot;</span> (获取字典序在 apple (含) 和 banana (不含) 之间的元素)</span></span><br><span class="line">ZRANGEBYLEX key min max [LIMIT offset count]</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZREVRANGEBYLEX key max min [LIMIT offset count]</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：与 ZRANGEBYLEX 类似，但按字典逆序排列。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">**重要前提：使用 ZREVRANGEBYLEX 时，目标 Zset 中的所有元素分数 *必须* 相同，否则结果可能不符合预期！**</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">示例：ZREVRANGEBYLEX myzset <span class="string">&quot;+ &quot;</span> <span class="string">&quot;[banana&quot;</span> (获取字典序从最大到 banana (含) 的元素)</span></span><br><span class="line">ZREVRANGEBYLEX key max min [LIMIT offset count]</span><br></pre></td></tr></table></figure>
+<h4 id="集合运算">集合运算</h4>
+<p>Zset 也支持并集和交集运算，但与 Set 不同的是，它可以指定如何处理重复元素的分数。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZUNIONSTORE destkey numkeys key [key ...] [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：计算给定的一个或多个有序集合 (key) 的并集，并将结果存储在新的有序集合 destkey 中。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">numkeys 指定输入 key 的数量。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">WEIGHTS (可选)：为每个输入集合指定一个乘法因子，元素的原始分数在参与运算前会乘以这个因子。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">AGGREGATE (可选)：指定如何处理并集中相同元素的分数，默认为 SUM (相加)，也可以是 MIN (取最小值) 或 MAX (取最大值)。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">示例：ZUNIONSTORE outkey 2 zset1 zset2 WEIGHTS 1 2 AGGREGATE MAX</span></span><br><span class="line">ZUNIONSTORE destkey numkeys key [key...] </span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">ZINTERSTORE destkey numkeys key [key ...] [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">解释：计算给定的一个或多个有序集合 (key) 的交集，并将结果存储在新的有序集合 destkey 中。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">参数含义与 ZUNIONSTORE 类似。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">注意：Zset 没有直接的差集运算命令，如果需要，可以通过代码逻辑结合 ZREM 实现。</span></span><br><span class="line">ZINTERSTORE destkey numkeys key [key...] </span><br></pre></td></tr></table></figure>
+<h3 id="应用场景">应用场景</h3>
+<p>Zset 类型（Sorted Set，有序集合）可以根据元素的权重来排序，我们可以自己来决定每个元素的权重值。比如说，我们可以根据元素插入 Sorted Set 的时间确定权重值，先插入的元素权重小，后插入的元素权重大。</p>
+<p>在面对需要展示最新列表、排行榜等场景时，如果数据更新频繁或者需要分页显示，可以优先考虑使用 Sorted Set。</p>
+<h4 id="排行榜">排行榜</h4>
+<p>有序集合最经典的应用非排行榜莫属了！无论是热门文章榜、游戏玩家积分榜、商品销量榜，还是实时更新的在线用户列表，Zset 都能轻松应对。</p>
+<p>我们以博文点赞排名为例，假设用户&quot;小林&quot;发表了五篇博文，它们的赞数（score）和文章ID（member）如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">arcticle:1 文章获得了200个赞</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZADD user:xiaolin:ranking 200 arcticle:1</span></span><br><span class="line">(integer) 1</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">arcticle:2 文章获得了40个赞</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZADD user:xiaolin:ranking 40 arcticle:2</span></span><br><span class="line">(integer) 1</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">arcticle:3 文章获得了100个赞</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZADD user:xiaolin:ranking 100 arcticle:3</span></span><br><span class="line">(integer) 1</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">arcticle:4 文章获得了50个赞</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZADD user:xiaolin:ranking 50 arcticle:4</span></span><br><span class="line">(integer) 1</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">arcticle:5 文章获得了150个赞</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZADD user:xiaolin:ranking 150 arcticle:5</span></span><br><span class="line">(integer) 1</span><br></pre></td></tr></table></figure>
+<p>如果文章 <code>arcticle:4</code> 新增了一个赞，可以使用 <code>ZINCRBY</code> 命令轻松更新：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZINCRBY user:xiaolin:ranking 1 arcticle:4</span></span><br><span class="line">&quot;51&quot; # 返回新的分数</span><br></pre></td></tr></table></figure>
+<p>想查看某篇文章（比如 <code>arcticle:4</code>）的当前赞数，可以使用 <code>ZSCORE</code> 命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZSCORE user:xiaolin:ranking arcticle:4</span></span><br><span class="line">&quot;51&quot;</span><br></pre></td></tr></table></figure>
+<p>获取小林文章中赞数最高的 3 篇文章（降序排名），可以使用 <code>ZREVRANGE</code> 命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">WITHSCORES 表示同时显示分数</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZREVRANGE user:xiaolin:ranking 0 2 WITHSCORES</span></span><br><span class="line">1) &quot;arcticle:1&quot;</span><br><span class="line">2) &quot;200&quot;</span><br><span class="line">3) &quot;arcticle:5&quot;</span><br><span class="line">4) &quot;150&quot;</span><br><span class="line">5) &quot;arcticle:3&quot;</span><br><span class="line">6) &quot;100&quot;</span><br></pre></td></tr></table></figure>
+<p>获取小林文章中赞数在 100 到 200 之间的文章（升序排列），可以使用 <code>ZRANGEBYSCORE</code> 命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZRANGEBYSCORE user:xiaolin:ranking 100 200 WITHSCORES</span></span><br><span class="line">1) &quot;arcticle:3&quot;</span><br><span class="line">2) &quot;100&quot;</span><br><span class="line">3) &quot;arcticle:5&quot;</span><br><span class="line">4) &quot;150&quot;</span><br><span class="line">5) &quot;arcticle:1&quot;</span><br><span class="line">6) &quot;200&quot;</span><br></pre></td></tr></table></figure>
+<h4 id="电话、姓名排序-按字典序">电话、姓名排序 (按字典序)</h4>
+<p>除了按数值分数排序，Zset 还能在所有元素分数都相同的情况下，按照元素的字典顺序（比如字母顺序、数字顺序）进行排序和范围查找。这就要用到 <code>ZRANGEBYLEX</code> (正序) 或 <code>ZREVRANGEBYLEX</code> (逆序) 这样的命令了。</p>
+<p><strong>重要前提：使用 <code>ZRANGEBYLEX</code> 或 <code>ZREVRANGEBYLEX</code> 时，目标 Zset 中的所有元素分数 <em>必须</em> 相同，否则结果可能不符合预期！</strong> 通常我们会将这些元素的分数统一设置为 <code>0</code>。</p>
+<p><em>1、电话排序</em></p>
+<p>我们可以将电话号码作为 member 存入 Zset，并将它们的分数都设为 0，然后根据需要来获取号段：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZADD phone 0 13100111100 0 13110114300 0 13132110901</span> </span><br><span class="line">(integer) 3</span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZADD phone 0 13200111100 0 13210414300 0 13252110901</span> </span><br><span class="line">(integer) 3</span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZADD phone 0 13300111100 0 13310414300 0 13352110901</span> </span><br><span class="line">(integer) 3</span><br></pre></td></tr></table></figure>
+<p>获取所有号码（按字典序升序）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">&#x27;-&#x27;</span> 和 <span class="string">&#x27;+&#x27;</span> 表示无穷小的字典序和无穷大的字典序</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZRANGEBYLEX phone - +</span></span><br><span class="line">1) &quot;13100111100&quot;</span><br><span class="line">2) &quot;13110114300&quot;</span><br><span class="line">3) &quot;13132110901&quot;</span><br><span class="line">4) &quot;13200111100&quot;</span><br><span class="line">5) &quot;13210414300&quot;</span><br><span class="line">6) &quot;13252110901&quot;</span><br><span class="line">7) &quot;13300111100&quot;</span><br><span class="line">8) &quot;13310414300&quot;</span><br><span class="line">9) &quot;13352110901&quot;</span><br></pre></td></tr></table></figure>
+<p>获取 132 号段的号码：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">&#x27;[132&#x27;</span> 表示大于等于 <span class="string">&#x27;132&#x27;</span> 的字典序</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">&#x27;(133&#x27;</span> 表示小于 <span class="string">&#x27;133&#x27;</span> 的字典序</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZRANGEBYLEX phone [132 (133</span></span><br><span class="line">1) &quot;13200111100&quot;</span><br><span class="line">2) &quot;13210414300&quot;</span><br><span class="line">3) &quot;13252110901&quot;</span><br></pre></td></tr></table></figure>
+<p>获取 132、133 号段的号码：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZRANGEBYLEX phone [132 (134</span></span><br><span class="line">1) &quot;13200111100&quot;</span><br><span class="line">2) &quot;13210414300&quot;</span><br><span class="line">3) &quot;13252110901&quot;</span><br><span class="line">4) &quot;13300111100&quot;</span><br><span class="line">5) &quot;13310414300&quot;</span><br><span class="line">6) &quot;13352110901&quot;</span><br></pre></td></tr></table></figure>
+<p><em>2、姓名排序</em></p>
+<p>同样，将姓名作为 member 存入 Zset，分数统一设为 0：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">zadd names 0 Toumas 0 Jake 0 Bluetuo 0 Gaodeng 0 Aimini 0 Aidehua</span> </span><br><span class="line">(integer) 6</span><br></pre></td></tr></table></figure>
+<p>获取所有人的名字（按字典序升序）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZRANGEBYLEX names - +</span></span><br><span class="line">1) &quot;Aidehua&quot;</span><br><span class="line">2) &quot;Aimini&quot;</span><br><span class="line">3) &quot;Bluetuo&quot;</span><br><span class="line">4) &quot;Gaodeng&quot;</span><br><span class="line">5) &quot;Jake&quot;</span><br><span class="line">6) &quot;Toumas&quot;</span><br></pre></td></tr></table></figure>
+<p>获取名字中大写字母 A 开头的所有人：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">&#x27;[A&#x27;</span> 表示以 A 开头（包含A）</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">&#x27;(B&#x27;</span> 表示小于 B （不包含B）</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZRANGEBYLEX names [A (B</span></span><br><span class="line">1) &quot;Aidehua&quot;</span><br><span class="line">2) &quot;Aimini&quot;</span><br></pre></td></tr></table></figure>
+<p>获取名字中大写字母 C 到 Z 的所有人：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">&#x27;[C&#x27;</span> 表示以 C 开头（包含C）</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="string">&#x27;[Z&#x27;</span> 表示以 Z 开头，由于 ZRANGEBYLEX 是前缀匹配，为了包含所有以Z开头的，可以用 <span class="string">&#x27;[Zz&#x27;</span> 或者更通用的方式确保能取到以Z结尾的，</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">但这里如果只是想取到Z开头的，可以考虑用一个比Z大的字符的上界，或者分段查询。更简单的是确保最后一个字母是Z的最大可能值。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">一个更精确的做法是如果想包含所有Z开头的，可以用 [Z (Za (假设没有Za开头的)，但这取决于具体场景。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">这里原示例的 [Z 意图是C到Z，但其匹配行为是<span class="string">&quot;以C开头&quot;</span>到<span class="string">&quot;以Z开头&quot;</span>。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">如果要包含所有以 Z 结尾的，则需要更复杂的模式或多次查询。</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">这里保持原意，获取字母 C 到 Z 开头的名字</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">ZRANGEBYLEX names [C [Zz</span></span><br><span class="line">1) &quot;Gaodeng&quot;</span><br><span class="line">2) &quot;Jake&quot;</span><br><span class="line">3) &quot;Toumas&quot;</span><br></pre></td></tr></table></figure>
+<h3 id="总结">总结</h3>
+<p>总结来说，Redis Zset (有序集合) 以其独特的&quot;元素唯一、自带排序&quot;特性，在需要动态排序、范围查找以及构建各类排行榜的场景中展现出强大的威力。通过灵活运用 <code>ZADD</code>, <code>ZRANGE</code>, <code>ZREVRANGE</code>, <code>ZRANGEBYSCORE</code> 等命令，你可以高效地处理各种有序数据需求。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8E%8B%E7%BC%A9%E5%88%97%E8%A1%A8/" rel="tag"># 压缩列表</a>
+              <a href="/tags/%E8%B7%B3%E8%A1%A8/" rel="tag"># 跳表</a>
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/" rel="tag"># 数据类型</a>
+              <a href="/tags/Zset/" rel="tag"># Zset</a>
+              <a href="/tags/Sorted-Set/" rel="tag"># Sorted Set</a>
+              <a href="/tags/%E6%9C%89%E5%BA%8F%E9%9B%86%E5%90%88/" rel="tag"># 有序集合</a>
+              <a href="/tags/%E6%8E%92%E8%A1%8C%E6%A6%9C/" rel="tag"># 排行榜</a>
+              <a href="/tags/listpack/" rel="tag"># listpack</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Set/" rel="prev" title="Redis 数据类型：Set 集合详解与妙用">
+      <i class="fa fa-chevron-left"></i> Redis 数据类型：Set 集合详解与妙用
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/05/11/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-4-%E5%AF%BB%E6%89%BE%E4%B8%A4%E4%B8%AA%E6%AD%A3%E5%BA%8F%E6%95%B0%E7%BB%84%E7%9A%84%E4%B8%AD%E4%BD%8D%E6%95%B0/" rel="next" title="LeetCode 4.寻找两个正序数组的中位数 - 深入理解二分思想">
+      LeetCode 4.寻找两个正序数组的中位数 - 深入理解二分思想 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Zset"><span class="nav-number">1.</span> <span class="nav-text">Zset</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E9%83%A8%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.2.</span> <span class="nav-text">内部实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="nav-number">1.3.</span> <span class="nav-text">常用命令</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0%E4%B8%8E%E4%BF%AE%E6%94%B9"><span class="nav-number">1.3.1.</span> <span class="nav-text">添加与修改</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E4%B8%8E%E6%9F%A5%E8%AF%A2%E6%95%B0%E9%87%8F"><span class="nav-number">1.3.2.</span> <span class="nav-text">删除与查询数量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E5%88%86%E6%95%B0%E4%B8%8E%E6%8E%92%E5%BA%8F%EF%BC%88%E6%8C%89%E5%88%86%E6%95%B0%EF%BC%89"><span class="nav-number">1.3.3.</span> <span class="nav-text">获取分数与排序（按分数）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2%EF%BC%88%E6%8C%89%E5%88%86%E6%95%B0%E6%88%96%E5%AD%97%E5%85%B8%E5%BA%8F%EF%BC%89"><span class="nav-number">1.3.4.</span> <span class="nav-text">范围查询（按分数或字典序）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%9B%86%E5%90%88%E8%BF%90%E7%AE%97"><span class="nav-number">1.3.5.</span> <span class="nav-text">集合运算</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.4.</span> <span class="nav-text">应用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8E%92%E8%A1%8C%E6%A6%9C"><span class="nav-number">1.4.1.</span> <span class="nav-text">排行榜</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%94%B5%E8%AF%9D%E3%80%81%E5%A7%93%E5%90%8D%E6%8E%92%E5%BA%8F-%E6%8C%89%E5%AD%97%E5%85%B8%E5%BA%8F"><span class="nav-number">1.4.2.</span> <span class="nav-text">电话、姓名排序 (按字典序)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.5.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">100</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">123</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">417k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">6:19</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : 'a6dad86f6b6aeda71a098e22e9c77ae0',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2025-04-18",2],["2025-04-19",3],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-26",1],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",9],["2025-05-22",2],["2025-05-24",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2025-04","2025-05"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [33,67],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"Hot100","value":58},{"name":"LeetCode","value":51},{"name":"Medium","value":45},{"name":"数组","value":22},{"name":"❌错题集","value":22},{"name":"MySQL","value":19},{"name":"动态规划","value":14},{"name":"深度优先搜索","value":14}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"Hot100","value":58},{"name":"LeetCode","value":51},{"name":"Medium","value":45},{"name":"数组","value":22},{"name":"❌错题集","value":22},{"name":"MySQL","value":19},{"name":"动态规划","value":14},{"name":"深度优先搜索","value":14}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":64},{"name":"LeetCode","value":64},{"name":"Hot100","value":63},{"name":"八股文","value":33},{"name":"基础知识","value":19}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":64},{"name":"LeetCode","value":64},{"name":"Hot100","value":63},{"name":"八股文","value":33},{"name":"基础知识","value":19}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[],"count":1,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":64,"path":"算法刷题/LeetCode"}],"count":64,"path":"算法刷题"},{"name":"八股文","children":[{"name":"REDIS","children":[{"name":"基础知识","children":[{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":15,"path":"八股文/REDIS/基础知识"}],"count":15,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"锁","children":[],"count":3,"path":"八股文/MySQL/锁"},{"name":"索引","children":[],"count":8,"path":"八股文/MySQL/索引"},{"name":"锁机制","children":[],"count":1,"path":"八股文/MySQL/锁机制"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"基础知识","children":[],"count":4,"path":"八股文/MySQL/基础知识"}],"count":18,"path":"八股文/MySQL"}],"count":33,"path":"八股文"},{"name":"技术八股","children":[{"name":"MySQL","children":[{"name":"锁","children":[],"count":1,"path":"技术八股/MySQL/锁"}],"count":1,"path":"技术八股/MySQL"}],"count":1,"path":"技术八股"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>
