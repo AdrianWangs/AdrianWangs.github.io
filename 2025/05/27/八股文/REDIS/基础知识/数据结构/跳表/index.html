@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="深度解析 Redis 跳表（skiplist）的原理、实现细节和性能特性，探讨其在有序集合（Sorted Set）中的应用以及相比于其他数据结构的优势。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis 数据结构：跳表详解">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/index.html">
+<meta property="og:site_name" content="小王的blog">
+<meta property="og:description" content="深度解析 Redis 跳表（skiplist）的原理、实现细节和性能特性，探讨其在有序集合（Sorted Set）中的应用以及相比于其他数据结构的优势。">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/1748326331702.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/1748326342079.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/1748326431445.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/1748326449383.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/1748326457615.png">
+<meta property="article:published_time" content="2025-05-27T15:10:00.000Z">
+<meta property="article:modified_time" content="2025-05-31T13:15:01.272Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="数据结构">
+<meta property="article:tag" content="REDIS">
+<meta property="article:tag" content="跳表">
+<meta property="article:tag" content="skiplist">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/1748326331702.png">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>Redis 数据结构：跳表详解 | 小王的blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小王的blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Adrian Wang's blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis 数据结构：跳表详解
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-05-27 15:10:00" itemprop="dateCreated datePublished" datetime="2025-05-27T15:10:00+00:00">2025-05-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-31 13:15:01" itemprop="dateModified" datetime="2025-05-31T13:15:01+00:00">2025-05-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/" itemprop="url" rel="index"><span itemprop="name">REDIS</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" itemprop="url" rel="index"><span itemprop="name">数据结构</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>5.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+            <div class="post-description">深度解析 Redis 跳表（skiplist）的原理、实现细节和性能特性，探讨其在有序集合（Sorted Set）中的应用以及相比于其他数据结构的优势。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="跳表">跳表</h2>
+<p><strong>什么是跳表？</strong></p>
+<p>跳表（Skip List）可以简单理解为&quot;<strong>带电梯的多层楼房</strong>&quot;。想象一下：</p>
+<ul>
+<li>普通链表就像一层楼的走廊，要找某个房间只能一个一个房间地走过去</li>
+<li>跳表就像多层楼房，上层楼有&quot;快速通道&quot;，可以快速跳跃到目标区域，然后再到下层精确查找</li>
+</ul>
+<p>Redis 只有 Zset（有序集合）对象的底层实现用到了跳表，跳表的优势是能支持平均 O(logN) 复杂度的节点查找。</p>
+<p><strong>为什么 Zset 同时使用跳表和哈希表？</strong></p>
+<p>zset 结构体里有两个数据结构：一个是跳表，一个是哈希表。这样设计的好处是：</p>
+<ul>
+<li><strong>跳表负责范围查询</strong>：比如查找分数在 80-90 之间的所有学生</li>
+<li><strong>哈希表负责单点查询</strong>：比如快速查找张三的具体分数</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zset</span> &#123;</span></span><br><span class="line">    dict *dict;</span><br><span class="line">    zskiplist *zsl;</span><br><span class="line">&#125; zset;</span><br></pre></td></tr></table></figure>
+<p><strong>数据一致性是如何保证的？</strong></p>
+<p>Zset 对象在执行数据插入或更新时，会同时在跳表和哈希表中进行相同操作，确保两个数据结构的信息保持一致。就像酒店的房间登记系统，既要在楼层分布图上标记，也要在客户信息表中记录。</p>
+<p>具体来说：</p>
+<ul>
+<li><strong>支持范围查询</strong>（如 ZRANGEBYSCORE 操作）：依靠跳表的有序特性</li>
+<li><strong>支持快速单点查询</strong>（如 ZSCORE 操作）：依靠哈希表的 O(1) 查找</li>
+</ul>
+<p><strong>为什么通常只说跳表是 Zset 的底层结构？</strong></p>
+<p>虽然 Zset 实际使用的是「哈希表 + 跳表」的组合结构，但我们讨论时通常只提跳表，是因为：</p>
+<ul>
+<li>哈希表主要起<strong>辅助作用</strong>，用于快速获取元素权重</li>
+<li><strong>核心操作都是由跳表实现的</strong>，比如范围查询、排序等</li>
+<li>跳表决定了 Zset 的主要特性和性能表现</li>
+</ul>
+<p>接下来，详细的说下跳表。</p>
+<h3 id="跳表结构设计">跳表结构设计</h3>
+<p>在理解跳表之前，我们先看看普通链表的问题。</p>
+<p><strong>普通链表的查找问题：</strong><br>
+链表在查找元素时，只能从头开始一个一个节点地遍历，就像在一条长长的队伍中找人，只能从队头开始一个个问过去，效率很低，时间复杂度是 O(N)。</p>
+<p><strong>跳表的解决方案：</strong><br>
+跳表是在链表基础上改进过来的，实现了一种「多层」的有序链表。就像给队伍安排了多个&quot;队长&quot;，可以先问队长大概位置，再在小范围内精确查找，这样能快速定位数据。</p>
+<p>那跳表长什么样呢？我这里举个例子，下图展示了一个层级为 3 的跳表。</p>
+<p><img src="/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/1748326331702.png" alt="1748326331702"></p>
+<p>图中头节点有 L0~L2 三个头指针，分别指向了不同层级的节点，然后每个层级的节点都通过指针连接起来：</p>
+<ul>
+<li><strong>L0 层级</strong>（最底层）：共有 5 个节点，分别是节点 1、2、3、4、5（包含所有节点）</li>
+<li><strong>L1 层级</strong>（中间层）：共有 3 个节点，分别是节点 2、3、5（部分节点）</li>
+<li><strong>L2 层级</strong>（最高层）：只有 1 个节点，也就是节点 3（更少节点）</li>
+</ul>
+<p><strong>查找效率对比：</strong></p>
+<ul>
+<li><strong>普通链表</strong>：要找节点 4，需要从头开始：1→2→3→4，查找 4 次</li>
+<li><strong>跳表查找</strong>：只需要 2 次跳跃：
+<ol>
+<li>从 L2 层直接跳到节点 3</li>
+<li>从节点 3 在 L0 层向前一步找到节点 4</li>
+</ol>
+</li>
+</ul>
+<p>可以看到，这个查找过程就是在多个层级上跳来跳去，最后定位到元素。当数据量很大时，跳表的查找复杂度就是 O(logN)。</p>
+<p><strong>跳表节点是怎么实现多层级的？</strong></p>
+<p>要理解跳表的多层级结构，我们需要看看「跳表节点」的数据结构：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> &#123;</span></span><br><span class="line">    <span class="comment">//Zset 对象的元素值</span></span><br><span class="line">    sds ele;</span><br><span class="line">    <span class="comment">//元素权重值</span></span><br><span class="line">    <span class="type">double</span> score;</span><br><span class="line">    <span class="comment">//后向指针</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">backward</span>;</span></span><br><span class="line">  </span><br><span class="line">    <span class="comment">//节点的 level 数组，保存每层上的前向指针和跨度</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistLevel</span> &#123;</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">forward</span>;</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> span;</span><br><span class="line">    &#125; level[];</span><br><span class="line">&#125; zskiplistNode;</span><br></pre></td></tr></table></figure>
+<p>让我们逐个分析这个结构体的字段：</p>
+<p><strong>1. 数据存储字段：</strong></p>
+<ul>
+<li><code>sds ele</code>：存储 Zset 对象的元素值（比如学生姓名&quot;张三&quot;）</li>
+<li><code>double score</code>：存储元素的权重值（比如学生分数 85.5）</li>
+</ul>
+<p><strong>2. 后向指针：</strong></p>
+<ul>
+<li><code>struct zskiplistNode *backward</code>：指向前一个节点</li>
+<li>作用：方便从跳表尾节点开始倒序遍历，就像可以从队尾往前走一样</li>
+</ul>
+<p><strong>3. 关键的多层级实现：</strong></p>
+<ul>
+<li><code>struct zskiplistLevel level[]</code>：这是实现多层级的关键！</li>
+</ul>
+<p><strong>level 数组是如何工作的？</strong></p>
+<ul>
+<li>level 数组中的每个元素代表跳表的一层</li>
+<li><code>level[0]</code> 表示第一层（L0），<code>level[1]</code> 表示第二层（L1），以此类推</li>
+<li>每层包含两个信息：
+<ul>
+<li><code>forward</code>：指向下一个跳表节点的指针</li>
+<li><code>span</code>：跨度，记录两个节点之间的距离</li>
+</ul>
+</li>
+</ul>
+<p>比如，下面这张图，展示了各个节点的跨度。</p>
+<p><img src="/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/1748326342079.png" alt="1748326342079"></p>
+<p><strong>跨度（span）的作用是什么？</strong></p>
+<p>很多人第一眼看到跨度，会以为是用来辅助遍历的，但实际上并不是。遍历操作只需要用前向指针（forward）就可以完成了。</p>
+<p><strong>跨度的真正作用：计算节点排位</strong></p>
+<ul>
+<li>跳表中的节点都是按分数排序的</li>
+<li>要计算某个节点在跳表中的排位（排第几名），就需要用到跨度</li>
+<li>计算方法：从头节点到目标节点的查找路径上，将沿途经过的所有层的跨度累加起来</li>
+</ul>
+<p><strong>举个例子：</strong><br>
+查找图中节点 3 在跳表中的排位：</p>
+<ol>
+<li>从头节点开始查找节点 3</li>
+<li>查找过程只经过了一个层（L2）</li>
+<li>L2 层的跨度是 3</li>
+<li>所以节点 3 在跳表中的排位是第 3 名</li>
+</ol>
+<p>这就像马拉松比赛中的距离标记，通过累加经过的距离标记，可以知道跑了多远。</p>
+<p><strong>头节点的特殊性：</strong><br>
+图中的头节点其实也是 zskiplistNode 跳表节点，只不过头节点比较特殊：</p>
+<ul>
+<li>后向指针、权重、元素值都没有用到（所以图中省略了）</li>
+<li>主要作用是作为各层链表的起始点</li>
+</ul>
+<p><strong>跳表的整体管理结构：</strong><br>
+那么，由谁来管理整个跳表，定义哪个节点是头节点呢？这就需要介绍「跳表」结构体了：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplist</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">header</span>, *<span class="title">tail</span>;</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> length;</span><br><span class="line">    <span class="type">int</span> level;</span><br><span class="line">&#125; zskiplist;</span><br></pre></td></tr></table></figure>
+<p>跳表结构里包含了四个重要信息：</p>
+<ul>
+<li>
+<p><strong>header/tail</strong>：跳表的头尾节点指针</p>
+<ul>
+<li>好处：可以在 O(1) 时间内直接访问头节点和尾节点</li>
+<li>就像电梯楼层显示器，可以直接知道最高层和最低层</li>
+</ul>
+</li>
+<li>
+<p><strong>length</strong>：跳表的节点数量</p>
+<ul>
+<li>好处：可以在 O(1) 时间内获取跳表有多少个节点</li>
+<li>就像楼房的住户统计表，直接知道总共有多少住户</li>
+</ul>
+</li>
+<li>
+<p><strong>level</strong>：跳表的最大层数</p>
+<ul>
+<li>好处：可以在 O(1) 时间内知道跳表的最高层是第几层</li>
+<li>就像建筑物的楼层标识，直接知道这栋楼有多高</li>
+</ul>
+</li>
+</ul>
+<h3 id="跳表节点查询过程">跳表节点查询过程</h3>
+<p><strong>跳表查找的基本策略：</strong><br>
+跳表查找就像在多层停车场找车位一样，先从最高层快速定位区域，再逐层下降精确查找。</p>
+<p><strong>具体查找过程：</strong><br>
+跳表会从头节点的最高层开始，逐一遍历每一层。在每一层查找时，有明确的判断规则：</p>
+<p><strong>何时继续在当前层前进？</strong><br>
+满足以下任一条件就继续在当前层向前移动：</p>
+<ol>
+<li><strong>权重比较</strong>：下一个节点的权重 &lt; 目标权重</li>
+<li><strong>相同权重时的元素比较</strong>：下一个节点的权重 = 目标权重，但元素值 &lt; 目标元素值</li>
+</ol>
+<p><strong>何时跳到下一层？</strong><br>
+如果上面两个条件都不满足，或者下一个节点为空，就跳到下一层继续查找。</p>
+<p>这个策略确保了：</p>
+<ul>
+<li>在每一层都能快速跳过明显不符合的节点</li>
+<li>权重相同时还能根据元素值进行精确比较</li>
+<li>逐层下降，最终精确定位目标节点</li>
+</ul>
+<p>举个例子，下图有个 3 层级的跳表。</p>
+<p><img src="/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/1748326431445.png" alt="1748326431445"></p>
+<p><strong>实际查找示例：</strong><br>
+假设要查找「元素：abcd，权重：4」的节点，整个查找过程如下：</p>
+<p><strong>第一步：从 L2 层开始</strong></p>
+<ul>
+<li>当前位置：头节点的 L2 层</li>
+<li>下一个节点：「元素：abc，权重：3」</li>
+<li>判断：3 &lt; 4（目标权重），符合条件1，继续在 L2 层前进</li>
+<li>到达「元素：abc，权重：3」节点</li>
+</ul>
+<p><strong>第二步：继续在 L2 层查找</strong></p>
+<ul>
+<li>当前位置：「元素：abc，权重：3」的 L2 层</li>
+<li>下一个节点：空节点</li>
+<li>判断：下一个节点为空，跳到下一层（L1）</li>
+</ul>
+<p><strong>第三步：在 L1 层查找</strong></p>
+<ul>
+<li>当前位置：「元素：abc，权重：3」的 L1 层</li>
+<li>下一个节点：「元素：abcde，权重：4」</li>
+<li>判断：权重相同（4=4），但 “abcde” &gt; “abcd”，不符合条件2，跳到下一层（L0）</li>
+</ul>
+<p><strong>第四步：在 L0 层查找</strong></p>
+<ul>
+<li>当前位置：「元素：abc，权重：3」的 L0 层</li>
+<li>下一个节点：「元素：abcd，权重：4」</li>
+<li>判断：找到目标节点！查找结束</li>
+</ul>
+<p>这个过程展示了跳表如何利用多层结构快速定位，避免了逐个遍历所有节点。</p>
+<h3 id="跳表节点层数设置">跳表节点层数设置</h3>
+<p><strong>层级比例对性能的影响</strong></p>
+<p>跳表的性能很大程度上取决于相邻两层节点数量的比例。如果比例不当，查询效率会大打折扣。</p>
+<p><strong>不良设计的例子：</strong><br>
+下图展示了一个设计不佳的跳表，第二层只有 1 个节点，而第一层有 6 个节点。</p>
+<p><img src="/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/1748326449383.png" alt="1748326449383"></p>
+<p><strong>问题分析：</strong><br>
+如果要查询节点 6，会发生什么？</p>
+<ul>
+<li>第二层只能跳到节点 3，然后就没有更多节点了</li>
+<li>只能在第一层从节点 3 开始：3→4→5→6，逐个查找</li>
+<li>这样就失去了跳表的优势，查询复杂度退化为 O(N)</li>
+</ul>
+<p><strong>理想的层级比例：</strong><br>
+为了保持跳表的高效性，<strong>相邻两层的节点数量最理想的比例是 2:1</strong>，这样可以将查找复杂度维持在 O(logN)。</p>
+<p><strong>良好设计的例子：</strong><br>
+下图展示了一个设计良好的跳表，相邻两层的节点数量比例接近 2:1。</p>
+<p><img src="/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E8%B7%B3%E8%A1%A8/1748326457615.png" alt="1748326457615"></p>
+<blockquote>
+<p>那怎样才能维持相邻两层的节点数量的比例为 2 : 1  呢？</p>
+</blockquote>
+<p><strong>如何维持理想的层级比例？</strong></p>
+<p>传统做法是在新增或删除节点时调整跳表结构来维持 2:1 比例，但这会带来额外的计算开销。</p>
+<p><strong>Redis 的巧妙解决方案：随机层数生成</strong></p>
+<p>Redis 采用了一种更巧妙的方法：<strong>在创建节点时随机生成每个节点的层数</strong>，而不是严格维持 2:1 比例。</p>
+<p><strong>随机生成算法：</strong></p>
+<ol>
+<li>生成一个 [0-1] 范围的随机数</li>
+<li>如果随机数 &lt; 0.25（25% 概率），层数增加 1</li>
+<li>继续生成下一个随机数，重复步骤 2</li>
+<li>直到随机数 ≥ 0.25 为止，确定最终层数</li>
+</ol>
+<p><strong>这种方法的特点：</strong></p>
+<ul>
+<li>每增加一层的概率是 25%</li>
+<li>层数越高，出现概率越低</li>
+<li>层高最大限制是 64（Redis 7.0 中是 32）</li>
+</ul>
+<p><strong>为什么随机方法有效？</strong></p>
+<ul>
+<li>25% 的概率意味着平均每 4 个节点中有 1 个会出现在更高层</li>
+<li>这自然形成了接近 4:1 的比例关系（虽然不是严格的 2:1，但仍然有效）</li>
+<li>避免了复杂的平衡调整操作</li>
+</ul>
+<p><strong>关于头节点的层数：</strong><br>
+前面图例中为了简化说明，头节点只画了 3 层，但实际上<strong>头节点会直接创建最大层数的结构</strong>。如果最大层数限制是 32，那么头节点就有 32 层，这样可以支持任意高度的节点插入。</p>
+<p><strong>头节点的创建过程：</strong><br>
+从下面的代码可以看到，创建跳表时：</p>
+<ul>
+<li>头节点的 level 数组有 ZSKIPLIST_MAXLEVEL 个元素（层）</li>
+<li>头节点不存储任何实际数据（member 和 score 都为空）</li>
+<li>所有层的 forward 指针都指向 NULL</li>
+<li>所有层的 span 值都为 0</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Create a new skiplist. */</span></span><br><span class="line">zskiplist *<span class="title function_">zslCreate</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">int</span> j;</span><br><span class="line">    zskiplist *zsl;</span><br><span class="line"></span><br><span class="line">    zsl = zmalloc(<span class="keyword">sizeof</span>(*zsl));</span><br><span class="line">    zsl-&gt;level = <span class="number">1</span>;</span><br><span class="line">    zsl-&gt;length = <span class="number">0</span>;</span><br><span class="line">    zsl-&gt;header = zslCreateNode(ZSKIPLIST_MAXLEVEL,<span class="number">0</span>,<span class="literal">NULL</span>);</span><br><span class="line">    <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; ZSKIPLIST_MAXLEVEL; j++) &#123;</span><br><span class="line">        zsl-&gt;header-&gt;level[j].forward = <span class="literal">NULL</span>;</span><br><span class="line">        zsl-&gt;header-&gt;level[j].span = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    zsl-&gt;header-&gt;backward = <span class="literal">NULL</span>;</span><br><span class="line">    zsl-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">return</span> zsl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>不同版本的最大层数限制：</strong></p>
+<ul>
+<li>Redis 7.0：32 层</li>
+<li>Redis 5.0：64 层</li>
+<li>Redis 3.0：32 层</li>
+</ul>
+<p>可以看到，Redis 在不同版本中对最大层数进行了调整，这是为了在内存使用和性能之间找到更好的平衡点。</p>
+<h3 id="为什么用跳表而不用平衡树？">为什么用跳表而不用平衡树？</h3>
+<p><strong>常见面试题解析</strong></p>
+<p>这是一个非常经典的面试题：为什么 Zset 选择跳表而不是平衡树（如 AVL 树、红黑树等）？</p>
+<p>这个问题，我们可以看看 Redis 作者 @antirez 的<a target="_blank" rel="noopener" href="https://news.ycombinator.com/item?id=1171423">原话</a>：</p>
+<blockquote>
+<p>There are a few reasons:</p>
+<ol>
+<li>
+<p>They are not very memory intensive. It’s up to you basically. Changing parameters about the probability of a node to have a given number of levels will make then less memory intensive than btrees.</p>
+</li>
+<li>
+<p>A sorted set is often target of many ZRANGE or ZREVRANGE operations, that is, traversing the skip list as a linked list. With this operation the cache locality of skip lists is at least as good as with other kind of balanced trees.</p>
+</li>
+<li>
+<p>They are simpler to implement, debug, and so forth. For instance thanks to the skip list simplicity I received a patch (already in Redis master) with augmented skip lists implementing ZRANK in O(log(N)). It required little changes to the code.</p>
+</li>
+</ol>
+</blockquote>
+<p><strong>作者观点的总结和深入分析：</strong></p>
+<p>作者主要从三个方面说明了选择跳表的原因，让我详细解释一下：</p>
+<p><strong>1. 内存使用更灵活</strong></p>
+<ul>
+<li><strong>平衡树</strong>：每个节点固定包含 2 个指针（左右子树）</li>
+<li><strong>跳表</strong>：每个节点的指针数量是动态的，平均为 1/(1-p)</li>
+<li>在 Redis 中，p=1/4，所以平均每个节点包含 1.33 个指针</li>
+<li><strong>结论</strong>：跳表比平衡树节省内存</li>
+</ul>
+<p><strong>2. 范围查询更简单</strong></p>
+<ul>
+<li><strong>平衡树的问题</strong>：找到范围的起始值后，需要进行复杂的中序遍历来找到范围内的所有节点</li>
+<li><strong>跳表的优势</strong>：找到起始值后，只需要在第 1 层（最底层）链表上连续遍历即可</li>
+<li><strong>比喻</strong>：就像在图书馆找书，跳表相当于找到书架后直接从左到右拿书，而平衡树需要在整个图书馆里按特定顺序跳着找书</li>
+</ul>
+<p><strong>3. 实现和维护更简单</strong></p>
+<ul>
+<li><strong>平衡树的复杂性</strong>：插入和删除可能触发复杂的树结构调整（旋转操作），代码复杂，调试困难</li>
+<li><strong>跳表的简单性</strong>：插入和删除只需要修改相邻节点的指针，就像在链表中插入节点一样简单</li>
+<li><strong>实际好处</strong>：代码易读、易维护、易扩展（比如添加 ZRANK 功能只需要少量代码修改）</li>
+</ul>
+<p><strong>为什么这些特点对 Redis 很重要？</strong></p>
+<ul>
+<li><strong>Zset 经常需要范围查询</strong>（ZRANGE、ZREVRANGE 等命令）</li>
+<li><strong>Redis 强调简单和可靠性</strong>，复杂的平衡树增加了出错风险</li>
+<li><strong>内存是 Redis 的重要考量</strong>，跳表的内存效率更符合需求</li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag"># 数据结构</a>
+              <a href="/tags/REDIS/" rel="tag"># REDIS</a>
+              <a href="/tags/%E8%B7%B3%E8%A1%A8/" rel="tag"># 跳表</a>
+              <a href="/tags/skiplist/" rel="tag"># skiplist</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/05/27/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-135-%E5%88%86%E5%8F%91%E7%B3%96%E6%9E%9C/" rel="prev" title="❌ LeetCode 135 - 分发糖果（Candy）">
+      <i class="fa fa-chevron-left"></i> ❌ LeetCode 135 - 分发糖果（Candy）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/05/27/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/quicklist/" rel="next" title="Redis 数据结构：QuickList 详解">
+      Redis 数据结构：QuickList 详解 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B7%B3%E8%A1%A8"><span class="nav-number">1.</span> <span class="nav-text">跳表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%B3%E8%A1%A8%E7%BB%93%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="nav-number">1.1.</span> <span class="nav-text">跳表结构设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%B3%E8%A1%A8%E8%8A%82%E7%82%B9%E6%9F%A5%E8%AF%A2%E8%BF%87%E7%A8%8B"><span class="nav-number">1.2.</span> <span class="nav-text">跳表节点查询过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%B3%E8%A1%A8%E8%8A%82%E7%82%B9%E5%B1%82%E6%95%B0%E8%AE%BE%E7%BD%AE"><span class="nav-number">1.3.</span> <span class="nav-text">跳表节点层数设置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E8%B7%B3%E8%A1%A8%E8%80%8C%E4%B8%8D%E7%94%A8%E5%B9%B3%E8%A1%A1%E6%A0%91%EF%BC%9F"><span class="nav-number">1.4.</span> <span class="nav-text">为什么用跳表而不用平衡树？</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">114</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">140</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">491k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">7:26</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : '5201132faf404a78050d2c1921623d6a',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2025-04-18",2],["2025-04-19",3],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-26",1],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",3],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",3],["2025-05-31",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2025-04","2025-05"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [33,81],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":59},{"name":"Hot100","value":58},{"name":"Medium","value":52},{"name":"数组","value":29},{"name":"❌错题集","value":26},{"name":"MySQL","value":22},{"name":"数据库","value":15},{"name":"动态规划","value":14}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":59},{"name":"Hot100","value":58},{"name":"Medium","value":52},{"name":"数组","value":29},{"name":"❌错题集","value":26},{"name":"MySQL","value":22},{"name":"数据库","value":15},{"name":"动态规划","value":14}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":72},{"name":"LeetCode","value":72},{"name":"Hot100","value":63},{"name":"八股文","value":40},{"name":"基础知识","value":23}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":72},{"name":"LeetCode","value":72},{"name":"Hot100","value":63},{"name":"八股文","value":40},{"name":"基础知识","value":23}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[],"count":9,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":72,"path":"算法刷题/LeetCode"}],"count":72,"path":"算法刷题"},{"name":"八股文","children":[{"name":"REDIS","children":[{"name":"基础知识","children":[{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":18,"path":"八股文/REDIS/基础知识"}],"count":18,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":40,"path":"八股文"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>

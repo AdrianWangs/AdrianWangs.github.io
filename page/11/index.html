@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta property="og:type" content="website">
+<meta property="og:title" content="小王的blog">
+<meta property="og:url" content="https://adrianwangs.github.io/page/11/index.html">
+<meta property="og:site_name" content="小王的blog">
+<meta property="og:locale">
+<meta property="article:author" content="Adrian Wang">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://adrianwangs.github.io/page/11/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : true,
+    isPost : false,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>小王的blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小王的blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Adrian Wang's blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content index posts-expand">
+            
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/23/%E5%89%8D%E6%B2%BF%E6%8A%80%E6%9C%AF/AI%E5%B7%A5%E7%A8%8B/2025-04-23-Introduction-to-MCP/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/23/%E5%89%8D%E6%B2%BF%E6%8A%80%E6%9C%AF/AI%E5%B7%A5%E7%A8%8B/2025-04-23-Introduction-to-MCP/" class="post-title-link" itemprop="url">Model Context Protocol (MCP) 介绍</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-23 11:46:39" itemprop="dateCreated datePublished" datetime="2025-04-23T11:46:39+00:00">2025-04-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-31 13:15:01" itemprop="dateModified" datetime="2025-05-31T13:15:01+00:00">2025-05-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%89%8D%E6%B2%BF%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">前沿技术</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%89%8D%E6%B2%BF%E6%8A%80%E6%9C%AF/AI%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">AI工程</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>5.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            Model Context Protocol (MCP) 介绍 为什么我们需要MCP 当今的大型语言模型(LLM)虽然功能强大，但在与外部世界交互时仍面临诸多挑战： 上下文窗口限制：模型能接收的信息量有限，导致处理大型代码库或数据集困难 数据隐私问题：敏感数据需要发送到云端处理，增加了隐私和安全风险 工具集成碎片化：每个LLM提供商有不同的工具集成方式，导致开发者需维护多套代码 本地资源访问受限：很难让LLM安全地访问本地文件系统、数据库或应用程序 多系统协作困难：让LLM与多个不同服务协同工作缺乏统一标准 Model Context Protocol (MCP)正是为解决这些问题而诞生的技术标准，它提供了一种统一、安全、灵活的方式，让语言模型能够与各种外部系统和资源进行交互。 MCP是什么 Model Context Protocol (MCP) 是一种用于构建LLM（大型语言模型）应用程序的客户端-服务器架构协议，它允许AI模型与外部数据源和工具进行交互。 名词解释： 客户端-服务器架构：一种计算模型，其中一个程序(客户端)请求服务，另一个程序(服务器)提供服务。就像餐厅中顾客(客户端)点餐，厨房(服务器)准备食物。 协议：一套规则，定义了系统间如何交换信息。类似于人们交流的语言和礼仪规范。 API(应用程序接口)：软件组件之间的连接点，允许不同程序相互通信。就像电源插座是电器与电网的接口。 MCP的核心思想是通过标准化的协议，让语言模型能够安全、灵活地访问各种本地和远程资源。这不仅仅是一个简单的API或函数调用系统，而是一个完整的架构模式，具有以下核心特征： 协议驱动: MCP 定义了客户端和服务器之间通信的标准协议，使不同组件能够无缝协作 资源抽象: 将各种数据源、工具和服务抽象为统一的资源接口 分布式设计: 支持多个服务器并行提供不同功能，实现功能解耦 安全隔离: 明确的安全边界，数据保持在服务器端，只有结果返回给客户端 可组合性: 不同MCP服务器可以组合使用，形成复杂的工作流 日常使用场景：MCP如何改变我们使用AI的方式 场景一：本地文档助手 问题：王先生有大量存储在本地电脑上的工作文档，他想让AI助手帮忙整理和总结，但又担心文档内容上传到云端会有安全风险。 MCP解决方案： 王先生在电脑上安装了支持MCP的Claude Desktop应用和文件系统MCP服务器 当他询问&quot;帮我总结所有2025年第一季度的会议记录&quot;时 Claude会通过MCP服务器安全地搜索本地文件系统 文档内容不会离开王先生的电脑，只有搜索结果返回给Claude Claude根据获取的会议内容生成总结报告 这一过程对王先生来说完全透明，他只需正常与AI交谈，但所有数据处理都在本地完成，保证了信息安全。 场景二：代码开发助手 问题：张女士是一名软件开发人员，使用AI助手编写代码，但发现AI无法访问她的本地代码库、运行测试或执行Git操作。 MCP解决方案： 张女士在IDE中使用支持MCP的AI编码助手 IDE运行多个MCP服务器，分别处理代码访问、测试运行和版本控制 当张女士要求&quot;根据单元测试结果修复这个bug&quot;时 AI通过代码访问MCP服务器读取相关文件 通过测试MCP服务器运行测试并获取结果 分析问题并生成修复方案 通过Git MCP服务器创建修复分支和提交更改 整个过程在张女士的本地环境完成，无需将完整代码库上传到云端，同时AI助手能够与她的开发工具流完美集成。 详细协议结构 MCP协议主要包含以下关键组件： 连接管理: 建立和维护客户端与服务器之间的连接 资源发现: 允许客户端发现服务器提供的资源和功能 资源请求: 客户端向服务器请求特定资源 资源响应: 服务器处理请求并返回结果 元数据交换: 交换有关资源和功能的元数据 安全机制: 保护传输中的数据并验证请求的合法性 基本原理与架构 MCP采用客户端-服务器架构，其中： MCP主机（Hosts）：如Claude Desktop、IDE或AI工具，希望通过MCP访问数据的程序 MCP客户端（Clients）：维护与服务器1:1连接的协议客户端，负责发送请求和接收响应 MCP服务器（Servers）：通过标准化的Model Context Protocol公开特定功能的轻量级程序，负责处理请求并返回结果 本地数据源：MCP服务器可以安全访问的计算机文件、数据库和服务 远程服务：MCP服务器可以连接的外部系统（如通过API） 这种架构可以通过以下Mermaid图表表示： MCP通信流程 MCP通信过程是如何实现LLM与各种资源交互的关键。以下是一个典型的MCP通信流程： sequenceDiagram participant User as 用户 participant LLM as 语言模型 participant Host as 主机应用 participant Client as MCP客户端 participant Server as MCP服务器 participant DataSource as 数据源 User-&gt;&gt;Host: 提出请求 Host-&gt;&gt;LLM: 转发用户请求 LLM--&gt;&gt;Host: 需要访问外部资源 Host-&gt;&gt;Client: 资源请求 Client-&gt;&gt;Server: 发送MCP请求 Server-&gt;&gt;DataSource: 数据访问 DataSource--&gt;&gt;Server: 返回数据 Server--&gt;&gt;Client: MCP响应 Client--&gt;&gt;Host: 返回资源 Host-&gt;&gt;LLM: 提供资源 LLM--&gt;&gt;Host: 基于资源的响应 Host-&gt;&gt;User: 显示结果 资源接口设计 MCP定义了一套资源接口，使客户端能够统一访问各种不同类型的资源： classDiagram class Resource { +String resourceId +String resourceType +Metadata metadata +request(parameters) } class FileResource { +String path +readContent() +writeContent(data) } class DatabaseResource { +String connectionString +query(sql) +update(sql) } class APIResource { +String endpoint +call(parameters) } Resource &lt;|-- FileResource Resource &lt;|-- DatabaseResource Resource &lt;|-- APIResource MCP与Function Call的区别 MCP和Function Call都是扩展LLM能力的技术，但它们在设计和实现上存在显著差异： Function Call Function Call（函数调用）是一种让LLM能够调用预定义函数的能力，主要特点： 通常在单一环境中运行 函数定义必须嵌入到模型的上下文中，占用token空间 典型的实现是在LLM生成函数调用JSON后，由应用程序执行相应函数 安全边界通常由应用程序自身定义 通常需要为每个LLM提供商实现不同的集成方式 sequenceDiagram participant User as 用户 participant App as 应用程序 participant LLM as 语言模型 participant Functions as 函数库 User-&gt;&gt;App: 提出请求 App-&gt;&gt;LLM: 请求(包含函数定义) Note over App,LLM: 函数定义占用上下文空间 LLM-&gt;&gt;App: 函数调用JSON App-&gt;&gt;Functions: 执行函数 Functions-&gt;&gt;App: 返回结果 App-&gt;&gt;LLM: 结果作为新上下文 LLM-&gt;&gt;App: 生成最终响应 App-&gt;&gt;User: 显示结果 MCP MCP则提供了一个更加分布式、标准化的架构： 采用客户端-服务器架构，明确分离责任 多个专用服务器可以并行提供不同功能，支持横向扩展 通过标准协议实现互操作性，与LLM提供商无关 明确的安全边界，数据保持在服务器端 可以跨应用程序和环境重用，提高代码复用性 资源动态发现，无需预先定义所有功能 sequenceDiagram participant User as 用户 participant Host as 主机应用 participant LLM as 语言模型 participant Client as MCP客户端 participant ServerA as MCP服务器A participant ServerB as MCP服务器B participant DataA as 数据源A participant DataB as 数据源B User-&gt;&gt;Host: 提出请求 Host-&gt;&gt;LLM: 转发请求 LLM-&gt;&gt;Host: 需要资源A Host-&gt;&gt;Client: 请求资源A Client-&gt;&gt;ServerA: MCP请求 ServerA-&gt;&gt;DataA: 访问数据 DataA--&gt;&gt;ServerA: 返回数据 ServerA--&gt;&gt;Client: MCP响应 Client--&gt;&gt;Host: 返回资源A Host-&gt;&gt;LLM: 提供资源A LLM-&gt;&gt;Host: 需要资源B Host-&gt;&gt;Client: 请求资源B Client-&gt;&gt;ServerB: MCP请求 ServerB-&gt;&gt;DataB: 访问数据 DataB--&gt;&gt;ServerB: 返回数据 ServerB--&gt;&gt;Client: MCP响应 Client--&gt;&gt;Host: 返回资源B Host-&gt;&gt;LLM: 提供资源B LLM-&gt;&gt;Host: 生成最终响应 Host-&gt;&gt;User: 显示结果 MCP的优势 MCP相比传统Function Call和其他工具集成方法有以下优势： 灵活性：可以轻松切换LLM提供商和供应商，无需重写集成 安全性：数据保持在您的基础设施内，明确的安全边界 可扩展性：可以根据需要连接多个专用服务器，支持复杂功能 互操作性：标准化协议确保不同系统间的兼容，避免供应商锁定 本地计算：可以在本地环境中执行计算，无需将敏感数据发送到云端 分布式架构：不同服务可以在不同位置运行，提高系统弹性和可用性 动态发现：客户端可以动态发现服务器提供的资源，无需硬编码 隔离性：不同服务器之间相互隔离，一个服务器的问题不会影响其他服务器 实际应用场景 MCP可以应用于多种场景： 开发环境集成：在IDE中通过MCP访问本地代码库、运行测试、执行版本控制操作 数据分析：安全访问和处理本地数据库或文件系统中的数据，执行复杂分析 企业应用：与内部系统安全集成，访问企业知识库、CRM系统、ERP系统等 个人助手：访问个人文件和应用程序，同时保持数据隐私，如日历、邮件、笔记 混合云部署：在本地和云端之间无缝集成资源，实现数据和功能的最佳分配 多模型协作：允许多个不同的LLM通过相同的接口访问相同的资源，实现模型协作 MCP实现示例 以下是一个简化的MCP服务器实现示例，展示了如何创建一个提供文件系统访问的MCP服务器： flo...
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/23/%E5%89%8D%E6%B2%BF%E6%8A%80%E6%9C%AF/AI%E5%B7%A5%E7%A8%8B/2025-04-23-Introduction-to-MCP/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/MySQL%E9%A1%B5%E7%B1%BB%E5%9E%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/MySQL%E9%A1%B5%E7%B1%BB%E5%9E%8B/" class="post-title-link" itemprop="url">MySQL 页类型详解</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-22 20:23:49" itemprop="dateCreated datePublished" datetime="2025-04-22T20:23:49+00:00">2025-04-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-31 13:15:01" itemprop="dateModified" datetime="2025-05-31T13:15:01+00:00">2025-05-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>1.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>详细介绍MySQL InnoDB存储引擎中的各种页类型及其作用</p>
+        
+          <div class="post-button">
+            <a class="btn" href="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/MySQL%E9%A1%B5%E7%B1%BB%E5%9E%8B/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/" class="post-title-link" itemprop="url">MYSQL 记录存储方式</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-22 19:51:40" itemprop="dateCreated datePublished" datetime="2025-04-22T19:51:40+00:00">2025-04-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-31 13:15:01" itemprop="dateModified" datetime="2025-05-31T13:15:01+00:00">2025-05-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>4.5k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>MYSQL 记录存储方式</p>
+        
+          <div class="post-button">
+            <a class="btn" href="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-142-Linked-List-Cycle-II/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-142-Linked-List-Cycle-II/" class="post-title-link" itemprop="url">LeetCode 142 - 环形链表 II (Linked List Cycle II)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-22 18:46:22" itemprop="dateCreated datePublished" datetime="2025-04-22T18:46:22+00:00">2025-04-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-31 13:15:01" itemprop="dateModified" datetime="2025-05-31T13:15:01+00:00">2025-05-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            问题描述 给定一个链表的头节点 head，返回链表开始入环的第一个节点。如果链表无环，则返回 null。 如果链表中有某个节点，可以通过连续跟踪 next 指针再次到达，则链表中存在环。为了表示给定链表中的环，评测系统内部使用整数 pos 来表示链表尾连接到链表中的位置（索引从 0 开始）。如果 pos 是 -1，则在该链表中没有环。注意：pos 不作为参数进行传递，仅仅是为了标识链表的实际情况。 不允许修改链表。 示例 示例 1： 123输入：head = [3,2,0,-4], pos = 1输出：返回索引为 1 的链表节点解释：链表中有一个环，其尾部连接到第二个节点。 链表可视化： 1233 → 2 → 0 → -4 ↑ ↓ ← ← ← ← 示例 2： 123输入：head = [1,2], pos = 0输出：返回索引为 0 的链表节点解释：链表中有一个环，其尾部连接到第一个节点。 链表可视化： 1231 → 2↑ ↓← ← ← 示例 3： 123输入：head = [1], pos = -1输出：返回 null解释：链表中没有环。 链表可视化： 11 → null 约束条件 链表中节点的数目范围在范围 [0, 10^4] 内 -10^5 &lt;= Node.val &lt;= 10^5 pos 的值为 -1 或者链表中的一个有效索引 进阶 你是否可以使用 O(1) 空间解决此题？ 解题思路 方法一：快慢指针（Floyd 判圈算法） 本题的核心思路是使用快慢指针（也称为 Floyd 判圈算法或龟兔赛跑算法）来解决。这是一种检测链表中是否存在环并找到环入口点的经典算法。 算法分析和数学证明 这个算法分为两个阶段： 检测环的存在：使用快慢指针，如果它们相遇，则存在环 寻找环的入口：通过数学关系确定环的入口点 让我们详细解析这个过程，并进行数学推导： 第一阶段：检测环的存在 设置两个指针 slow 和 fast，初始时都指向链表头节点 head slow 指针每次移动 1 步，fast 指针每次移动 2 步 如果链表中存在环，这两个指针最终会在环中某个节点相遇 如果 fast 指针到达了链表末尾（即 fast 或 fast.next 为 null），则链表不存在环 第二阶段：寻找环的入口 数学推导是这个算法的关键。假设： 链表头到环入口点的距离为 a 步 环入口点到相遇点的距离为 b 步 相遇点回到环入口点的距离为 c 步 那么环的总长度为 b + c 步。 环形链表示意图 Mermaid 图示 graph LR Head((Head)) --&gt; A((A)) A --&gt; B((B)) B --&gt; C((C)) C --&gt; D((D)) D --&gt; E((E)) E --&gt; F((F)) F --&gt; C style C fill:#f96,stroke:#333 style F fill:#69f,stroke:#333 Head -.-&gt; |&quot;链表头&quot;|A C -.-&gt; |&quot;环入口点&quot;|C F -.-&gt; |&quot;相遇点&quot;|F A -.-&gt; |&quot;距离 a&quot;|C C -.-&gt; |&quot;距离 b&quot;|F F -.-&gt; |&quot;距离 c&quot;|C 纯文本图示 123456789101112 环入口 ↓head → A → B → C → D → E ↑ ↓ ↑ ↓ ↑ ↓ G ← F ← F ← 相遇点 距离标记:head到环入口C的距离: a环入口C到相遇点F的距离: b相遇点F返回环入口C的距离: c 另一种表示方式: 1234567891011 a b +---+ +---+ ↓ ↓ ↓ ↓head → → → → → → → + ↑ ↓ ↑ ↓ ↑ ↓ + ← ← + ↑ + c 当 slow 和 fast 指针相遇时： slow 走了 a + b 步 fast 走了 a + b + n(b + c) 步，其中 n 是 fast 指针在环中绕的圈数 由于 fast 指针走的步数是 slow 指针的 2 倍，所以有： 1a + b + n(b + c) = 2(a + b) 化简： 123a + b + n(b + c) = 2a + 2bn(b + c) = a + ba = n(b + c) - b = (n-1)(b + c) + c 对于 n=1 的情况（即 fast 指针绕环一圈就与 slow 相遇），我们有： 1a = c 这个结论非常重要：从链表头到环入口的距离，等于从相遇点继续前进到环入口的距离。 基于这个发现，我们的算法第二阶段为： 将 fast 指针重新指向链表头节点 保持 slow 指针在相遇点 让两个指针每次都移动 1 步 它们最终会在环的入口点相遇 这种方法的巧妙之处在于我们不需要知道环的长度或链表的长度，也不需要额外的空间来记录已访问过的节点。 代码实现 123456789101112131415161718192021222324252627282930313233343536373839404142434445/** * Definition for singly-linked list. * type ListNode struct &#123; * Val int * Next *ListNode * &#125; */func detectCycle(head *ListNode) *ListNode &#123; // 处理边界情况 if head == nil || head.Next == nil &#123; return nil &#125; // 阶段一：检测环的存在 slow, fast := head, head for &#123; // 如果到达链表末尾，则无环 if fast == nil || fast.Next == nil &#123; return nil &#125; // 快指针移动两步，慢指针移动一步 fast = fast.Next.Next slow = slow.Next // 如果两指针相遇，则存在环 if slow == fast &#123; break &#125; &#125; // 阶段二：寻找环的入口 // 重置快指针到链表头，慢指针保持在相遇点 fast = head // 两个指针每次都移动一步 for slow != fast &#123; slow = slow.Next fast = fast.Next &#125; // 当两指针再次相遇时，就是环的入口点 return fast&#125; 复杂度分析 时间复杂度：O(n)，其中 n 是链表中节点的数量。在最坏情况下，需要遍历整个链表一次才能确定是否有环，然后再遍历部分链表找到环的入口。 空间复杂度：O(1)，只使用了两个指针，不需要额外的空间。 不同方法比较 方面 快慢指针法 哈希表法 时间复杂度 O(n) O(n) 空间复杂度 O(1) O(n) 优点 空间效率高 实现简单直观 缺点 数学分析较复杂 需要额外空间 推荐度 ★★★★★ ★★★☆☆ 关键收获 Floyd 判圈算法是解决链表环检测问题的经典算法，它不仅可以检测环的存在，还能找到环的入口点。 该算法的数学推导很巧妙：从链表头到环入口的距离等于从相遇点继续前进到环入口的距离。 我们可以用 O(1) 的空间复杂度解决此问题，这比使用哈希表需要 O(n) 空间的方法更加高效。 这种双指针的技巧在链表问题中非常常见，掌握这种思想可以帮助解决许多类似问题，如寻找链表中点、检测环、寻找倒数第 k 个节点等。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-142-Linked-List-Cycle-II/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-234-Palindrome-Linked-List/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-234-Palindrome-Linked-List/" class="post-title-link" itemprop="url">LeetCode 234 - 回文链表（Palindrome Linked List）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-21 18:16:22" itemprop="dateCreated datePublished" datetime="2025-04-21T18:16:22+00:00">2025-04-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-31 13:15:01" itemprop="dateModified" datetime="2025-05-31T13:15:01+00:00">2025-05-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>4.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            Problem Description 给你一个单链表的头节点 head，请你判断该链表是否为回文链表。如果是，返回 true；否则，返回 false。 回文链表指的是从前往后读和从后往前读是一样的链表。例如，1-&gt;2-&gt;2-&gt;1 是回文链表，而 1-&gt;2 不是回文链表。 Examples 示例 1： 12输入：head = [1,2,2,1]输出：true 可视化表示: 11 -&gt; 2 -&gt; 2 -&gt; 1 示例 2： 12输入：head = [1,2]输出：false 可视化表示: 11 -&gt; 2 Constraints 链表中节点数目在范围 [1, 10^5] 内 0 &lt;= Node.val &lt;= 9 进阶：你能否用 O(n) 时间复杂度和 O(1) 空间复杂度解决此题？ Solution Approach 对于回文链表的判断，我们需要考虑几个关键点： 链表不能像数组那样随机访问，无法直接从两端同时向中间比较 直观思路是将链表转为数组，但这需要 O(n) 额外空间 最优解法需要找到链表中点，反转后半部分，然后比较两半部分 以下我会介绍多种解决此问题的方法，从简单到优化逐步讲解。 方法一：转换为数组 最直观的方法是将链表节点值复制到数组中，然后使用双指针判断数组是否回文。 实现细节 遍历链表，将所有节点值存入数组 使用双指针从数组两端向中间移动并比较 代码实现 123456789101112131415func isPalindrome(head *ListNode) bool &#123; // 将链表值复制到数组 vals := []int&#123;&#125; for node := head; node != nil; node = node.Next &#123; vals = append(vals, node.Val) &#125; // 使用双指针判断数组是否回文 for i, j := 0, len(vals)-1; i &lt; j; i, j = i+1, j-1 &#123; if vals[i] != vals[j] &#123; return false &#125; &#125; return true&#125; 方法二：使用栈 利用栈的特性，我们可以先将前半部分节点值入栈，然后与后半部分比较。 实现细节 使用快慢指针找到链表中点 将前半部分节点值入栈 比较栈中元素与后半部分节点值 代码实现 1234567891011121314151617181920212223242526272829303132func isPalindrome(head *ListNode) bool &#123; if head == nil || head.Next == nil &#123; return true &#125; // 快慢指针找中点 slow, fast := head, head stack := []int&#123;&#125; // 将前半部分入栈 for fast != nil &amp;&amp; fast.Next != nil &#123; stack = append(stack, slow.Val) slow = slow.Next fast = fast.Next.Next &#125; // 如果链表长度为奇数，跳过中间节点 if fast != nil &#123; slow = slow.Next &#125; // 比较栈顶元素与后半部分 for slow != nil &#123; if len(stack) == 0 || stack[len(stack)-1] != slow.Val &#123; return false &#125; stack = stack[:len(stack)-1] slow = slow.Next &#125; return true&#125; 方法三：原地反转（原始实现） 这是用户提供的原始解法，使用 O(n) 时间和 O(1) 空间。 实现细节 使用快慢指针找到链表中点 反转后半部分链表 比较前半部分和反转后的后半部分 代码实现（原始版本） 1234567891011121314151617181920212223242526272829303132333435363738394041424344454647func isPalindrome(head *ListNode) bool &#123; if head == nil &#123; return true &#125; fast, slow := head, head for fast.Next != nil &#123; fast = fast.Next if fast.Next == nil &#123; break &#125; slow = slow.Next fast = fast.Next &#125; head2 := slow.Next slow.Next = nil head2 = reverseListTmp(head2) cur1, cur2 := head, head2 for cur2 != nil &#123; if cur1.Val != cur2.Val &#123; return false &#125; cur1 = cur1.Next cur2 = cur2.Next &#125; return true&#125;func reverseListTmp(head *ListNode) *ListNode &#123; if head == nil || head.Next == nil &#123; return head &#125; var cur, prev *ListNode cur = head for cur != nil &#123; tmp := cur.Next cur.Next = prev prev = cur cur = tmp &#125; return prev&#125; 方法四：优化的原地反转（最优解） 在原始实现的基础上，我们可以进行一些优化，使代码更加健壮和易读。 实现细节 更清晰地处理边界情况 简化找中点的逻辑 明确区分奇偶长度链表的处理 模块化功能，提高代码可读性 提供可选的链表恢复功能 代码实现（优化版本） 1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980818283848586type ListNode struct &#123; Val int Next *ListNode&#125;func isPalindrome(head *ListNode) bool &#123; // 处理边界情况 if head == nil || head.Next == nil &#123; return true &#125; // 查找链表中点 fast, slow := head, head for fast != nil &amp;&amp; fast.Next != nil &#123; slow = slow.Next fast = fast.Next.Next &#125; // 处理奇数长度链表的情况 var secondHalf *ListNode if fast == nil &#123; // 偶数长度 secondHalf = slow &#125; else &#123; // 奇数长度，中间节点不参与比较 secondHalf = slow.Next &#125; // 断开链表 firstHalfEnd := slow if fast == nil &#123; firstHalfEnd = findPredecessor(head, slow) &#125; firstHalfEnd.Next = nil // 反转后半部分 secondHalf = reverseList(secondHalf) // 比较两半部分 result := compareHalves(head, secondHalf) // 可选：恢复链表结构 // firstHalfEnd.Next = reverseList(secondHalf) return result&#125;// 找到前驱节点func findPredecessor(head, target *ListNode) *ListNode &#123; if head == target &#123; return nil &#125; curr := head for curr != nil &amp;&amp; curr.Next != target &#123; curr = curr.Next &#125; return curr&#125;// 比较两个链表func compareHalves(first, second *ListNode) bool &#123; for first != nil &amp;&amp; second != nil &#123; if first.Val != second.Val &#123; return false &#125; first = first.Next second = second.Next &#125; return true&#125;// 反转链表func reverseList(head *ListNode) *ListNode &#123; var prev *ListNode curr := head for curr != nil &#123; next := curr.Next curr.Next = prev prev = curr curr = next &#125; return prev&#125; 方法五：递归解法 递归方法也可以用来解决此问题，但需要 O(n) 的栈空间。 实现细节 使用递归遍历到链表末尾 回溯时，与前面的节点比较 代码实现 12345678910111213141516171819func isPalindrome(head *ListNode) bool &#123; frontPointer := head var recursiveCheck func(*ListNode) bool recursiveCheck = func(currentNode *ListNode) bool &#123; if currentNode != nil &#123; if !recursiveCheck(currentNode.Next) &#123; return false &#125; if frontPointer.Val != currentNode.Val &#123; return false &#125; frontPointer = frontPointer.Next &#125; return true &#125; return recursiveCheck(head)&#125; Comparison of Approaches 方面 方法一：数组 方法二：栈 方法三：原始反转 方法四：优化反转 方法五：递归 时间复杂度 O(n) O(n) O(n) O(n) O(n) 空间复杂度 O(n) O(n) O(1) O(1) O(n) 优点 实现简单 直观易懂 空间效率高 代码健壮，易于理解 简洁优雅 缺点 空间开销大 空间开销大 代码结构不够清晰 略微复杂 使用了隐式栈空间...
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-234-Palindrome-Linked-List/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-206-Reverse-Linked-List/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-206-Reverse-Linked-List/" class="post-title-link" itemprop="url">LeetCode 206 - 反转链表（Reverse Linked List）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-21 11:31:21" itemprop="dateCreated datePublished" datetime="2025-04-21T11:31:21+00:00">2025-04-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-31 13:15:01" itemprop="dateModified" datetime="2025-05-31T13:15:01+00:00">2025-05-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.5k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            问题描述 给你单链表的头节点 head，请你反转链表，并返回反转后的链表。 示例 1： 12输入：head = [1,2,3,4,5]输出：[5,4,3,2,1] 示例 2： 12输入：head = [1,2]输出：[2,1] 示例 3： 12输入：head = []输出：[] 约束条件： 链表中节点的数目范围是 [0, 5000] -5000 &lt;= Node.val &lt;= 5000 进阶：链表可以选用迭代或递归方式完成反转。你能否用两种方法解决这道题？ 解题思路 反转链表是一个经典问题，有两种主要的解法：迭代法和递归法。 方法一：迭代法 迭代法的核心思想是：遍历链表，将当前节点的 next 指针改为指向前一个节点。由于单链表只能从前往后遍历，我们需要使用额外的指针来记录当前节点的前一个节点和后一个节点。 基本步骤： 初始化三个指针：prev（前一个节点）初始为 nil，curr（当前节点）初始为 head，next（下一个节点）在循环中赋值。 在遍历过程中，我们首先保存当前节点的下一个节点，防止链表断开后无法继续遍历。 将当前节点的 next 指针指向 prev。 将 prev 和 curr 指针向前移动一步。 重复步骤 2-4，直到 curr 指向 nil，表示已经遍历完整个链表。 方法二：递归法 递归法的核心思想是：假设链表后面的部分已经反转完成，我们只需要处理当前节点和子问题的关系。 基本思路： 终止条件：当链表为空或只有一个节点时，反转后的结果就是它本身，直接返回。 递归调用：对除了头节点以外的其他节点进行反转，并得到新的头节点（反转后链表的头）。 处理当前节点：将当前节点的下一个节点的 next 指向当前节点，并将当前节点的 next 设为 nil。 返回新的头节点。 实现细节 递归实现 在递归方法中，关键在于理解子问题的边界和如何处理当前节点与子问题的关系。 当我们递归地反转 head.Next 及其后面的节点时，我们得到了一个新的头节点 newHead，它是原链表的最后一个节点。此时，除了 head 节点外，其他所有节点都已反转完成。我们只需要将 head.Next.Next 指向 head（让原来的下一个节点指向自己），然后将 head.Next 设为 nil（断开原来的连接），就完成了整个链表的反转。 迭代实现 在迭代方法中，我们需要小心处理指针的移动，确保不会丢失链表的任何部分。特别是在反转当前节点的 next 指针之前，我们需要先保存下一个节点的引用。 代码实现 递归解法 1234567891011121314/** * 递归 */func reverseList(head *ListNode) *ListNode &#123; if head == nil || head.Next == nil &#123; return head &#125; newHead := reverseList(head.Next) head.Next.Next = head head.Next = nil return newHead&#125; 迭代解法 12345678910111213141516171819202122/** * 迭代 */func reverseList(head *ListNode) *ListNode &#123; if head == nil || head.Next == nil &#123; return head &#125; var cur, prev *ListNode prev = head cur = head.Next prev.Next = nil for cur != nil &#123; tmp := cur.Next cur.Next = prev prev = cur cur = tmp &#125; return prev&#125; 优化建议 对于上述迭代解法，虽然结果是正确的，但有几点可以优化： 初始化指针：标准的做法是将 prev 初始化为 nil，cur 初始化为 head，这样可以更简洁地处理各种情况，包括空链表和只有一个节点的链表。 特殊情况处理：虽然代码中有对 head == nil || head.Next == nil 的特殊情况处理，但使用标准的初始化方式后，这个特殊处理是不必要的，因为迭代过程会自然地处理这些情况。 代码简化：可以将初始化和迭代过程简化，减少不必要的步骤。 优化后的迭代版本如下： 12345678910111213func reverseList(head *ListNode) *ListNode &#123; var prev *ListNode curr := head for curr != nil &#123; next := curr.Next // 临时保存下一个节点 curr.Next = prev // 反转当前节点的指针 prev = curr // 移动 prev 指针 curr = next // 移动 curr 指针 &#125; return prev // prev 现在指向新的头节点&#125; 这个优化版本的特点是： 代码更简洁，逻辑更清晰 不需要特殊处理空链表或单节点链表的情况 变量命名更规范，使用 curr 和 next 更容易理解 复杂度分析 时间复杂度 递归解法：O(n)，其中 n 是链表的长度。我们需要对每个节点调用一次递归函数。 迭代解法：O(n)，其中 n 是链表的长度。我们需要遍历整个链表一次。 空间复杂度 递归解法：O(n)，其中 n 是链表的长度。主要是由于递归调用栈的开销。 迭代解法：O(1)，只需要常数级别的额外空间。 两种方法的比较 方面 递归解法 迭代解法 时间复杂度 O(n) O(n) 空间复杂度 O(n) O(1) 优点 代码简洁，思路清晰 空间效率高 缺点 空间开销大，可能栈溢出 代码稍复杂，需要多个指针 推荐度 ★★★☆☆ ★★★★★ 关键收获 指针操作：链表问题的核心是指针操作，需要小心处理指针的移动和更新，避免链表断裂或形成环。 迭代与递归：链表问题通常可以使用迭代和递归两种方式解决，迭代方法通常更高效，而递归方法则更直观。 技巧： 使用多个指针（如 prev、curr、next）可以有效地处理链表的反转操作 在修改指针前，务必先保存必要的引用，防止链表丢失 对于特殊情况（如空链表、单节点链表），可以单独处理或设计算法使其自然包含在一般情况中 空间效率：在实际应用中，通常优先考虑迭代解法，因为它的空间复杂度更低，特别是对于长链表，可以避免递归造成的栈溢出问题。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-206-Reverse-Linked-List/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-160-Intersection-of-Two-Linked-Lists/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-160-Intersection-of-Two-Linked-Lists/" class="post-title-link" itemprop="url">LeetCode 160 - 相交链表（Intersection of Two Linked Lists）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-20 23:19:20" itemprop="dateCreated datePublished" datetime="2025-04-20T23:19:20+00:00">2025-04-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-31 13:15:01" itemprop="dateModified" datetime="2025-05-31T13:15:01+00:00">2025-05-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.7k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            Problem Description 给你两个单链表的头节点 headA 和 headB ，请你找出并返回两个单链表相交的起始节点。如果两个链表不存在相交节点，返回 null 。 图示两个链表在节点 c1 开始相交： 12345A: a1 → a2 ↘ c1 → c2 → c3 ↗ B: b1 → b2 → b3 题目数据保证整个链式结构中不存在环，函数返回结果后，链表必须保持其原始结构。 示例 1： 12345 4 → 1 ↘ 8 → 4 → 5 ↗ 5 → 6 → 1 输入：intersectVal = 8, listA = [4,1,8,4,5], listB = [5,6,1,8,4,5], skipA = 2, skipB = 3 输出：Intersected at ‘8’ 解释：相交节点的值为 8 （注意，如果两个链表相交则不能为 0）。 从各自的表头开始算起，链表 A 为 [4,1,8,4,5]，链表 B 为 [5,6,1,8,4,5]。 在 A 中，相交节点前有 2 个节点；在 B 中，相交节点前有 3 个节点。 示例 2： 123451 → 9 → 1 ↘ 2 → 4 ↗ 3 输入：intersectVal = 2, listA = [1,9,1,2,4], listB = [3,2,4], skipA = 3, skipB = 1 输出：Intersected at ‘2’ 示例 3： 1232 → 6 → 41 → 5 输入：intersectVal = 0, listA = [2,6,4], listB = [1,5], skipA = 3, skipB = 2 输出：No intersection 约束条件： listA 中节点数目为 m listB 中节点数目为 n 1 &lt;= m, n &lt;= 3 * 10^4 1 &lt;= Node.val &lt;= 10^5 0 &lt;= skipA &lt;= m 0 &lt;= skipB &lt;= n 如果 listA 和 listB 没有交点，intersectVal 为 0 如果 listA 和 listB 有交点，intersectVal == listA[skipA] == listB[skipB] 进阶：你能否设计一个时间复杂度 O(m + n) 、仅用 O(1) 内存的解决方案？ Solution Approach 这个问题有几种解法，我们将逐一介绍，并分析各自的优缺点。 方法一：哈希表法 核心思想：使用哈希表存储第一个链表的所有节点，然后遍历第二个链表，检查每个节点是否在哈希表中存在。 实现步骤： 创建一个哈希表（Go中可以使用map） 将链表A的所有节点添加到哈希表中 遍历链表B，对于每个节点，检查它是否已经存在于哈希表中 如果找到匹配的节点，则返回该节点作为交点 如果遍历完链表B仍未找到匹配节点，则返回nil 1234567891011121314151617func getIntersectionNode(headA, headB *ListNode) *ListNode &#123; nodeMap := make(map[*ListNode]bool) // 将链表A的所有节点添加到哈希表 for curr := headA; curr != nil; curr = curr.Next &#123; nodeMap[curr] = true &#125; // 遍历链表B，检查节点是否在哈希表中 for curr := headB; curr != nil; curr = curr.Next &#123; if nodeMap[curr] &#123; return curr &#125; &#125; return nil&#125; 方法二：双指针法（最优解） 核心思想：使用两个指针 pA 和 pB 分别遍历链表 A 和链表 B。当一个指针到达链表末尾时，将其重定向到另一个链表的头部。最终，两个指针会在相交点相遇，或者在遍历完两个链表后同时为 nil。 实现步骤： 初始化两个指针 pA 和 pB 分别指向链表 A 和链表 B 的头节点 同时移动这两个指针，每次移动一步 当 pA 到达链表 A 的末尾时，将其重定向到链表 B 的头部 当 pB 到达链表 B 的末尾时，将其重定向到链表 A 的头部 如果两个链表相交，pA 和 pB 最终会在相交点相遇 如果两个链表不相交，pA 和 pB 最终都会变为 nil 123456789101112131415161718192021222324func getIntersectionNode(headA, headB *ListNode) *ListNode &#123; if headA == nil || headB == nil &#123; return nil &#125; pA, pB := headA, headB for pA != pB &#123; // 当到达链表末尾时，切换到另一个链表的头部 if pA == nil &#123; pA = headB &#125; else &#123; pA = pA.Next &#125; if pB == nil &#123; pB = headA &#125; else &#123; pB = pB.Next &#125; &#125; return pA // pA 要么是相交点，要么是 nil&#125; 方法三：计算长度差法 核心思想：计算两个链表的长度，然后让较长的链表先移动差值步数，之后两个指针同步前进，最终会在相交点相遇。 实现步骤： 分别计算链表 A 和链表 B 的长度 计算两个链表的长度差 diff 让较长的链表的指针先移动 diff 步 然后两个指针同步前进，每次都移动一步 检查两个指针是否相等，如果相等，则返回该节点 1234567891011121314151617181920212223242526272829303132func getIntersectionNode(headA, headB *ListNode) *ListNode &#123; // 计算链表长度的辅助函数 getLength := func(head *ListNode) int &#123; length := 0 for curr := head; curr != nil; curr = curr.Next &#123; length++ &#125; return length &#125; lenA, lenB := getLength(headA), getLength(headB) pA, pB := headA, headB // 让较长的链表先移动差值步数 if lenA &gt; lenB &#123; for i := 0; i &lt; lenA - lenB; i++ &#123; pA = pA.Next &#125; &#125; else &#123; for i := 0; i &lt; lenB - lenA; i++ &#123; pB = pB.Next &#125; &#125; // 同步前进，寻找相交点 for pA != pB &#123; pA = pA.Next pB = pB.Next &#125; return pA // pA 要么是相交点，要么是 nil&#125; 错误解法分析 我之前的解法存在以下问题： 1234567891011121314151617181920212223242526func getIntersectionNode(headA, headB *ListNode) *ListNode &#123; if headA == nil || headB == nil &#123; return nil &#125; fast, slow := headA, headB for fast != slow &#123; if fast == nil &#123; fast = headB &#125; else &#123; fast = fast.Next &#125; if fast == nil &#123; fast = headB &#125; else &#123; fast = fast.Next &#125; if slow == nil &#123; slow = headA &#125; else &#123; slow = slow.Next &#125; &#125; return fast&#125; 错误点： 算法思路混淆：这个解法似乎混合了检测环形链表的快慢指针法和检测相交链表的双指针法。在相交链表问题中，不应该使用不同速度的指针。 指针移动逻辑错误：fast 指针尝试每次移动两步，而 slow 指针每次移动一步。这种方式在没有环的情况下可能导致无法正确找到相交点。 重置逻辑问题：代码中 fast 指针可能在同一次循环中被重置两次，这不符合算法的要求。 可能的无限循环：如果两个链表不相交，并且长度不同，这种实现可能导致指针永远不会相等，从而陷入无限循环。 解法比较 方面 哈希表法 双指针法 长度差法 时间复杂度 O(m+n) O(m+n) O(m+n) 空间复杂度 O(m) O(1) O(1) 优点 简单直观，容易实现 空间复杂度最优，代码简洁 思路清晰，易于理解 缺点 需要额外空间 初次理解可能有难度 代码略长，需要计算长度 推荐度 ★★★☆☆ ★★★★★ ★★★★☆ Key Learnings 双指针技巧：此问题展示了双指针在解决链表问题中的强大作用，特别是方法二的解法巧妙且优雅。 空间时间权衡：哈希表法虽然直观，但需要额外空间；而双指针法和长度差法只需O(1)空间，展示了算法设计中空间与时间的权衡。 边界条件处理：在处理链表问题时，总是需要考虑空链表、单节点链表等边界情况。 问题简化：通过重定向指针（方法二）或提前移动（方法三），我们能够简化问题，使不同长度的链表在同步点相遇。 错误分析：理解错误解法的缺陷能够帮助我们更深入地理解问题的本质和解决方案的要求。在此问题中，不恰当地混用算法模式（快慢指针和双指针）导致了解法的失败。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-160-Intersection-of-Two-Linked-Lists/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-240-Search-a-2D-Matrix-II/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-240-Search-a-2D-Matrix-II/" class="post-title-link" itemprop="url">LeetCode 240 - 搜索二维矩阵 II（Search a 2D Matrix II）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-20 14:03:49" itemprop="dateCreated datePublished" datetime="2025-04-20T14:03:49+00:00">2025-04-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-31 13:15:01" itemprop="dateModified" datetime="2025-05-31T13:15:01+00:00">2025-05-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>4.2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            问题描述 编写一个高效的算法来搜索 m x n 矩阵 matrix 中的一个目标值 target。该矩阵具有以下特性： 每行的元素从左到右升序排列。 每列的元素从上到下升序排列。 示例 1： 输入：matrix = 1234567[ [1, 4, 7, 11, 15], [2, 5, 8, 12, 19], [3, 6, 9, 16, 22], [10, 13, 14, 17, 24], [18, 21, 23, 26, 30]] target = 5 输出：true 示例 2： 输入：matrix = 1234567[ [1, 4, 7, 11, 15], [2, 5, 8, 12, 19], [3, 6, 9, 16, 22], [10, 13, 14, 17, 24], [18, 21, 23, 26, 30]] target = 20 输出：false 提示： m == matrix.length n == matrix[i].length 1 &lt;= n, m &lt;= 300 -10^9 &lt;= matrix[i][j] &lt;= 10^9 每行的所有元素从左到右升序排列 每列的所有元素从上到下升序排列 -10^9 &lt;= target &lt;= 10^9 解题思路 这道题目提供了一个特殊性质的二维矩阵，要求我们查找一个目标值。矩阵的特性是每行从左到右升序，每列从上到下升序。根据这个特性，我们可以有多种解题思路。 方法一：角落搜索法 核心思想: 利用矩阵的排序特性，从右上角或左下角开始搜索，每次能够排除一行或一列。 从右上角（或左下角）开始搜索的原理： 若当前元素等于目标值，直接返回 true 若当前元素大于目标值，则可以排除当前列（因为当前列下方的元素更大） 若当前元素小于目标值，则可以排除当前行（因为当前行左侧的元素更小） 这种方法的时间复杂度是 O(m + n)，其中 m 是行数，n 是列数，因为每次操作都会排除一行或一列。 实现细节 我们从矩阵的右上角开始搜索： 初始化指针位置为右上角坐标 (0, columns-1) 当指针在矩阵范围内时，比较当前元素与目标值： 如果相等，返回 true 如果当前元素大于目标值，则向左移动（列索引减一） 如果当前元素小于目标值，则向下移动（行索引加一） 如果搜索结束后仍未找到目标值，返回 false 代码实现 123456789101112131415161718192021222324252627282930func searchMatrix(matrix [][]int, target int) bool &#123; // 获取矩阵的行数和列数 rows := len(matrix) if rows == 0 &#123; return false &#125; columns := len(matrix[0]) // 从右上角开始搜索 row, col := 0, columns-1 // 当指针在矩阵范围内时继续搜索 for row &lt; rows &amp;&amp; col &gt;= 0 &#123; currentValue := matrix[row][col] if currentValue == target &#123; // 找到目标值 return true &#125; else if currentValue &gt; target &#123; // 当前值大于目标值，排除当前列 col-- &#125; else &#123; // 当前值小于目标值，排除当前行 row++ &#125; &#125; // 搜索完毕未找到目标值 return false&#125; 方法二：二分查找法 核心思想: 由于每一行都是排序的，我们可以对每一行使用二分查找。 实现细节 遍历矩阵的每一行 对每一行使用二分查找寻找目标值 如果在任一行中找到目标值，返回 true 否则，返回 false 这种方法的时间复杂度是 O(m log n)，其中 m 是行数，n 是列数。 代码实现 12345678910111213141516171819202122232425262728293031323334353637func searchMatrix(matrix [][]int, target int) bool &#123; // 获取矩阵行数 rows := len(matrix) if rows == 0 &#123; return false &#125; // 对每一行使用二分查找 for _, row := range matrix &#123; // 如果在当前行找到目标值，返回 true if binarySearch(row, target) &#123; return true &#125; &#125; // 所有行都搜索完毕未找到目标值 return false&#125;// 二分查找辅助函数func binarySearch(nums []int, target int) bool &#123; left, right := 0, len(nums)-1 for left &lt;= right &#123; mid := left + (right-left)/2 if nums[mid] == target &#123; return true &#125; else if nums[mid] &gt; target &#123; right = mid - 1 &#125; else &#123; left = mid + 1 &#125; &#125; return false&#125; 方法三：分治法 核心思想: 利用矩阵的特性，将矩阵划分为四个子矩阵，递归搜索。 实现细节 找到矩阵中心点 (midRow, midCol) 将矩阵分为四个区域：左上、右上、左下、右下 比较中心点的值与目标值： 如果等于目标值，返回 true 如果大于目标值，则目标值可能在左上区域或左下区域或右上区域 如果小于目标值，则目标值可能在右下区域或右上区域或左下区域 递归搜索可能包含目标值的子矩阵 这种方法的时间复杂度在最坏情况下可能接近 O(m*n)，但在平均情况下表现较好。 代码实现 1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253func searchMatrix(matrix [][]int, target int) bool &#123; // 获取矩阵的行数和列数 rows := len(matrix) if rows == 0 &#123; return false &#125; columns := len(matrix[0]) // 调用递归搜索函数 return searchMatrixRecursively(matrix, target, 0, 0, rows-1, columns-1)&#125;// 递归搜索函数func searchMatrixRecursively(matrix [][]int, target int, rowStart, colStart, rowEnd, colEnd int) bool &#123; // 基本情况：超出矩阵范围 if rowStart &gt; rowEnd || colStart &gt; colEnd &#123; return false &#125; // 基本情况：矩阵只有一个元素 if rowStart == rowEnd &amp;&amp; colStart == colEnd &#123; return matrix[rowStart][colStart] == target &#125; // 计算中心点坐标 rowMid := rowStart + (rowEnd-rowStart)/2 colMid := colStart + (colEnd-colStart)/2 // 中心点值 midValue := matrix[rowMid][colMid] // 如果找到目标值，直接返回 if midValue == target &#123; return true &#125; // 根据中心点值与目标值的关系，决定搜索哪些子矩阵 if midValue &gt; target &#123; // 搜索左上区域（行结束和列结束都是中心点） return searchMatrixRecursively(matrix, target, rowStart, colStart, rowMid, colMid) || // 搜索右上区域（行从开始到中心，列从中心+1到结束） searchMatrixRecursively(matrix, target, rowStart, colMid+1, rowMid, colEnd) || // 搜索左下区域（行从中心+1到结束，列从开始到中心） searchMatrixRecursively(matrix, target, rowMid+1, colStart, rowEnd, colMid) &#125; else &#123; // 搜索右下区域（行开始和列开始都是中心点+1） return searchMatrixRecursively(matrix, target, rowMid+1, colMid+1, rowEnd, colEnd) || // 搜索右上区域（行从开始到中心，列从中心+1到结束） searchMatrixRecursively(matrix, target, rowStart, colMid+1, rowMid, colEnd) || // 搜索左下区域（行从中心+1到结束，列从开始到中心） searchMatrixRecursively(matrix, target, rowMid+1, colStart, rowEnd, colMid) &#125;&#125; 复杂度分析 方法 时间复杂度 空间复杂度 优点 缺点 角落搜索法 O(m + n) O(1) 非常高效，实现简单 需要理解特定的搜索策略 二分查找法 O(m log n) O(1) 易于理解，二分查找是常见算法 对于大矩阵，比角落搜索法慢 分治法 最坏 O(m*n) O(log(m*n)) 适用于更一般的搜索问题 实现复杂，递归调用开销大 综合考虑，角落搜索法（方法一）是解决此问题最高效的方法，它充分利用了矩阵的特性，时间复杂度为 O(m + n)，空间复杂度为 O(1)。 关键学习点 利用数据结构特性：矩阵的排序特性使我们能够设计出 O(m+n) 的算法。在解决问题时，充分理解并利用数据的特殊性质往往能找到最优解。 搜索空间缩减：角落搜索法的核心思想是每次操作都能排除一行或一列，有效地缩小搜索空间。 多种解法思考：同一个问题可以有多种解法，从暴力法到优化解法，通过比较不同算法的复杂度，可以找到最适合的解决方案。 二维空间的搜索技巧：对于二维空间的搜索问题，可以考虑从特殊点（如角落）开始，利用排序特性引导搜索方向。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-240-Search-a-2D-Matrix-II/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-2563-%E7%BB%9F%E8%AE%A1%E5%85%AC%E5%B9%B3%E6%95%B0%E5%AF%B9%E7%9A%84%E6%95%B0%E7%9B%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-2563-%E7%BB%9F%E8%AE%A1%E5%85%AC%E5%B9%B3%E6%95%B0%E5%AF%B9%E7%9A%84%E6%95%B0%E7%9B%AE/" class="post-title-link" itemprop="url">LeetCode 2563 - 统计公平数对的数目（Count the Number of Fair Pairs）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-20 13:18:36" itemprop="dateCreated datePublished" datetime="2025-04-20T13:18:36+00:00">2025-04-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-31 13:15:01" itemprop="dateModified" datetime="2025-05-31T13:15:01+00:00">2025-05-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            问题描述 给你一个下标从 0 开始、长度为 n 的整数数组 nums 和两个整数 lower 和 upper，返回公平数对的数目。 如果 (i, j) 数对满足以下情况，则认为是一个公平数对： 0 ≤ i &lt; j &lt; n 且 lower ≤ nums[i] + nums[j] ≤ upper 示例 1: 123输入: nums = [0,1,7,4,4,5], lower = 3, upper = 6输出: 6解释: 共计 6 个公平数对: (0,3), (0,4), (0,5), (1,3), (1,4) 和 (1,5)。 示例 2: 123输入: nums = [1,7,9,2,5], lower = 11, upper = 11输出: 1解释: 只有单个公平数对: (2,3)。 提示: 1 ≤ nums.length ≤ 10^5 nums.length == n -10^9 ≤ nums[i] ≤ 10^9 -10^9 ≤ lower ≤ upper ≤ 10^9 解题思路 这道题目要求统计符合条件的数对数量，主要难点在于如何高效地找出所有满足 lower ≤ nums[i] + nums[j] ≤ upper 的数对。 一个常见的思路是使用嵌套循环枚举所有可能的数对，但这种方法的时间复杂度为 O(n²)，在数组长度较大时会超时。 我们可以利用排序 + 二分查找来优化解法： 首先对数组 nums 进行排序 对于每个元素 nums[j]，我们需要找出有多少个索引 i (i &lt; j) 满足： lower ≤ nums[i] + nums[j] ≤ upper 即 lower - nums[j] ≤ nums[i] ≤ upper - nums[j] 由于数组已排序，我们可以使用二分查找： 找到第一个满足 nums[i] ≥ lower - nums[j] 的位置 left 找到第一个满足 nums[i] &gt; upper - nums[j] 的位置 right 则满足条件的元素个数为 right - left 具体实现步骤 实现这个解法，我们可以按照以下步骤操作： 对 nums 数组排序 初始化计数器 res = 0 遍历数组中的每个位置 j： 对于当前元素 nums[j]，在 nums[0...j-1] 中二分查找： 找到第一个大于等于 lower - nums[j] 的位置 left 找到第一个大于 upper - nums[j] 的位置 right 将 right - left 加到结果 res 上 返回最终的 res 在 Golang 中，我们可以使用标准库中的 sort.SearchInts 函数来执行二分查找。 但实际上，这里有一个小问题需要注意：在题目中，我们需要找的是 nums[i] ≤ upper - nums[j] 的最右边界，而 sort.SearchInts 找的是第一个 &gt;= 目标值的位置。所以我们需要查找的是 upper - nums[j] + 1，即找到第一个大于 upper - nums[j] 的位置。 代码实现 1234567891011func countFairPairs(nums []int, lower int, upper int) (res int64) &#123; sort.Ints(nums) for j := 0; j &lt; len(nums); j++ &#123; right := sort.SearchInts(nums[:j], upper-nums[j]+1) left := sort.SearchInts(nums[:j], lower-nums[j]) res += int64(right - left) &#125; return&#125; 执行过程分析 让我们以示例 1 为例，跟踪代码的执行过程： 1nums = [0,1,7,4,4,5], lower = 3, upper = 6 排序后： 1nums = [0,1,4,4,5,7] 遍历每个位置 j： j = 0: 没有比 0 更小的索引，跳过 j = 1: nums[1] = 1 在 nums[0:1] = [0] 中查找 ≥ lower-nums[1] = 3-1 = 2 的位置 left = 1 在 nums[0:1] = [0] 中查找 ≥ upper-nums[1]+1 = 6-1+1 = 6 的位置 right = 1 添加 right-left = 1-1 = 0 对 j = 2: nums[2] = 4 在 nums[0:2] = [0,1] 中查找 ≥ lower-nums[2] = 3-4 = -1 的位置 left = 0 在 nums[0:2] = [0,1] 中查找 ≥ upper-nums[2]+1 = 6-4+1 = 3 的位置 right = 2 添加 right-left = 2-0 = 2 对: (0,2), (1,2) j = 3: nums[3] = 4 在 nums[0:3] = [0,1,4] 中查找 ≥ lower-nums[3] = 3-4 = -1 的位置 left = 0 在 nums[0:3] = [0,1,4] 中查找 ≥ upper-nums[3]+1 = 6-4+1 = 3 的位置 right = 2 添加 right-left = 2-0 = 2 对: (0,3), (1,3) j = 4: nums[4] = 5 在 nums[0:4] = [0,1,4,4] 中查找 ≥ lower-nums[4] = 3-5 = -2 的位置 left = 0 在 nums[0:4] = [0,1,4,4] 中查找 ≥ upper-nums[4]+1 = 6-5+1 = 2 的位置 right = 2 添加 right-left = 2-0 = 2 对: (0,4), (1,4) j = 5: nums[5] = 7 在 nums[0:5] = [0,1,4,4,5] 中查找 ≥ lower-nums[5] = 3-7 = -4 的位置 left = 0 在 nums[0:5] = [0,1,4,4,5] 中查找 ≥ upper-nums[5]+1 = 6-7+1 = 0 的位置 right = 0 添加 right-left = 0-0 = 0 对 最终结果: 0 + 0 + 2 + 2 + 2 + 0 = 6 对，符合预期。 复杂度分析 时间复杂度: O(n log n) 排序的时间复杂度为 O(n log n) 遍历数组需要 O(n)，每次遍历中进行两次二分查找，每次二分查找的时间复杂度为 O(log n) 总时间复杂度为 O(n log n) 空间复杂度: O(log n) 或 O(n) 除了输入数组外，排序可能需要 O(log n) 的栈空间 如果排序算法就地进行，则额外空间复杂度为 O(log n) 如果使用额外空间进行排序，则空间复杂度为 O(n) 关键收获 排序 + 二分查找: 这是解决区间查询问题的一种常见技巧。先将数组排序，然后通过二分查找快速确定符合条件的元素范围。 等价转换: 将条件 lower ≤ nums[i] + nums[j] ≤ upper 转换为 lower - nums[j] ≤ nums[i] ≤ upper - nums[j]，这样可以对固定的 nums[j] 查找符合条件的 nums[i]。 边界处理: 在使用标准库的二分查找函数时，需要正确理解函数的行为和边界处理。例如，sort.SearchInts 返回的是第一个大于等于目标值的位置，如果想找最后一个小于等于目标值的位置，需要做相应调整。 索引范围控制: 在二分查找中，需要明确在哪个范围内查找。在本题中，我们只在 nums[0:j] 范围内查找，确保 i &lt; j。 这道题是对二分查找和排序应用的一个很好的例子，展示了如何通过预处理和高效的查找算法将时间复杂度从 O(n²) 优化到 O(n log n)。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-2563-%E7%BB%9F%E8%AE%A1%E5%85%AC%E5%B9%B3%E6%95%B0%E5%AF%B9%E7%9A%84%E6%95%B0%E7%9B%AE/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/19/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-48-Rotate-Image/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/04/19/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-48-Rotate-Image/" class="post-title-link" itemprop="url">LeetCode 48 - 旋转图像（Rotate Image）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-19 22:48:32" itemprop="dateCreated datePublished" datetime="2025-04-19T22:48:32+00:00">2025-04-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-31 13:15:01" itemprop="dateModified" datetime="2025-05-31T13:15:01+00:00">2025-05-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>1.7k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <div class="post-excerpt">
+            问题描述 给定一个 n × n 的二维矩阵 matrix 表示一个图像。请你将图像顺时针旋转 90 度。 你必须原地旋转图像，这意味着你需要直接修改输入的二维矩阵。请不要使用另一个矩阵来旋转图像。 示例 1： 12输入：matrix = [[1,2,3],[4,5,6],[7,8,9]]输出：[[7,4,1],[8,5,2],[9,6,3]] 旋转前： 1231 2 34 5 67 8 9 旋转后： 1237 4 18 5 29 6 3 示例 2： 12输入：matrix = [[5,1,9,11],[2,4,8,10],[13,3,6,7],[15,14,12,16]]输出：[[15,13,2,5],[14,3,4,1],[12,6,8,9],[16,7,10,11]] 旋转前： 1234 5 1 9 11 2 4 8 1013 3 6 715 14 12 16 旋转后： 123415 13 2 514 3 4 112 6 8 916 7 10 11 约束条件： n == matrix.length == matrix[i].length 1 &lt;= n &lt;= 20 -1000 &lt;= matrix[i][j] &lt;= 1000 解题思路 旋转图像是一个经典的矩阵操作问题。关键在于：如何在不使用额外空间的情况下完成矩阵的旋转。 首先，让我们理解一下顺时针旋转 90 度对矩阵元素位置的影响： 对于位置 (i, j) 的元素，旋转后它将位于 (j, n-1-i) 这个规律可以帮助我们直接交换元素，但直接这样操作会导致覆盖其他元素。因此，我们可以采用分解为多个简单变换的方法。 方法：转置 + 水平翻转 这个方法将 90 度旋转分解为两个简单的矩阵操作： 矩阵转置（沿主对角线翻转） 水平翻转（左右列交换） 步骤详解： 矩阵转置： 遍历矩阵的一半（对角线以下部分），交换 matrix[i][j] 和 matrix[j][i] 这一步将行变为列，列变为行 水平翻转： 对每一行进行左右翻转 将第 j 列和第 n-1-j 列交换 这两步操作组合起来，正好等同于将矩阵顺时针旋转 90 度。 我们可以通过一个例子来说明这个过程： 原始矩阵： 1231 2 34 5 67 8 9 转置后： 1231 4 72 5 83 6 9 水平翻转后： 1237 4 18 5 29 6 3 可以看到，最终结果正是原矩阵顺时针旋转 90 度后的结果。 实现细节 实现过程中，需要注意以下几点： 在转置操作中，我们只需要遍历矩阵的一半（主对角线以下的部分），避免重复交换 在水平翻转中，只需要遍历每行的前一半列 所有操作都是原地进行的，不需要额外的空间 代码实现 12345678910111213141516func rotate(matrix [][]int) &#123; // 先沿着主对角线进行对称反转 n := len(matrix) for i := 0; i &lt; n; i++ &#123; for j := 0; j &lt; i; j++ &#123; matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j] &#125; &#125; // 然后每一行进行水平翻转 for i := 0; i &lt; n; i++ &#123; for j := 0; j &lt; n/2; j++ &#123; matrix[i][n-1-j], matrix[i][j] = matrix[i][j], matrix[i][n-1-j] &#125; &#125;&#125; 复杂度分析 时间复杂度：O(n²)，其中 n 是矩阵的边长。需要遍历整个矩阵两次。 空间复杂度：O(1)，只使用了常数级别的额外空间。 其他可能的方法 除了上述方法外，还有另一种旋转方法：层层旋转。 此方法的思路是： 将矩阵看作由多个同心方形环组成 对每一层的四条边上的元素进行旋转交换 从外到内依次处理每一层 代码实现会稍微复杂一些，需要小心处理索引，但时间和空间复杂度与上述方法相同。 比较 方面 转置+水平翻转 层层旋转 时间复杂度 O(n²) O(n²) 空间复杂度 O(1) O(1) 优点 实现简单，思路清晰 直观对应旋转过程 缺点 分解为两步不直观 索引处理复杂 推荐度 ★★★★★ ★★★☆☆ 关键收获 矩阵操作的分解思想：将复杂的矩阵操作分解为简单操作的组合 原地算法的实现技巧：如何通过元素交换实现空间优化 矩阵转置和水平翻转：这是两个常用的矩阵操作，在其他问题中也经常用到 对于矩阵旋转问题，关键是找到元素变换前后位置的对应关系，然后利用这种关系设计高效的算法。
+          </div>
+          <div class="post-button">
+            <a class="btn" href="/2025/04/19/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-48-Rotate-Image/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+      
+      
+    </div>
+
+    
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/page/10/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><span class="page-number current">11</span><a class="page-number" href="/page/12/">12</a><a class="extend next" rel="next" href="/page/12/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+  </nav>
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">114</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">140</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">491k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">7:26</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2025-04-18",2],["2025-04-19",3],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-26",1],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",3],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",3],["2025-05-31",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2025-04","2025-05"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [33,81],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":59},{"name":"Hot100","value":58},{"name":"Medium","value":52},{"name":"数组","value":29},{"name":"❌错题集","value":26},{"name":"MySQL","value":22},{"name":"数据库","value":15},{"name":"动态规划","value":14}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":59},{"name":"Hot100","value":58},{"name":"Medium","value":52},{"name":"数组","value":29},{"name":"❌错题集","value":26},{"name":"MySQL","value":22},{"name":"数据库","value":15},{"name":"动态规划","value":14}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":72},{"name":"LeetCode","value":72},{"name":"Hot100","value":63},{"name":"八股文","value":40},{"name":"基础知识","value":23}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":72},{"name":"LeetCode","value":72},{"name":"Hot100","value":63},{"name":"八股文","value":40},{"name":"基础知识","value":23}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[],"count":9,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":72,"path":"算法刷题/LeetCode"}],"count":72,"path":"算法刷题"},{"name":"八股文","children":[{"name":"REDIS","children":[{"name":"基础知识","children":[{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":18,"path":"八股文/REDIS/基础知识"}],"count":18,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":40,"path":"八股文"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>
