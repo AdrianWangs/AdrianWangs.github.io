@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="详解Redis List列表类型，包括其实现原理、常用命令及典型应用场景。作为简单的字符串列表，List支持双向操作，并可作为消息队列、任务队列等多种场景使用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis知识点: List列表">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/List/index.html">
+<meta property="og:site_name" content="小王的blog">
+<meta property="og:description" content="详解Redis List列表类型，包括其实现原理、常用命令及典型应用场景。作为简单的字符串列表，List支持双向操作，并可作为消息队列、任务队列等多种场景使用。">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/List/1746872332385.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/List/1746872357038.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/List/1746872365846.png">
+<meta property="article:published_time" content="2025-05-10T15:11:44.000Z">
+<meta property="article:modified_time" content="2025-06-13T13:09:44.474Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="消息队列">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="八股文">
+<meta property="article:tag" content="REDIS">
+<meta property="article:tag" content="数据类型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/List/1746872332385.png">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/List/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>Redis知识点: List列表 | 小王的blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小王的blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Adrian Wang's blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/List/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis知识点: List列表
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-05-10 15:11:44" itemprop="dateCreated datePublished" datetime="2025-05-10T15:11:44+00:00">2025-05-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-13 13:09:44" itemprop="dateModified" datetime="2025-06-13T13:09:44+00:00">2025-06-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/" itemprop="url" rel="index"><span itemprop="name">REDIS</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/" itemprop="url" rel="index"><span itemprop="name">数据类型</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>4.6k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+            <div class="post-description">详解Redis List列表类型，包括其实现原理、常用命令及典型应用场景。作为简单的字符串列表，List支持双向操作，并可作为消息队列、任务队列等多种场景使用。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="List">List</h2>
+<h3 id="介绍">介绍</h3>
+<p>List 列表是 Redis 中的基础数据类型之一，它是一个简单的字符串列表，<strong>按照插入顺序排序</strong>。List 的特点是支持双向操作，可以从头部（左侧）或尾部（右侧）向列表添加或移除元素。</p>
+<p>列表的最大长度为 $2^32 - 1$（即 4,294,967,295），也就是每个列表最多可以存储超过 <strong>40 亿</strong>个元素，足以满足绝大多数应用场景的需求。</p>
+<p>List 类型具有以下主要特性：</p>
+<ul>
+<li>有序性：元素按照插入顺序排列</li>
+<li>可重复性：同一个元素可以多次出现在列表中</li>
+<li>双向操作：支持从两端进行插入和弹出操作</li>
+<li>阻塞操作：支持阻塞式的弹出操作，适合实现队列</li>
+</ul>
+<h3 id="内部实现">内部实现</h3>
+<p>List 类型的底层数据结构经历了多次演进：</p>
+<ul>
+<li>
+<p>在 Redis 3.2 版本之前，List 由<strong>双向链表或压缩列表</strong>实现：</p>
+<ul>
+<li>如果列表的元素个数小于 <code>512</code> 个（默认值，可由 <code>list-max-ziplist-entries</code> 配置），列表每个元素的值都小于 <code>64</code> 字节（默认值，可由 <code>list-max-ziplist-value</code> 配置），Redis 会使用**压缩列表（ziplist）**作为 List 类型的底层数据结构；</li>
+<li>如果列表的元素不满足上面的条件，Redis 会使用**双向链表（linkedlist）**作为 List 类型的底层数据结构；</li>
+</ul>
+</li>
+<li>
+<p><strong>在 Redis 3.2 版本及之后，List 数据类型底层数据结构统一由 quicklist 实现</strong>，替代了之前的双向链表和压缩列表。</p>
+</li>
+</ul>
+<p><strong>quicklist</strong> 是一个双向链表，但它的每个节点都是一个压缩列表。这种设计结合了双向链表和压缩列表的优点：既保留了链表的灵活性（便于在两端进行操作），又利用了压缩列表的空间效率优势。通过将多个元素存储在一个压缩列表中，quicklist 减少了链表节点的数量和内存碎片。</p>
+<h3 id="常用命令">常用命令</h3>
+<p><img src="/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/List/1746872332385.png" alt="1746872332385"></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">将一个或多个值value插入到key列表的表头(最左边)，最后的值在最前面</span></span><br><span class="line">LPUSH key value [value ...] </span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">将一个或多个值value插入到key列表的表尾(最右边)</span></span><br><span class="line">RPUSH key value [value ...]</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">移除并返回key列表的头元素</span></span><br><span class="line">LPOP key   </span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">移除并返回key列表的尾元素</span></span><br><span class="line">RPOP key </span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">返回列表key中指定区间内的元素，区间以偏移量start和stop指定，从0开始</span></span><br><span class="line">LRANGE key start stop</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">从key列表表头弹出一个元素，没有就阻塞<span class="built_in">timeout</span>秒，如果<span class="built_in">timeout</span>=0则一直阻塞</span></span><br><span class="line">BLPOP key [key ...] timeout</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">从key列表表尾弹出一个元素，没有就阻塞<span class="built_in">timeout</span>秒，如果<span class="built_in">timeout</span>=0则一直阻塞</span></span><br><span class="line">BRPOP key [key ...] timeout</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">返回列表的长度</span></span><br><span class="line">LLEN key</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">通过索引获取列表中的元素</span></span><br><span class="line">LINDEX key index</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">在列表的元素前或者后插入元素</span></span><br><span class="line">LINSERT key BEFORE|AFTER pivot value</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">将列表 <span class="built_in">source</span> 中的最后一个元素弹出并返回，然后将该元素插入到列表 destination 的头部</span></span><br><span class="line">RPOPLPUSH source destination</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">RPOPLPUSH的阻塞版本</span></span><br><span class="line">BRPOPLPUSH source destination timeout</span><br></pre></td></tr></table></figure>
+<h3 id="应用场景">应用场景</h3>
+<h4 id="消息队列">消息队列</h4>
+<p>消息队列在存取消息时，必须要满足三个需求，分别是<strong>消息保序、处理重复的消息和保证消息可靠性</strong>。</p>
+<p>Redis 的 List 和 Stream 两种数据类型，都可以满足消息队列的这三个需求。我们先来了解下基于 List 的消息队列实现方法。</p>
+<p><em>1、如何满足消息保序需求？</em></p>
+<p>List 本身就是按先进先出的顺序对数据进行存取的，所以，如果使用 List 作为消息队列保存消息的话，就已经能满足消息保序的需求了。</p>
+<p>List 可以使用 LPUSH + RPOP（或者反过来，RPUSH+LPOP）命令实现消息队列。</p>
+<p><img src="/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/List/1746872357038.png" alt="1746872357038"></p>
+<ul>
+<li>生产者使用 <code>LPUSH key value[value...]</code> 将消息插入到队列的头部，如果 key 不存在则会创建一个空的队列再插入消息。</li>
+<li>消费者使用 <code>RPOP key</code> 依次读取队列的消息，先进先出。</li>
+</ul>
+<p>不过，在消费者读取数据时，有一个潜在的性能风险点。</p>
+<p>在生产者往 List 中写入数据时，List 并不会主动地通知消费者有新消息写入，如果消费者想要及时处理消息，就需要在程序中不停地调用 <code>RPOP</code> 命令（比如使用一个 while(1) 循环）。如果有新消息写入，RPOP 命令就会返回结果，否则，RPOP 命令返回空值，再继续循环。</p>
+<p>所以，即使没有新消息写入 List，消费者也要不停地调用 RPOP 命令，这就会导致消费者程序的 CPU 一直消耗在执行 RPOP 命令上，带来不必要的性能损失。</p>
+<p>为了解决这个问题，Redis 提供了 BRPOP 命令。<strong>BRPOP 命令也称为阻塞式读取，客户端在没有读到队列数据时，自动阻塞，直到有新的数据写入队列，再开始读取新数据</strong>。和消费者程序自己不停地调用 RPOP 命令相比，这种方式能节省 CPU 开销。</p>
+<p><img src="/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/List/1746872365846.png" alt="1746872365846"></p>
+<p><em>2、如何处理重复的消息？</em></p>
+<p>消费者要实现重复消息的判断，需要 2 个方面的要求：</p>
+<ul>
+<li>每个消息都有一个全局的 ID。</li>
+<li>消费者要记录已经处理过的消息的 ID。当收到一条消息后，消费者程序就可以对比收到的消息 ID 和记录的已处理过的消息 ID，来判断当前收到的消息有没有经过处理。如果已经处理过，那么，消费者程序就不再进行处理了。</li>
+</ul>
+<p>但是 <strong>List 并不会为每个消息生成 ID 号，所以我们需要自行为每个消息生成一个全局唯一 ID</strong>，生成之后，我们在用 LPUSH 命令把消息插入 List 时，需要在消息中包含这个全局唯一 ID。</p>
+<p>例如，我们执行以下命令，就把一条全局 ID 为 111000102、库存量为 99 的消息插入了消息队列：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">LPUSH mq <span class="string">&quot;111000102:stock:99&quot;</span></span></span><br><span class="line">(integer) 1</span><br></pre></td></tr></table></figure>
+<p><em>3、如何保证消息可靠性？</em></p>
+<p>当消费者程序从 List 中读取一条消息后，List 就不会再留存这条消息了。所以，如果消费者程序在处理消息的过程出现了故障或宕机，就会导致消息没有处理完成，那么，消费者程序再次启动后，就没法再次从 List 中读取消息了。</p>
+<p>为了留存消息，List 类型提供了 <code>BRPOPLPUSH</code> 命令，这个命令的<strong>作用是让消费者程序从一个 List 中读取消息，同时，Redis 会把这个消息再插入到另一个 List（可以叫作备份 List）留存</strong>。</p>
+<p>这样一来，如果消费者程序读了消息但没能正常处理，等它重启后，就可以从备份 List 中重新读取消息并进行处理了。</p>
+<p>好了，到这里可以知道基于 List 类型的消息队列，满足消息队列的三大需求（消息保序、处理重复的消息和保证消息可靠性）。</p>
+<ul>
+<li>消息保序：使用 LPUSH + RPOP；</li>
+<li>阻塞读取：使用 BRPOP；</li>
+<li>重复消息处理：生产者自行实现全局唯一 ID；</li>
+<li>消息的可靠性：使用 BRPOPLPUSH</li>
+</ul>
+<blockquote>
+<p>List 作为消息队列有什么缺陷？</p>
+</blockquote>
+<p><strong>List 不支持多个消费者消费同一条消息</strong>，因为一旦消费者拉取一条消息后，这条消息就从 List 中删除了，无法被其它消费者再次消费。</p>
+<p>要实现一条消息可以被多个消费者消费，那么就要将多个消费者组成一个消费组，使得多个消费者可以消费同一条消息，但是 <strong>List 类型并不支持消费组的实现</strong>。</p>
+<p>这就要说起 Redis 从 5.0 版本开始提供的 Stream 数据类型了，Stream 同样能够满足消息队列的三大需求，而且它还支持「消费组」形式的消息读取。</p>
+<h4 id="任务队列">任务队列</h4>
+<p>除了作为消息队列，List 还可以用作任务队列。任务队列与消息队列的主要区别在于，任务队列中的每个元素都代表一个需要处理的任务，而不仅仅是一条消息。</p>
+<p>任务队列的基本实现方式：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">生产者添加任务</span></span><br><span class="line">LPUSH tasks &quot;task_id:1001:param1:value1:param2:value2&quot;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">消费者获取任务</span></span><br><span class="line">BRPOP tasks 0</span><br></pre></td></tr></table></figure>
+<h4 id="最近更新列表">最近更新列表</h4>
+<p>List 的有序特性使其适合存储最近更新的内容列表，例如社交媒体中的最新动态、博客的最新文章等。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">添加新文章到最新文章列表</span></span><br><span class="line">LPUSH latest_articles &quot;article:1001&quot;</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">保持列表不超过指定长度</span></span><br><span class="line">LTRIM latest_articles 0 99  # 只保留最新的100篇文章</span><br></pre></td></tr></table></figure>
+<h4 id="分页数据缓存">分页数据缓存</h4>
+<p>List 可以用于存储分页数据，利用 LRANGE 命令可以很方便地实现分页查询：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">存储分页数据</span></span><br><span class="line">RPUSH page_data:user:1001 &quot;item1&quot; &quot;item2&quot; &quot;item3&quot; ... &quot;item100&quot;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">获取第一页数据（假设每页10条）</span></span><br><span class="line">LRANGE page_data:user:1001 0 9</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">获取第二页数据</span></span><br><span class="line">LRANGE page_data:user:1001 10 19</span><br></pre></td></tr></table></figure>
+<h3 id="性能考量">性能考量</h3>
+<p>List 数据类型的性能特点：</p>
+<ol>
+<li>
+<p><strong>时间复杂度</strong>：</p>
+<ul>
+<li>LPUSH/RPUSH：O(1)，在列表头部/尾部添加元素是常数时间复杂度</li>
+<li>LPOP/RPOP：O(1)，从列表头部/尾部移除元素也是常数时间复杂度</li>
+<li>LRANGE：O(N)，N是返回的元素数量</li>
+<li>LINDEX：O(N)，N是索引的位置，较大的索引值可能导致性能下降</li>
+<li>LINSERT：O(N)，N是查找插入位置前需要遍历的元素数量</li>
+</ul>
+</li>
+<li>
+<p><strong>内存占用</strong>：</p>
+<ul>
+<li>quicklist 的设计平衡了内存效率和访问速度</li>
+<li>每个节点包含多个元素，减少了内存碎片</li>
+<li>可通过 <code>list-max-ziplist-size</code> 和 <code>list-compress-depth</code> 配置参数调整内存占用</li>
+</ul>
+</li>
+<li>
+<p><strong>性能优化建议</strong>：</p>
+<ul>
+<li>避免在大型列表中间插入或删除元素</li>
+<li>尽量在列表两端操作，利用O(1)的时间复杂度</li>
+<li>使用 LTRIM 命令定期清理列表，保持合理的长度</li>
+<li>对于阻塞操作，设置合理的超时时间，避免无限期阻塞</li>
+</ul>
+</li>
+</ol>
+<h3 id="最佳实践">最佳实践</h3>
+<ol>
+<li>
+<p><strong>大小控制</strong></p>
+<ul>
+<li>使用 LTRIM 命令限制列表大小，防止无限增长</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">LPUSH latest_logs &quot;new log entry&quot;</span><br><span class="line">LTRIM latest_logs 0 999  # 只保留最新的1000条日志</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p><strong>批量操作</strong></p>
+<ul>
+<li>使用多值参数形式的命令进行批量操作，减少网络往返</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">优于多次调用LPUSH</span></span><br><span class="line">LPUSH mylist value1 value2 value3 value4 value5</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p><strong>事务使用</strong></p>
+<ul>
+<li>当需要原子性地执行多个列表操作时，使用事务</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MULTI</span><br><span class="line">LPUSH source_list &quot;item&quot;</span><br><span class="line">LPOP dest_list</span><br><span class="line">EXEC</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p><strong>超时处理</strong></p>
+<ul>
+<li>使用阻塞操作时，添加合理的超时时间，避免客户端永久阻塞</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">最多阻塞5秒</span></span><br><span class="line">BRPOP task_queue 5</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p><strong>监控指标</strong></p>
+<ul>
+<li>定期监控列表长度，避免过度增长</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LLEN mylist  # 监控列表长度</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="相关特性">相关特性</h3>
+<ol>
+<li>
+<p><strong>与其他数据类型的对比</strong></p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>List</th>
+<th>Stream</th>
+<th>Pub/Sub</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>消息持久化</td>
+<td>支持</td>
+<td>支持</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>消费组</td>
+<td>不支持</td>
+<td>支持</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>消息ID</td>
+<td>需自行实现</td>
+<td>内置支持</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>阻塞操作</td>
+<td>支持</td>
+<td>支持</td>
+<td>天然广播</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>简单队列</td>
+<td>复杂消息系统</td>
+<td>实时通知</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p><strong>与 Stream 的协作</strong></p>
+<ul>
+<li>对于简单应用可以使用 List</li>
+<li>需要消费组或消息持久化等高级特性时，推荐使用 Stream</li>
+<li>可以将 List 作为快速缓冲区，再定期批量写入 Stream</li>
+</ul>
+</li>
+<li>
+<p><strong>替代方案</strong></p>
+<ul>
+<li>当需要更强大的消息队列功能时，可以考虑专业的消息队列系统如 RabbitMQ、Kafka 等</li>
+<li>对于简单的队列需求，List 提供了轻量级的解决方案</li>
+</ul>
+</li>
+</ol>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://redis.io/docs/data-types/lists/">Redis官方文档 - Lists</a></li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/commands/?group=list">Redis命令参考 - List命令</a></li>
+<li><a target="_blank" rel="noopener" href="http://zhangtielei.com/posts/blog-redis-quicklist.html">Redis内部数据结构详解之quicklist</a></li>
+<li><a target="_blank" rel="noopener" href="https://redisbook.readthedocs.io/en/latest/index.html">Redis实战</a></li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" rel="tag"># 消息队列</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+              <a href="/tags/%E5%85%AB%E8%82%A1%E6%96%87/" rel="tag"># 八股文</a>
+              <a href="/tags/REDIS/" rel="tag"># REDIS</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/" rel="tag"># 数据类型</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/String/" rel="prev" title="Redis 字符串（String）数据类型详解">
+      <i class="fa fa-chevron-left"></i> Redis 字符串（String）数据类型详解
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/05/10/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-136-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/" rel="next" title="LeetCode 136 - 只出现一次的数字（Single Number）">
+      LeetCode 136 - 只出现一次的数字（Single Number） <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#List"><span class="nav-number">1.</span> <span class="nav-text">List</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E9%83%A8%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.2.</span> <span class="nav-text">内部实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="nav-number">1.3.</span> <span class="nav-text">常用命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.4.</span> <span class="nav-text">应用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="nav-number">1.4.1.</span> <span class="nav-text">消息队列</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BB%BB%E5%8A%A1%E9%98%9F%E5%88%97"><span class="nav-number">1.4.2.</span> <span class="nav-text">任务队列</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%80%E8%BF%91%E6%9B%B4%E6%96%B0%E5%88%97%E8%A1%A8"><span class="nav-number">1.4.3.</span> <span class="nav-text">最近更新列表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E9%A1%B5%E6%95%B0%E6%8D%AE%E7%BC%93%E5%AD%98"><span class="nav-number">1.4.4.</span> <span class="nav-text">分页数据缓存</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E8%80%83%E9%87%8F"><span class="nav-number">1.5.</span> <span class="nav-text">性能考量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5"><span class="nav-number">1.6.</span> <span class="nav-text">最佳实践</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E7%89%B9%E6%80%A7"><span class="nav-number">1.7.</span> <span class="nav-text">相关特性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">2.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">130</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">168</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">544k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">8:15</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : 'ee2cc950b046692b6045d49f19c8dbea',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-26",1],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",1],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2025-04","2025-05","2025-06"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [32,81,17],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":68},{"name":"Hot100","value":58},{"name":"Medium","value":57},{"name":"数组","value":31},{"name":"❌错题集","value":26},{"name":"MySQL","value":22},{"name":"REDIS","value":17},{"name":"数据库","value":15}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":68},{"name":"Hot100","value":58},{"name":"Medium","value":57},{"name":"数组","value":31},{"name":"❌错题集","value":26},{"name":"MySQL","value":22},{"name":"REDIS","value":17},{"name":"数据库","value":15}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":81},{"name":"LeetCode","value":80},{"name":"Hot100","value":63},{"name":"八股文","value":47},{"name":"REDIS","value":25}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":81},{"name":"LeetCode","value":80},{"name":"Hot100","value":63},{"name":"八股文","value":47},{"name":"REDIS","value":25}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[],"count":17,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":80,"path":"算法刷题/LeetCode"}],"count":81,"path":"算法刷题"},{"name":"八股文","children":[{"name":"REDIS","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/REDIS/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/REDIS/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/REDIS/高可用"},{"name":"基础知识","children":[{"name":"内存管理","children":[],"count":1,"path":"八股文/REDIS/基础知识/内存管理"},{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":19,"path":"八股文/REDIS/基础知识"}],"count":25,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":47,"path":"八股文"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>

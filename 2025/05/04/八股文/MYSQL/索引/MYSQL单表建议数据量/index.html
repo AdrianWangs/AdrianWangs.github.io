@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="详细分析了MySQL单表2000W条数据建议值的来源与实际意义。通过B+树索引结构、页存储机制和查询性能解释了这一建议值的合理性，以及实际应用中影响表数据量上限的关键因素。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL单表建议数据量">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/index.html">
+<meta property="og:site_name" content="小王的blog">
+<meta property="og:description" content="详细分析了MySQL单表2000W条数据建议值的来源与实际意义。通过B+树索引结构、页存储机制和查询性能解释了这一建议值的合理性，以及实际应用中影响表数据量上限的关键因素。">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746350930968.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746350943788.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351373593.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351388668.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351399761.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351415703.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351427532.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351436733.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351449311.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351464769.png">
+<meta property="article:published_time" content="2025-05-04T16:56:44.000Z">
+<meta property="article:modified_time" content="2025-06-13T13:09:44.310Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="索引">
+<meta property="article:tag" content="B+树">
+<meta property="article:tag" content="表空间">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746350930968.png">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>MySQL单表建议数据量 | 小王的blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小王的blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Adrian Wang's blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL单表建议数据量
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-05-04 16:56:44" itemprop="dateCreated datePublished" datetime="2025-05-04T16:56:44+00:00">2025-05-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-13 13:09:44" itemprop="dateModified" datetime="2025-06-13T13:09:44+00:00">2025-06-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/%E7%B4%A2%E5%BC%95/" itemprop="url" rel="index"><span itemprop="name">索引</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>5.7k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+            <div class="post-description">详细分析了MySQL单表2000W条数据建议值的来源与实际意义。通过B+树索引结构、页存储机制和查询性能解释了这一建议值的合理性，以及实际应用中影响表数据量上限的关键因素。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>我们经常听说，单表数据量不要超过 2000W，否则性能会下降。这个&quot;2000W&quot;的建议值是否真的可靠？它的依据是什么？本文将通过分析 MySQL 的存储结构、B+树索引特性，以及实际测试来探讨这个问题。</p>
+<h2 id="实验"><strong>实验</strong></h2>
+<p>先建立一个实验表:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> person(</span><br><span class="line">    id <span class="type">int</span> <span class="keyword">NOT NULL</span> AUTO_INCREMENT <span class="keyword">PRIMARY KEY</span> comment <span class="string">&#x27;主键&#x27;</span>,</span><br><span class="line">    person_id tinyint <span class="keyword">not null</span> comment <span class="string">&#x27;用户 id&#x27;</span>,</span><br><span class="line">    person_name <span class="type">VARCHAR</span>(<span class="number">200</span>) comment <span class="string">&#x27;用户名称&#x27;</span>,</span><br><span class="line">    gmt_create datetime comment <span class="string">&#x27;创建时间&#x27;</span>,</span><br><span class="line">    gmt_modified datetime comment <span class="string">&#x27;修改时间&#x27;</span></span><br><span class="line">) comment <span class="string">&#x27;人员信息表&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<p>插入一条数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert into</span> person <span class="keyword">values</span>(<span class="number">1</span>, <span class="number">1</span>,<span class="string">&#x27;user_1&#x27;</span>, NOW(), now());</span><br></pre></td></tr></table></figure>
+<h3 id="大数据量测试数据生成方法">大数据量测试数据生成方法</h3>
+<p>为了测试单表在不同数据量下的性能，我们需要生成大量测试数据。下面介绍一种高效的数据生成方法：</p>
+<h4 id="步骤-1：初始化计数器变量">步骤 1：初始化计数器变量</h4>
+<p>首先，设置一个 MySQL 用户变量 <code>@i</code>作为数据生成的计数器：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 这条语句创建一个名为rownum的列，其值为@i+1，同时设置@i的初始值为100</span></span><br><span class="line"><span class="keyword">select</span> (<span class="variable">@i</span>:<span class="operator">=</span><span class="variable">@i</span><span class="operator">+</span><span class="number">1</span>) <span class="keyword">as</span> rownum, person_name <span class="keyword">from</span> person, (<span class="keyword">select</span> <span class="variable">@i</span>:<span class="operator">=</span><span class="number">100</span>) <span class="keyword">as</span> init;</span><br><span class="line"><span class="comment">-- 重置@i的值为1，准备开始生成数据</span></span><br><span class="line"><span class="keyword">set</span> <span class="variable">@i</span><span class="operator">=</span><span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>MySQL 用户变量</strong>：以 <code>@</code>开头的变量是 MySQL 的用户定义变量，可以在会话中保存值并在多个 SQL 语句之间传递。</p>
+</blockquote>
+<h4 id="步骤-2：使用递归插入法生成大量数据">步骤 2：使用递归插入法生成大量数据</h4>
+<p>下面这条 SQL 语句是关键，它利用表中现有的数据来生成更多数据：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert into</span> person(id, person_id, person_name, gmt_create, gmt_modified)</span><br><span class="line"><span class="keyword">select</span> <span class="variable">@i</span>:<span class="operator">=</span><span class="variable">@i</span><span class="operator">+</span><span class="number">1</span>,                  <span class="comment">-- 为每行生成唯一ID，同时@i的值增加1</span></span><br><span class="line">       <span class="keyword">left</span>(rand()<span class="operator">*</span><span class="number">10</span>,<span class="number">10</span>) <span class="keyword">as</span> person_id,        <span class="comment">-- 生成随机的person_id</span></span><br><span class="line">       concat(<span class="string">&#x27;user_&#x27;</span>,<span class="variable">@i</span><span class="operator">%</span><span class="number">2048</span>),               <span class="comment">-- 生成用户名，循环使用2048个不同名称</span></span><br><span class="line">       date_add(gmt_create,<span class="type">interval</span> <span class="operator">+</span> <span class="variable">@i</span><span class="operator">*</span><span class="built_in">cast</span>(rand()<span class="operator">*</span><span class="number">100</span> <span class="keyword">as</span> signed) <span class="keyword">SECOND</span>),  <span class="comment">-- 生成递增的创建时间</span></span><br><span class="line">       date_add(date_add(gmt_modified,<span class="type">interval</span> <span class="operator">+</span><span class="variable">@i</span><span class="operator">*</span><span class="built_in">cast</span>(rand()<span class="operator">*</span><span class="number">100</span> <span class="keyword">as</span> signed) <span class="keyword">SECOND</span>), <span class="type">interval</span> <span class="operator">+</span> <span class="built_in">cast</span>(rand()<span class="operator">*</span><span class="number">1000000</span> <span class="keyword">as</span> signed) <span class="keyword">SECOND</span>)  <span class="comment">-- 生成修改时间</span></span><br><span class="line"><span class="keyword">from</span> person;  <span class="comment">-- 从person表中选择数据，每次执行会使表中数据量翻倍</span></span><br></pre></td></tr></table></figure>
+<p><strong>数据量增长说明</strong>：</p>
+<ul>
+<li>每执行一次上述 SQL，表中的数据量就会翻倍</li>
+<li>执行 20 次后，数据量约为 2^20≈1,048,576（约 100 万）条</li>
+<li>执行 23 次后，数据量约为 2^23≈8,388,608（约 800 万）条</li>
+<li>依此类推，可以生成任意数量的测试数据</li>
+</ul>
+<p><strong>小技巧</strong>：如果不想每次都翻倍增加数据，可以在 SQL 语句末尾添加 WHERE 条件，例如 <code>WHERE id &gt; 某个值</code>来控制新增的数据量。</p>
+<h4 id="步骤-3：处理可能出现的内存问题">步骤 3：处理可能出现的内存问题</h4>
+<p>当数据量达到较大规模（约 800 万或 1000 万）时，可能会遇到以下错误：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">The total number of locks exceeds the lock table size</span><br></pre></td></tr></table></figure>
+<p><strong>错误原因</strong>：这是因为 MySQL 的临时表空间和缓冲池空间不足导致的。</p>
+<p><strong>解决方法</strong>：增加相关内存参数的设置：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 增加临时表大小到512MB</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> tmp_table_size <span class="operator">=</span> <span class="number">512</span><span class="operator">*</span><span class="number">1024</span><span class="operator">*</span><span class="number">1024</span>;</span><br><span class="line"><span class="comment">-- 增加InnoDB缓冲池大小到1GB</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> innodb_buffer_pool_size <span class="operator">=</span> <span class="number">1</span><span class="operator">*</span><span class="number">1024</span><span class="operator">*</span><span class="number">1024</span><span class="operator">*</span><span class="number">1024</span>;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>提示</strong>：这些参数需要根据您的服务器内存情况进行适当调整，不要设置得过大以免影响系统稳定性。</p>
+</blockquote>
+<p>接下来看看测试结果：</p>
+<p>下图展示了在 MySQL 8.0 版本上进行的性能测试结果。测试环境为个人电脑，同时运行有 IDE、浏览器等应用程序，因此这些数据仅供参考，不代表生产环境的实际性能。</p>
+<p><img src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746350930968.png" alt="1746350930968"></p>
+<p><img src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746350943788.png" alt="1746350943788"></p>
+<p>从测试数据可以看出，当表中数据量达到 2000 万行后，查询响应时间出现明显上升。这与行业中流传的&quot;单表不超过 2000 万行&quot;的建议相符。但这是否是一条普适的规则？</p>
+<h2 id="探究-2000-万行建议值的来源"><strong>探究 2000 万行建议值的来源</strong></h2>
+<p>首先，让我们分析数据库单表行数的理论上限。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> person(</span><br><span class="line">    id <span class="type">int</span>(<span class="number">10</span>) <span class="keyword">NOT NULL</span> AUTO_INCREMENT <span class="keyword">PRIMARY KEY</span> comment <span class="string">&#x27;主键&#x27;</span>,</span><br><span class="line">    person_id tinyint <span class="keyword">not null</span> comment <span class="string">&#x27;用户 id&#x27;</span>,</span><br><span class="line">    person_name <span class="type">VARCHAR</span>(<span class="number">200</span>) comment <span class="string">&#x27;用户名称&#x27;</span>,</span><br><span class="line">    gmt_create datetime comment <span class="string">&#x27;创建时间&#x27;</span>,</span><br><span class="line">    gmt_modified datetime comment <span class="string">&#x27;修改时间&#x27;</span></span><br><span class="line">) comment <span class="string">&#x27;人员信息表&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<p>从建表语句可以看出，id 作为主键具有唯一性约束，主键类型决定了表的理论容量上限：</p>
+<ul>
+<li>若主键为 <code>int</code>类型（32 位），则最大支持 2^32-1（约 21.4 亿）行数据</li>
+<li>若主键为 <code>bigint</code>类型（64 位），则最大支持 2^63-1（约 9.22×10^18）行数据，这个数值极其庞大，在实际应用中很难达到这一限制</li>
+</ul>
+<p>有研究表明，如果使用无符号 bigint 作为自增主键，其最大值为 18,446,744,073,709,551,615。按照每秒写入一条记录的速度，理论上需要约 5800 亿年才能用尽这个限制，远超宇宙的预计寿命。</p>
+<table>
+<thead>
+<tr>
+<th>一秒增加的记录数</th>
+<th>大约多少年用完</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1/1 秒</td>
+<td>584942417355 年</td>
+</tr>
+<tr>
+<td>1w/秒</td>
+<td>58494241 年</td>
+</tr>
+<tr>
+<td>100w/秒</td>
+<td>584942 年</td>
+</tr>
+<tr>
+<td>1 亿/秒</td>
+<td>5849 年</td>
+</tr>
+</tbody>
+</table>
+<h2 id="表空间"><strong>表空间</strong></h2>
+<p>下面我们再来看看索引的结构，我们下面讲内容都是基于 Innodb 引擎的，大家都知道 Innodb 的索引内部用的是 B+ 树。</p>
+<p><img src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351373593.png" alt="1746351373593"></p>
+<p>这张表数据，在硬盘上存储也是类似如此的，它实际是放在一个叫 person.ibd（innodb data）的文件中，也叫做表空间；虽然数据表中，他们看起来是一条连着一条，但是实际上在文件中它被分成很多小份的数据页，而且每一份都是 16K。</p>
+<p>大概就像下面这样，当然这只是我们抽象出来的，在表空间中还有段、区、组等很多概念，但是我们需要跳出来看。</p>
+<p><img src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351388668.png" alt="1746351388668"></p>
+<h2 id="页的数据结构"><strong>页的数据结构</strong></h2>
+<p>实际页的内部结构像是下面这样的：</p>
+<p><img src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351399761.png" alt="1746351399761"></p>
+<p>从图中可以看出，一个 InnoDB 数据页的存储空间大致被划分成了 7 个部分，有的部分占用的字节数是确定的，有的部分占用的字节数是不确定的。</p>
+<p>在页的 7 个组成部分中，我们自己存储的记录会按照我们指定的行格式存储到 <code>User Records</code> 部分。</p>
+<p>但是在一开始生成页的时候，其实并没有 User Records 这个部分，每当我们插入一条记录，都会从 Free Space 部分，也就是尚未使用的存储空间中申请一个记录大小的空间划分到 User Records 部分。</p>
+<p>当 Free Space 部分的空间全部被 User Records 部分替代掉之后，也就意味着这个页使用完了，如果还有新的记录插入的话，就需要去申请新的页了。</p>
+<p>这个过程的图示如下：</p>
+<p><img src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351415703.png" alt="1746351415703"></p>
+<p>刚刚上面说到了数据的新增的过程。</p>
+<p>那下面就来说说，数据的查找过程，假如我们需要查找一条记录，我们可以把表空间中的每一页都加载到内存中，然后对记录挨个判断是不是我们想要的。</p>
+<p>在数据量小的时候，没啥问题，内存也可以撑。但是现实就是这么残酷，不会给你这个局面。</p>
+<p>为了解决这问题，MySQL 中就有了索引的概念，大家都知道索引能够加快数据的查询，那到底是怎么个回事呢？下面我就来看看。</p>
+<h2 id="索引的数据结构"><strong>索引的数据结构</strong></h2>
+<p>在 MySQL 中索引的数据结构和刚刚描述的页几乎是一模一样的，而且大小也是 16K,。</p>
+<p>但是在索引页中记录的是页 (数据页，索引页) 的最小主键 id 和页号，以及在索引页中增加了层级的信息，从 0 开始往上算，所以页与页之间就形成了层级结构关系。</p>
+<p><img src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351427532.png" alt="1746351427532"></p>
+<p>这种结构实际上呈现了树状结构的特征，类似于层次化的索引组织。在这里我们简单展示了三个节点，2 层结构，但随着数据增加，结构可能扩展至 3 层。这就是我们常说的 B+ 树，最下面那一层的 page level =0, 也就是叶子节点，其余都是非叶子节点。</p>
+<p><img src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351436733.png" alt="1746351436733"></p>
+<p>从上图中，我们分析一个非叶子节点（索引页），在非叶子节点的内容区中包含主键 ID 值和对应的页号指针两部分信息：</p>
+<ul>
+<li>id：对应页中记录的最小记录 id 值；</li>
+<li>页号：指向对应页的指针；</li>
+</ul>
+<p>而数据页与此几乎大同小异，区别在于数据页记录的是真实的行数据而不是页地址，而且 id 的也是顺序的。</p>
+<h2 id="单表建议值"><strong>单表建议值</strong></h2>
+<p>下面我们就以 3 层，2 分叉（实际中是 M 分叉）的图例来说明一下查找一个行数据的过程。</p>
+<p><img src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351449311.png" alt="1746351449311"></p>
+<p>比如说我们需要查找一个 id=6 的行数据：</p>
+<ul>
+<li>因为在非叶子节点中存放的是页号和该页最小的 id，所以我们从顶层开始对比，首先看页号 10 中的目录，有 [id=1, 页号 = 20],[id=5, 页号 = 30], 说明左侧节点最小 id 为 1，右侧节点最小 id 是 5。6&gt;5, 那按照二分法查找的规则，肯定就往右侧节点继续查找；</li>
+<li>找到页号 30 的节点后，发现这个节点还有子节点（非叶子节点），那就继续比对，同理，6&gt;5 &amp;&amp; 6&lt;7, 所以找到了页号 60；</li>
+<li>找到页号 60 之后，发现此节点为叶子节点（数据节点），于是将此页数据加载至内存进行一一对比，结果找到了 id=6 的数据行。</li>
+</ul>
+<p>从上述的过程中发现，我们为了查找 id=6 的数据，总共查询了三个页，如果三个页都在磁盘中（未提前加载至内存），那么最多需要经历三次的磁盘 IO。</p>
+<p>需要注意的是，图中的页号只是个示例，实际情况下并不是连续的，在磁盘中存储也不一定是顺序的。</p>
+<p>至此，我们大概已经了解了表的数据是怎么个结构了，也大概知道查询数据是个怎么的过程了，这样我们也就能大概估算这样的结构能存放多少数据了。</p>
+<p>从上面的图解我们知道 B+ 数的叶子节点才是存在数据的，而非叶子节点是用来存放索引数据的。</p>
+<p>所以，同样一个 16K 的页，非叶子节点里的每条数据都指向新的页，而新的页有两种可能</p>
+<ul>
+<li>如果是叶子节点，那么里面就是一行行的数据</li>
+<li>如果是非叶子节点的话，那么就会继续指向新的页</li>
+</ul>
+<p>假设</p>
+<ul>
+<li>非叶子节点内指向其他页的数量为 x</li>
+<li>叶子节点内能容纳的数据行数为 y</li>
+<li>B+ 数的层数为 z</li>
+</ul>
+<p>如下图中所示，<strong>总记录数 = $x^{z-1} \times y$，即总数等于 $x$ 的 $z-1$ 次方与 $y$ 的乘积</strong>。</p>
+<p><img src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746351464769.png" alt="1746351464769"></p>
+<blockquote>
+<p>X =？</p>
+</blockquote>
+<p>在文章的开头已经介绍了页的结构，索引也也不例外，都会有 File Header (38 byte)、Page Header (56 Byte)、Infimum + Supermum（26 byte）、File Trailer（8byte）, 再加上页目录，大概 1k 左右。</p>
+<p>我们就当做它就是 1K, 那整个页的大小是 16K, 剩下 15k 用于存数据，在索引页中主要记录的是主键与页号，主键我们假设是 Bigint (8 byte), 而页号也是固定的（4Byte）, 那么索引页中的一条数据也就是 12byte。</p>
+<p>所以 x=15*1024/12≈1280 行。</p>
+<blockquote>
+<p>Y=？</p>
+</blockquote>
+<p>叶子节点和非叶子节点的结构是一样的，同理，能放数据的空间也是 15k。</p>
+<p>但是叶子节点中存放的是真正的行数据，这个影响的因素就会多很多，比如，字段的类型，字段的数量。每行数据占用空间越大，页中所放的行数量就会越少。</p>
+<p>这边我们暂时按一条行数据 1k 来算，那一页就能存下 15 条，Y = 15*1024/1000 ≈15。</p>
+<p>到这一步，我们已经可以开始推算总容量了。</p>
+<p>根据上述的公式，总记录数 = $x^{z-1} \times y$，已知 $x=1280，y=15$：</p>
+<ul>
+<li>假设 B+ 树是两层，那就是 z = 2，Total = （1280 ^1）*15 = 19200</li>
+<li>假设 B+ 树是三层，那就是 z = 3，Total = （1280 ^2） *15 = 24576000（约 2.45kw）</li>
+</ul>
+<p>这与文章开头提到的 2000W 行数建议值高度吻合。实际上，一般 B+ 树的层级最多也就是 3 层。</p>
+<p>如果增加到 4 层，不仅查询时可能增加磁盘 IO 次数，而且总记录数将达到约 3 百多亿，这在大多数应用场景中并不实用。因此，3 层结构是较为合理的选择。</p>
+<p>然而，我们的分析还需要继续深入。</p>
+<p>我们刚刚在计算 Y 值时假设每行数据占用空间为 1K。但如果实际每行数据占用 5K，那每个数据页最多只能容纳 3 条记录。</p>
+<p>同样按照 $z = 3$ 计算，总记录数 $= （1280 ^2） \times 3 = 4915200（约 500w）$</p>
+<p>由此可见，在保持相同层级结构（即相似查询性能）的情况下，行数据大小的不同会显著影响最大建议记录数。此外，影响查询性能的还有诸多因素，如数据库版本、服务器配置、SQL 编写质量等。</p>
+<p>MySQL 为了提高性能，会将表的索引装载到内存中。当 InnoDB buffer size 充足时，可以实现索引的全内存加载，查询性能不会受到明显影响。</p>
+<p>然而，当单表数据量达到特定上限后，内存可能无法完全容纳索引，导致后续 SQL 查询产生额外的磁盘 IO，从而降低性能。因此，提升硬件配置（如增加内存）可能会显著提高查询性能。</p>
+<h2 id="总结"><strong>总结</strong></h2>
+<ul>
+<li>MySQL 的表数据是以页的形式存放的，页在磁盘中不一定是连续的。</li>
+<li>页的空间是 16K, 并不是所有的空间都是用来存放数据的，会有一些固定的信息，如，页头，页尾，页码，校验码等等。</li>
+<li>在 B+ 树中，叶子节点和非叶子节点的数据结构是一样的，区别在于，叶子节点存放的是实际的行数据，而非叶子节点存放的是主键和页号。</li>
+<li>索引结构不会影响单表最大行数，2000W 也只是推荐值，超过了这个值可能会导致 B + 树层级更高，影响查询性能。</li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+              <a href="/tags/%E7%B4%A2%E5%BC%95/" rel="tag"># 索引</a>
+              <a href="/tags/B-%E6%A0%91/" rel="tag"># B+树</a>
+              <a href="/tags/%E8%A1%A8%E7%A9%BA%E9%97%B4/" rel="tag"># 表空间</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/05/03/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-207-%E8%AF%BE%E7%A8%8B%E8%A1%A8/" rel="prev" title="LeetCode 207 - 课程表（Course Schedule）">
+      <i class="fa fa-chevron-left"></i> LeetCode 207 - 课程表（Course Schedule）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88/" rel="next" title="MySQL索引失效的常见情况详解">
+      MySQL索引失效的常见情况详解 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C"><span class="nav-number">1.</span> <span class="nav-text">实验</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%A7%E6%95%B0%E6%8D%AE%E9%87%8F%E6%B5%8B%E8%AF%95%E6%95%B0%E6%8D%AE%E7%94%9F%E6%88%90%E6%96%B9%E6%B3%95"><span class="nav-number">1.1.</span> <span class="nav-text">大数据量测试数据生成方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-1%EF%BC%9A%E5%88%9D%E5%A7%8B%E5%8C%96%E8%AE%A1%E6%95%B0%E5%99%A8%E5%8F%98%E9%87%8F"><span class="nav-number">1.1.1.</span> <span class="nav-text">步骤 1：初始化计数器变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-2%EF%BC%9A%E4%BD%BF%E7%94%A8%E9%80%92%E5%BD%92%E6%8F%92%E5%85%A5%E6%B3%95%E7%94%9F%E6%88%90%E5%A4%A7%E9%87%8F%E6%95%B0%E6%8D%AE"><span class="nav-number">1.1.2.</span> <span class="nav-text">步骤 2：使用递归插入法生成大量数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-3%EF%BC%9A%E5%A4%84%E7%90%86%E5%8F%AF%E8%83%BD%E5%87%BA%E7%8E%B0%E7%9A%84%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98"><span class="nav-number">1.1.3.</span> <span class="nav-text">步骤 3：处理可能出现的内存问题</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A2%E7%A9%B6-2000-%E4%B8%87%E8%A1%8C%E5%BB%BA%E8%AE%AE%E5%80%BC%E7%9A%84%E6%9D%A5%E6%BA%90"><span class="nav-number">2.</span> <span class="nav-text">探究 2000 万行建议值的来源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A8%E7%A9%BA%E9%97%B4"><span class="nav-number">3.</span> <span class="nav-text">表空间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A1%B5%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">4.</span> <span class="nav-text">页的数据结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">5.</span> <span class="nav-text">索引的数据结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E5%80%BC"><span class="nav-number">6.</span> <span class="nav-text">单表建议值</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">130</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">168</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">544k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">8:15</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : '5a08063aa17bb10de407caf996f42ad9',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-26",1],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",1],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2025-04","2025-05","2025-06"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [32,81,17],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":68},{"name":"Hot100","value":58},{"name":"Medium","value":57},{"name":"数组","value":31},{"name":"❌错题集","value":26},{"name":"MySQL","value":22},{"name":"REDIS","value":17},{"name":"数据库","value":15}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":68},{"name":"Hot100","value":58},{"name":"Medium","value":57},{"name":"数组","value":31},{"name":"❌错题集","value":26},{"name":"MySQL","value":22},{"name":"REDIS","value":17},{"name":"数据库","value":15}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":81},{"name":"LeetCode","value":80},{"name":"Hot100","value":63},{"name":"八股文","value":47},{"name":"REDIS","value":25}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":81},{"name":"LeetCode","value":80},{"name":"Hot100","value":63},{"name":"八股文","value":47},{"name":"REDIS","value":25}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[],"count":17,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":80,"path":"算法刷题/LeetCode"}],"count":81,"path":"算法刷题"},{"name":"八股文","children":[{"name":"REDIS","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/REDIS/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/REDIS/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/REDIS/高可用"},{"name":"基础知识","children":[{"name":"内存管理","children":[],"count":1,"path":"八股文/REDIS/基础知识/内存管理"},{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":19,"path":"八股文/REDIS/基础知识"}],"count":25,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":47,"path":"八股文"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>
