@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="详细分析LeetCode第5题“最长回文子串”动态规划解法的常见填表顺序错误，并提供正确的思路与实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="❌ LeetCode 5 - 最长回文子串：动态规划填表顺序错误分析">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-5-%E6%9C%80%E9%95%BF%E5%9B%9E%E6%96%87%E5%AD%90%E4%B8%B2%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="小王的blog">
+<meta property="og:description" content="详细分析LeetCode第5题“最长回文子串”动态规划解法的常见填表顺序错误，并提供正确的思路与实现。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-05-20T20:00:00.000Z">
+<meta property="article:modified_time" content="2025-06-15T16:13:21.458Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="LeetCode">
+<meta property="article:tag" content="Medium">
+<meta property="article:tag" content="动态规划">
+<meta property="article:tag" content="❌错题集">
+<meta property="article:tag" content="字符串">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/05/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-5-%E6%9C%80%E9%95%BF%E5%9B%9E%E6%96%87%E5%AD%90%E4%B8%B2%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>❌ LeetCode 5 - 最长回文子串：动态规划填表顺序错误分析 | 小王的blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小王的blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Adrian Wang's blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-计算机网络">
+
+    <a href="/network" rel="section"><i class="fa fa-globe fa-fw"></i>计算机网络</a>
+
+  </li>
+        <li class="menu-item menu-item-golang">
+
+    <a href="/golang" rel="section"><i class="fa fa-brands fa-golang fa-fw"></i>Golang</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/05/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-5-%E6%9C%80%E9%95%BF%E5%9B%9E%E6%96%87%E5%AD%90%E4%B8%B2%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ❌ LeetCode 5 - 最长回文子串：动态规划填表顺序错误分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-05-20 20:00:00" itemprop="dateCreated datePublished" datetime="2025-05-20T20:00:00+00:00">2025-05-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-15 16:13:21" itemprop="dateModified" datetime="2025-06-15T16:13:21+00:00">2025-06-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+            <div class="post-description">详细分析LeetCode第5题“最长回文子串”动态规划解法的常见填表顺序错误，并提供正确的思路与实现。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="问题描述">问题描述</h2>
+<p>给定一个字符串 <code>s</code>，找到 <code>s</code> 中最长的回文子串。</p>
+<p><strong>示例 1：</strong></p>
+<p>输入：s = “babad”<br>
+输出：“bab”<br>
+解释：“aba” 同样是符合题意的答案。</p>
+<p><strong>示例 2：</strong></p>
+<p>输入：s = “cbbd”<br>
+输出：“bb”</p>
+<p><strong>约束条件：</strong></p>
+<ul>
+<li><code>1 &lt;= s.length &lt;= 1000</code></li>
+<li><code>s</code> 仅由数字和英文字母组成</li>
+</ul>
+<h2 id="错误的解法与分析">错误的解法与分析</h2>
+<p>一个常见的解决此问题的思路是使用动态规划。我们定义 <code>dp[i][j]</code> 表示字符串 <code>s</code> 中从索引 <code>i</code> 到 <code>j</code> 的子串是否是回文串。</p>
+<p>状态转移方程可以这样定义：</p>
+<ul>
+<li>如果 <code>s[i] == s[j]</code>：
+<ul>
+<li>如果子串长度小于等于 2（即 <code>j - i &lt; 2</code>），那么 <code>dp[i][j]</code> 为 <code>true</code>。</li>
+<li>如果子串长度大于 2，那么 <code>dp[i][j]</code> 取决于 <code>dp[i+1][j-1]</code> 是否为回文串。</li>
+</ul>
+</li>
+<li>如果 <code>s[i] != s[j]</code>，那么 <code>dp[i][j]</code> 为 <code>false</code>。</li>
+</ul>
+<p>以下是一个尝试实现该思路的 Go 代码，但它存在一个关键的错误：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">longestPalindrome</span><span class="params">(s <span class="type">string</span>)</span></span> <span class="type">string</span> &#123;</span><br><span class="line">	n := <span class="built_in">len</span>(s)</span><br><span class="line">	<span class="keyword">if</span> n == <span class="number">1</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> s</span><br><span class="line">	&#125;</span><br><span class="line">	dp := <span class="built_in">make</span>([][]<span class="type">bool</span>, n)</span><br><span class="line">	<span class="keyword">for</span> i := <span class="keyword">range</span> dp &#123;</span><br><span class="line">		dp[i] = <span class="built_in">make</span>([]<span class="type">bool</span>, n)</span><br><span class="line">	&#125;</span><br><span class="line">	maxLen := <span class="number">1</span></span><br><span class="line">	start := <span class="number">0</span></span><br><span class="line">	end := <span class="number">1</span> <span class="comment">// ❌ 错误点：end 初始化不当，可能导致长度为1时出错</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="keyword">range</span> s &#123;</span><br><span class="line">		dp[i][i] = <span class="literal">true</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// ❌ 错误点：填表顺序问题</span></span><br><span class="line">	<span class="comment">// 当计算 dp[i][j] 时，dp[i+1][j-1] 可能尚未被计算</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; n; i++ &#123;</span><br><span class="line">		<span class="keyword">for</span> j := i + <span class="number">1</span>; j &lt; n; j++ &#123;</span><br><span class="line">			<span class="keyword">if</span> j-i &lt; <span class="number">2</span> &#123; <span class="comment">// 子串长度为2</span></span><br><span class="line">				dp[i][j] = s[i] == s[j]</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123; <span class="comment">// 子串长度大于2</span></span><br><span class="line">				dp[i][j] = dp[i+<span class="number">1</span>][j<span class="number">-1</span>] &amp;&amp; s[i] == s[j]</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> dp[i][j] &amp;&amp; j-i+<span class="number">1</span> &gt; maxLen &#123;</span><br><span class="line">				maxLen = j - i + <span class="number">1</span></span><br><span class="line">				start = i</span><br><span class="line">				end = j</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> s[start : end+<span class="number">1</span>]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="错误原因分析">错误原因分析</h3>
+<p>主要的错误在于 <strong>DP 表的填充顺序</strong>。</p>
+<p>在上述代码中，外层循环 <code>i</code> 从 <code>0</code> 遍历到 <code>n-1</code>，内层循环 <code>j</code> 从 <code>i+1</code> 遍历到 <code>n-1</code>。当我们计算 <code>dp[i][j]</code> 时，它依赖于 <code>dp[i+1][j-1]</code> 的值。</p>
+<p>让我们考虑一个例子，比如计算 <code>dp[0][3]</code>。根据状态转移方程，它依赖于 <code>dp[1][2]</code>。<br>
+在当前的遍历顺序下：</p>
+<ul>
+<li><code>i = 0</code>:
+<ul>
+<li><code>j = 1</code>: 计算 <code>dp[0][1]</code></li>
+<li><code>j = 2</code>: 计算 <code>dp[0][2]</code> (依赖 <code>dp[1][1]</code>)</li>
+<li><code>j = 3</code>: 计算 <code>dp[0][3]</code> (依赖 <code>dp[1][2]</code>)</li>
+</ul>
+</li>
+</ul>
+<p>当 <code>i=0, j=3</code> 时，我们需要 <code>dp[1][2]</code> 的值。但是，<code>dp[1][2]</code> 会在 <code>i=1, j=2</code> 时才被计算。这意味着在计算 <code>dp[0][3]</code> 时，<code>dp[1][2]</code> 还没有被正确计算出来（其值仍为默认的 <code>false</code>），从而导致 <code>dp[0][3]</code> 的计算错误。</p>
+<p>此外，<code>end</code> 变量的初始化为 <code>1</code>，当字符串长度为 <code>1</code> 时，如果 <code>maxLen</code> 没有更新（例如字符串本身就是单个字符，已经是回文），<code>s[start : end+1]</code> 会变成 <code>s[0:2]</code>，这会导致数组越界。对于长度为 1 的字符串，<code>start</code>应为<code>0</code>，<code>end</code>应为<code>0</code>。</p>
+<h2 id="正确的解法与思路">正确的解法与思路</h2>
+<p>为了解决填表顺序的问题，我们需要确保在计算 <code>dp[i][j]</code> 时，其依赖的 <code>dp[i+1][j-1]</code> 已经被计算过。这可以通过改变循环的遍历顺序来实现。</p>
+<p>正确的思路是：</p>
+<ol>
+<li><strong>外层循环 <code>i</code> 从 <code>n-1</code> 向下遍历到 <code>0</code>。</strong></li>
+<li><strong>内层循环 <code>j</code> 从 <code>i+1</code> 向上遍历到 <code>n-1</code>。</strong></li>
+</ol>
+<p>这样，当我们计算 <code>dp[i][j]</code> 时：</p>
+<ul>
+<li><code>i</code> 的值比 <code>i+1</code> 小。</li>
+<li><code>j</code> 的值比 <code>j-1</code> 大。<br>
+由于 <code>i</code> 是从大到小遍历的，当计算 <code>dp[i][...]</code> 时，所有 <code>dp[i+1][...]</code> 的行都已经被计算完毕。因此，<code>dp[i+1][j-1]</code> 的值是已知的。</li>
+</ul>
+<p>同时，对于 <code>end</code> 的初始化，当 <code>maxLen</code> 为 <code>1</code> 时，<code>start</code> 和 <code>end</code> 都应该是 <code>0</code>（或者说，子串就是 <code>s[0:1]</code>）。</p>
+<h3 id="正确的-Go-代码实现">正确的 Go 代码实现</h3>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">longestPalindrome</span><span class="params">(s <span class="type">string</span>)</span></span> <span class="type">string</span> &#123;</span><br><span class="line">	n := <span class="built_in">len</span>(s)</span><br><span class="line">	<span class="keyword">if</span> n &lt; <span class="number">2</span> &#123; <span class="comment">// 处理空字符串或单字符字符串的情况</span></span><br><span class="line">		<span class="keyword">return</span> s</span><br><span class="line">	&#125;</span><br><span class="line">	dp := <span class="built_in">make</span>([][]<span class="type">bool</span>, n)</span><br><span class="line">	<span class="keyword">for</span> i := <span class="keyword">range</span> dp &#123;</span><br><span class="line">		dp[i] = <span class="built_in">make</span>([]<span class="type">bool</span>, n)</span><br><span class="line">	&#125;</span><br><span class="line">	maxLen := <span class="number">1</span></span><br><span class="line">	start := <span class="number">0</span></span><br><span class="line">	<span class="comment">// end 不需要单独初始化为1，通过dp[i][i] 和后续更新来确定</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 所有长度为1的子串都是回文串</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; n; i++ &#123;</span><br><span class="line">		dp[i][i] = <span class="literal">true</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 从后往前遍历 i，确保 dp[i+1][j-1] 已被计算</span></span><br><span class="line">	<span class="keyword">for</span> i := n - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i-- &#123;</span><br><span class="line">		<span class="comment">// 从 i+1 开始遍历 j</span></span><br><span class="line">		<span class="keyword">for</span> j := i + <span class="number">1</span>; j &lt; n; j++ &#123;</span><br><span class="line">			<span class="keyword">if</span> s[i] == s[j] &#123;</span><br><span class="line">				<span class="comment">// 如果子串长度为2 (j-i == 1) 或者内部子串 dp[i+1][j-1] 是回文</span></span><br><span class="line">				<span class="keyword">if</span> j-i &lt; <span class="number">2</span> || dp[i+<span class="number">1</span>][j<span class="number">-1</span>] &#123;</span><br><span class="line">					dp[i][j] = <span class="literal">true</span></span><br><span class="line">					<span class="keyword">if</span> j-i+<span class="number">1</span> &gt; maxLen &#123;</span><br><span class="line">						maxLen = j - i + <span class="number">1</span></span><br><span class="line">						start = i</span><br><span class="line">						<span class="comment">// end = j // end 可以不在这里更新，最后通过 start 和 maxLen 计算</span></span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">    <span class="comment">// 通过 start 和 maxLen 来确定最终的子串</span></span><br><span class="line">	<span class="keyword">return</span> s[start : start+maxLen]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这个修正后的版本中：</p>
+<ol>
+<li><code>i</code> 从 <code>n-1</code> 递减到 <code>0</code>。</li>
+<li><code>j</code> 从 <code>i+1</code> 递增到 <code>n-1</code>。</li>
+<li>简化了 <code>dp[i][j]</code> 的判断逻辑：如果 <code>s[i] == s[j]</code>，那么当子串长度为 2 (<code>j-i == 1</code>，等价于 <code>j-i &lt; 2</code>) 或者内部子串 <code>dp[i+1][j-1]</code> 为回文时，<code>dp[i][j]</code> 才为 <code>true</code>。</li>
+<li><code>end</code> 的更新被移除了，最后直接通过 <code>start</code> 和 <code>maxLen</code> 来截取子串，这样更简洁且不易出错。对于 <code>maxLen</code> 初始化为 <code>1</code>，<code>start</code> 初始化为 <code>0</code>，如果循环没有找到更长的回文串，会返回 <code>s[0:1]</code>，这是正确的。</li>
+<li>处理了 <code>n &lt; 2</code> 的边界情况。</li>
+</ol>
+<h2 id="学习总结">学习总结</h2>
+<p>动态规划问题的核心之一在于确定正确的状态转移顺序。当一个状态 <code>dp[i][j]</code> 依赖于其他状态时（如本例中的 <code>dp[i+1][j-1]</code>），必须确保在计算当前状态之前，所有依赖的状态都已经被正确计算。</p>
+<p>对于二维 DP 表，常见的遍历顺序有：</p>
+<ul>
+<li>从上到下，从左到右。</li>
+<li>从下到上，从左到右。</li>
+<li>从上到下，从右到左。</li>
+<li>从下到上，从右到左。</li>
+</ul>
+<p>选择哪种顺序取决于状态之间的依赖关系。在本题中，由于 <code>dp[i][j]</code> 依赖于 <code>dp[i+1][j-1]</code>（即左下方的单元格），因此从下往上（<code>i</code> 递减）、从左往右（<code>j</code> 递增，且 <code>j &gt; i</code>）的遍历顺序是合适的。</p>
+<p>另外，初始化边界条件和最终结果的提取方式也需要仔细考虑，以避免数组越界或逻辑错误。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LeetCode/" rel="tag"># LeetCode</a>
+              <a href="/tags/Medium/" rel="tag"># Medium</a>
+              <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" rel="tag"># 动态规划</a>
+              <a href="/tags/%E2%9D%8C%E9%94%99%E9%A2%98%E9%9B%86/" rel="tag"># ❌错题集</a>
+              <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" rel="tag"># 字符串</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/05/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-1143-%E6%9C%80%E9%95%BF%E5%85%AC%E5%85%B1%E5%AD%90%E5%BA%8F%E5%88%97/" rel="prev" title="LeetCode 1143 - 最长公共子序列 (Longest Common Subsequence)">
+      <i class="fa fa-chevron-left"></i> LeetCode 1143 - 最长公共子序列 (Longest Common Subsequence)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/05/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-72-%E7%BC%96%E8%BE%91%E8%B7%9D%E7%A6%BB/" rel="next" title="LeetCode 72 - 编辑距离 (Edit Distance)">
+      LeetCode 72 - 编辑距离 (Edit Distance) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%94%99%E8%AF%AF%E7%9A%84%E8%A7%A3%E6%B3%95%E4%B8%8E%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">错误的解法与分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%99%E8%AF%AF%E5%8E%9F%E5%9B%A0%E5%88%86%E6%9E%90"><span class="nav-number">2.1.</span> <span class="nav-text">错误原因分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AD%A3%E7%A1%AE%E7%9A%84%E8%A7%A3%E6%B3%95%E4%B8%8E%E6%80%9D%E8%B7%AF"><span class="nav-number">3.</span> <span class="nav-text">正确的解法与思路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A3%E7%A1%AE%E7%9A%84-Go-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.1.</span> <span class="nav-text">正确的 Go 代码实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">学习总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">135</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">173</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">607k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">9:12</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : '22927cc3e30c2f5c8ba366388c71b7ae',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-26",1],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",1],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",4],["2025-06-16",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2025-04","2025-05","2025-06"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [32,81,22],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":70},{"name":"Medium","value":59},{"name":"Hot100","value":58},{"name":"数组","value":31},{"name":"❌错题集","value":25},{"name":"MySQL","value":22},{"name":"REDIS","value":17},{"name":"深度优先搜索","value":16}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":70},{"name":"Medium","value":59},{"name":"Hot100","value":58},{"name":"数组","value":31},{"name":"❌错题集","value":25},{"name":"MySQL","value":22},{"name":"REDIS","value":17},{"name":"深度优先搜索","value":16}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":83},{"name":"LeetCode","value":82},{"name":"Hot100","value":63},{"name":"八股文","value":48},{"name":"REDIS","value":25}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":83},{"name":"LeetCode","value":82},{"name":"Hot100","value":63},{"name":"八股文","value":48},{"name":"REDIS","value":25}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"八股文","children":[{"name":"计算机网络","children":[],"count":1,"path":"八股文/计算机网络"},{"name":"REDIS","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/REDIS/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/REDIS/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/REDIS/高可用"},{"name":"基础知识","children":[{"name":"内存管理","children":[],"count":1,"path":"八股文/REDIS/基础知识/内存管理"},{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":19,"path":"八股文/REDIS/基础知识"}],"count":25,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":48,"path":"八股文"},{"name":"技术八股","children":[],"count":2,"path":"技术八股"},{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[],"count":18,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":82,"path":"算法刷题/LeetCode"}],"count":83,"path":"算法刷题"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>
