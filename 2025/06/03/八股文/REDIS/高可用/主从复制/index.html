@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="深入解析Redis主从复制机制，包括全量复制、增量复制、命令传播等核心原理，以及脑裂问题的解决方案和面试重点">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis主从复制详解：原理、优化与故障处理">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/index.html">
+<meta property="og:site_name" content="小王的blog">
+<meta property="og:description" content="深入解析Redis主从复制机制，包括全量复制、增量复制、命令传播等核心原理，以及脑裂问题的解决方案和面试重点">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956095442.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956101047.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956109396.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956117873.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956126945.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956137173.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956142843.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956152362.png">
+<meta property="article:published_time" content="2025-06-03T21:16:26.000Z">
+<meta property="article:modified_time" content="2025-06-21T16:54:19.368Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="性能优化">
+<meta property="article:tag" content="高可用">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="主从复制">
+<meta property="article:tag" content="数据同步">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956095442.png">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>Redis主从复制详解：原理、优化与故障处理 | 小王的blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小王的blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Adrian Wang's blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-计算机网络">
+
+    <a href="/network" rel="section"><i class="fa fa-globe fa-fw"></i>计算机网络</a>
+
+  </li>
+        <li class="menu-item menu-item-golang">
+
+    <a href="/golang" rel="section"><i class="fa fa-brands fa-golang fa-fw"></i>Golang</a>
+
+  </li>
+        <li class="menu-item menu-item-面试经验">
+
+    <a href="/interview" rel="section"><i class="fa fa-briefcase fa-fw"></i>面试经验</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis主从复制详解：原理、优化与故障处理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-06-03 21:16:26" itemprop="dateCreated datePublished" datetime="2025-06-03T21:16:26+00:00">2025-06-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-21 16:54:19" itemprop="dateModified" datetime="2025-06-21T16:54:19+00:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/" itemprop="url" rel="index"><span itemprop="name">REDIS</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/" itemprop="url" rel="index"><span itemprop="name">高可用</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+            <div class="post-description">深入解析Redis主从复制机制，包括全量复制、增量复制、命令传播等核心原理，以及脑裂问题的解决方案和面试重点</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1>Redis主从复制详解</h1>
+<h2 id="前言">前言</h2>
+<p>在之前的文章中，我们学习了Redis的AOF和RDB持久化技术，这两种技术可以保证即使服务器重启也不会丢失数据（或仅丢失少量数据）。</p>
+<p>但是，将所有数据存储在一台服务器上仍然存在风险：</p>
+<ul>
+<li><strong>服务器宕机</strong>：数据恢复需要时间，期间无法提供服务</li>
+<li><strong>硬盘故障</strong>：可能导致数据完全丢失</li>
+</ul>
+<p>为了解决这些<strong>单点故障</strong>问题，最好的方案是将数据备份到多台服务器上，让这些服务器都能对外提供服务。这样即使一台服务器出现故障，其他服务器仍能继续工作。</p>
+<p><img src="/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956095442.png" alt="1748956095442"></p>
+<p>但这样又带来了新的问题：</p>
+<ul>
+<li>多台服务器之间如何保持数据一致性？</li>
+<li>读写操作应该如何分配？</li>
+</ul>
+<p>Redis通过<strong>主从复制模式</strong>解决了这些问题。</p>
+<h2 id="什么是主从复制？">什么是主从复制？</h2>
+<p>主从复制是一种数据同步机制，具有以下特点：</p>
+<ol>
+<li><strong>一主多从</strong>：一个主服务器（Master），多个从服务器（Slave）</li>
+<li><strong>读写分离</strong>：主服务器负责写操作，从服务器负责读操作</li>
+<li><strong>自动同步</strong>：主服务器的写操作会自动同步到从服务器</li>
+</ol>
+<p><img src="/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956101047.png" alt="1748956101047"></p>
+<p>这样设计的好处是：</p>
+<ul>
+<li>保证了数据的一致性</li>
+<li>提高了系统的可用性</li>
+<li>实现了读写分离，提升了性能</li>
+</ul>
+<h2 id="主从复制的工作原理">主从复制的工作原理</h2>
+<h3 id="建立主从关系">建立主从关系</h3>
+<p>要建立主从关系，我们使用<code>replicaof</code>命令（Redis 5.0之前使用<code>slaveof</code>）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">在从服务器上执行</span></span><br><span class="line">replicaof &lt;主服务器IP&gt; &lt;主服务器端口&gt;</span><br></pre></td></tr></table></figure>
+<p>执行这个命令后，从服务器就会成为主服务器的从服务器，并开始同步数据。</p>
+<h3 id="第一次同步过程">第一次同步过程</h3>
+<p>主从服务器的第一次同步分为三个阶段：</p>
+<p><img src="/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956109396.png" alt="1748956109396"></p>
+<h4 id="第一阶段：建立连接、协商同步">第一阶段：建立连接、协商同步</h4>
+<ol>
+<li>
+<p><strong>发送psync命令</strong>：从服务器向主服务器发送<code>psync</code>命令</p>
+<ul>
+<li><code>runID</code>：主服务器的唯一标识（第一次为&quot;?&quot;）</li>
+<li><code>offset</code>：复制进度（第一次为-1）</li>
+</ul>
+</li>
+<li>
+<p><strong>响应FULLRESYNC</strong>：主服务器返回<code>FULLRESYNC</code>命令</p>
+<ul>
+<li>包含主服务器的runID和当前复制进度offset</li>
+<li>表示将进行全量复制</li>
+</ul>
+</li>
+</ol>
+<h4 id="第二阶段：主服务器同步数据">第二阶段：主服务器同步数据</h4>
+<ol>
+<li><strong>生成RDB文件</strong>：主服务器执行<code>bgsave</code>命令生成RDB快照</li>
+<li><strong>发送RDB文件</strong>：将RDB文件传输给从服务器</li>
+<li><strong>加载RDB文件</strong>：从服务器清空旧数据，加载新的RDB文件</li>
+</ol>
+<p><strong>重要</strong>：在生成、传输、加载RDB期间，主服务器收到的新写命令会保存在<code>replication buffer</code>缓冲区中。</p>
+<h4 id="第三阶段：发送增量数据">第三阶段：发送增量数据</h4>
+<ol>
+<li>从服务器加载完RDB后，发送确认消息给主服务器</li>
+<li>主服务器将<code>replication buffer</code>中的增量数据发送给从服务器</li>
+<li>从服务器执行这些命令，完成数据同步</li>
+</ol>
+<h3 id="命令传播">命令传播</h3>
+<p>第一次同步完成后，主从服务器维护一个<strong>长连接</strong>：</p>
+<p><img src="/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956117873.png" alt="1748956117873"></p>
+<ul>
+<li>主服务器通过这个连接持续将写命令发送给从服务器</li>
+<li>从服务器执行这些命令，保持数据一致性</li>
+<li>使用长连接避免了频繁建立连接的开销</li>
+</ul>
+<h2 id="性能优化策略">性能优化策略</h2>
+<h3 id="分摊主服务器压力">分摊主服务器压力</h3>
+<p>当从服务器数量很多时，主服务器可能面临压力：</p>
+<ul>
+<li>频繁fork进程生成RDB文件</li>
+<li>大量网络带宽用于传输RDB文件</li>
+</ul>
+<p><strong>解决方案</strong>：建立多级主从架构</p>
+<p><img src="/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956126945.png" alt="1748956126945"></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">让从服务器也成为其他服务器的主服务器</span></span><br><span class="line">replicaof &lt;中间服务器IP&gt; 6379</span><br></pre></td></tr></table></figure>
+<p>这样可以：</p>
+<ul>
+<li>减轻主服务器的CPU压力</li>
+<li>分摊网络带宽使用</li>
+<li>提高整体的扩展性</li>
+</ul>
+<h2 id="增量复制机制">增量复制机制</h2>
+<h3 id="网络断开重连问题">网络断开重连问题</h3>
+<p>在命令传播阶段，如果网络中断会怎么办？</p>
+<p><img src="/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956137173.png" alt="1748956137173"></p>
+<p><strong>Redis 2.8之前</strong>：重新进行全量复制（效率低）<br>
+<strong>Redis 2.8之后</strong>：采用增量复制（只同步断线期间的数据）</p>
+<h3 id="增量复制过程">增量复制过程</h3>
+<p><img src="/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956142843.png" alt="1748956142843"></p>
+<ol>
+<li><strong>重连请求</strong>：从服务器发送psync命令（offset不是-1）</li>
+<li><strong>响应CONTINUE</strong>：主服务器决定采用增量复制</li>
+<li><strong>发送增量数据</strong>：主服务器发送断线期间的写命令</li>
+</ol>
+<h3 id="关键组件">关键组件</h3>
+<h4 id="repl-backlog-buffer环形缓冲区">repl_backlog_buffer环形缓冲区</h4>
+<ul>
+<li><strong>作用</strong>：保存最近的写命令</li>
+<li><strong>特点</strong>：环形结构，写满后覆盖旧数据</li>
+<li><strong>默认大小</strong>：1MB</li>
+</ul>
+<h4 id="replication-offset复制偏移量">replication offset复制偏移量</h4>
+<ul>
+<li><strong>master_repl_offset</strong>：主服务器写入位置</li>
+<li><strong>slave_repl_offset</strong>：从服务器读取位置</li>
+</ul>
+<h3 id="同步策略判断">同步策略判断</h3>
+<p>主服务器根据偏移量差异决定同步方式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">如果 slave要读取的数据 在 repl_backlog_buffer中：</span><br><span class="line">    执行增量复制</span><br><span class="line">否则：</span><br><span class="line">    执行全量复制</span><br></pre></td></tr></table></figure>
+<p><img src="/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E9%AB%98%E5%8F%AF%E7%94%A8/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/1748956152362.png" alt="1748956152362"></p>
+<h3 id="缓冲区大小优化">缓冲区大小优化</h3>
+<p>为避免频繁全量复制，需要合理设置缓冲区大小：</p>
+<p><strong>计算公式</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">repl_backlog_buffer_size = write_size_per_second × 断线重连时间(秒)</span><br></pre></td></tr></table></figure>
+<p><strong>举例</strong>：</p>
+<ul>
+<li>主服务器每秒产生1MB写命令</li>
+<li>平均断线重连需要5秒</li>
+<li>建议缓冲区大小：5MB × 2 = 10MB</li>
+</ul>
+<p><strong>配置方法</strong>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">修改配置文件</span></span><br><span class="line">repl-backlog-size 10mb</span><br></pre></td></tr></table></figure>
+<h2 id="总结">总结</h2>
+<p>Redis主从复制包含三种核心机制：</p>
+<ol>
+<li><strong>全量复制</strong>：第一次同步，传输完整数据</li>
+<li><strong>命令传播</strong>：基于长连接的实时同步</li>
+<li><strong>增量复制</strong>：网络恢复后的差异同步</li>
+</ol>
+<p><strong>关键优化点</strong>：</p>
+<ul>
+<li>使用多级主从架构分摊压力</li>
+<li>合理配置repl_backlog_buffer大小</li>
+<li>保证主从节点网络稳定性</li>
+</ul>
+<h2 id="面试题详解">面试题详解</h2>
+<h3 id="Redis主从节点是长连接还是短连接？">Redis主从节点是长连接还是短连接？</h3>
+<p><strong>答案</strong>：长连接</p>
+<p><strong>解释</strong>：主从服务器在完成第一次全量同步后，会维护一个TCP长连接用于命令传播，避免频繁建立和断开连接的性能开销。</p>
+<h3 id="怎么判断Redis某个节点是否正常工作？">怎么判断Redis某个节点是否正常工作？</h3>
+<p><strong>答案</strong>：通过ping-pong心跳检测机制</p>
+<p><strong>详细说明</strong>：</p>
+<ul>
+<li><strong>主节点监控</strong>：默认每10秒向从节点发送ping命令（可通过<code>repl-ping-slave-period</code>配置）</li>
+<li><strong>从节点上报</strong>：每1秒发送<code>replconf ack&#123;offset&#125;</code>命令，包含：
+<ul>
+<li>实时监测网络状态</li>
+<li>上报复制偏移量</li>
+<li>检查数据是否丢失</li>
+</ul>
+</li>
+<li><strong>失效判断</strong>：当一半以上节点ping某个节点无响应时，认为该节点下线</li>
+</ul>
+<h3 id="主从复制架构中，过期key如何处理？">主从复制架构中，过期key如何处理？</h3>
+<p><strong>答案</strong>：由主节点统一处理</p>
+<p><strong>处理流程</strong>：</p>
+<ol>
+<li>主节点检测到key过期或通过淘汰算法删除key</li>
+<li>主节点模拟发送<code>del</code>命令给所有从节点</li>
+<li>从节点收到删除命令后执行相应操作</li>
+<li>保证主从节点对过期key处理的一致性</li>
+</ol>
+<h3 id="Redis是同步复制还是异步复制？">Redis是同步复制还是异步复制？</h3>
+<p><strong>答案</strong>：异步复制</p>
+<p><strong>特点</strong>：</p>
+<ul>
+<li>主节点收到写命令后立即返回给客户端</li>
+<li>写命令先存入内部缓冲区，然后异步发送给从节点</li>
+<li>优点：响应速度快，不阻塞主节点</li>
+<li>缺点：可能存在短暂的数据不一致</li>
+</ul>
+<h3 id="主从复制中两个Buffer有什么区别？">主从复制中两个Buffer有什么区别？</h3>
+<p><strong>replication buffer vs repl backlog buffer</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>replication buffer</th>
+<th>repl backlog buffer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>出现阶段</strong></td>
+<td>全量复制 + 增量复制</td>
+<td>仅增量复制</td>
+</tr>
+<tr>
+<td><strong>分配方式</strong></td>
+<td>每个从节点一个</td>
+<td>整个主节点一个</td>
+</tr>
+<tr>
+<td><strong>满了之后</strong></td>
+<td>断开连接，重新全量复制</td>
+<td>覆盖旧数据（环形结构）</td>
+</tr>
+<tr>
+<td><strong>主要作用</strong></td>
+<td>缓存待发送的命令</td>
+<td>支持增量复制</td>
+</tr>
+</tbody>
+</table>
+<h3 id="如何应对主从数据不一致？">如何应对主从数据不一致？</h3>
+<p><strong>产生原因</strong>：主从复制是异步的，存在网络延迟</p>
+<p><strong>解决方案</strong>：</p>
+<ol>
+<li>
+<p><strong>网络优化</strong>：</p>
+<ul>
+<li>保证主从节点网络连接质量</li>
+<li>避免跨机房部署</li>
+</ul>
+</li>
+<li>
+<p><strong>监控复制进度</strong>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查看复制进度</span></span><br><span class="line">INFO replication</span><br></pre></td></tr></table></figure>
+<ul>
+<li>监控<code>master_repl_offset</code>和<code>slave_repl_offset</code>差值</li>
+<li>当差值超过阈值时，暂时停止从该从节点读取数据</li>
+</ul>
+</li>
+<li>
+<p><strong>设置合理阈值</strong>：</p>
+<ul>
+<li>根据业务需求设置可接受的数据延迟范围</li>
+<li>在一致性和可用性之间找到平衡</li>
+</ul>
+</li>
+</ol>
+<h3 id="主从切换如何减少数据丢失？">主从切换如何减少数据丢失？</h3>
+<p><strong>数据丢失场景</strong>：</p>
+<h4 id="1-异步复制数据丢失">1. 异步复制数据丢失</h4>
+<p><strong>原因</strong>：主节点收到写请求后立即返回，但还未同步到从节点时宕机</p>
+<p><strong>解决方案</strong>：配置<code>min-slaves-max-lag</code>参数</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">当所有从节点复制延迟超过10秒时，主节点拒绝写入</span></span><br><span class="line">min-slaves-max-lag 10</span><br></pre></td></tr></table></figure>
+<p><strong>降级策略</strong>：</p>
+<ul>
+<li>将数据写入本地缓存/磁盘</li>
+<li>使用消息队列（如Kafka）缓存数据</li>
+<li>主节点恢复后重新写入</li>
+</ul>
+<h4 id="2-脑裂数据丢失">2. 脑裂数据丢失</h4>
+<p><strong>原因</strong>：网络分区导致出现两个主节点，旧主节点数据在重新加入时被清空</p>
+<p><strong>解决方案</strong>：组合使用两个参数</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">至少需要1个从节点连接</span></span><br><span class="line">min-slaves-to-write 1</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">复制延迟不能超过12秒</span></span><br><span class="line">min-slaves-max-lag 12</span><br></pre></td></tr></table></figure>
+<p><strong>保护机制</strong>：</p>
+<ul>
+<li>当条件不满足时，主节点拒绝写入</li>
+<li>防止在网络分区期间写入无法同步的数据</li>
+<li>确保只有健康的主节点能接收写请求</li>
+</ul>
+<p><strong>实际案例</strong>：<br>
+假设配置：</p>
+<ul>
+<li><code>min-slaves-to-write = 1</code></li>
+<li><code>min-slaves-max-lag = 12s</code></li>
+<li>哨兵<code>down-after-milliseconds = 10s</code></li>
+</ul>
+<p>当主节点卡住15秒时：</p>
+<ol>
+<li>哨兵在10秒后判断主节点下线，开始主从切换</li>
+<li>由于超过12秒无法与从节点同步，主节点停止接收写请求</li>
+<li>切换完成后，只有新主节点能接收请求，避免数据丢失</li>
+</ol>
+<h3 id="主从如何做到故障自动切换？">主从如何做到故障自动切换？</h3>
+<p><strong>问题</strong>：主节点故障时，从节点无法自动升级为主节点</p>
+<p><strong>解决方案</strong>：Redis哨兵机制（Sentinel）</p>
+<p><strong>哨兵功能</strong>：</p>
+<ul>
+<li><strong>故障发现</strong>：自动检测主节点是否可用</li>
+<li><strong>故障转移</strong>：自动选举新的主节点</li>
+<li><strong>通知应用</strong>：将变更通知给客户端</li>
+<li><strong>配置管理</strong>：更新主从配置信息</li>
+</ul>
+<p><strong>实现高可用</strong>：</p>
+<ul>
+<li>无需人工干预</li>
+<li>快速故障恢复</li>
+<li>保证服务连续性</li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag"># 性能优化</a>
+              <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8/" rel="tag"># 高可用</a>
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/" rel="tag"># 主从复制</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/" rel="tag"># 数据同步</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/06/03/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/%E8%BF%87%E6%9C%9F%E5%88%A0%E9%99%A4%E5%92%8C%E5%86%85%E5%AD%98%E6%B7%98%E6%B1%B0/" rel="prev" title="Redis 过期删除策略和内存淘汰策略有什么区别？">
+      <i class="fa fa-chevron-left"></i> Redis 过期删除策略和内存淘汰策略有什么区别？
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/06/04/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/leetcode-73-matrix-zeroes/" rel="next" title="LeetCode 73 - 矩阵置零（Matrix Zeroes）解题思路与错误分析">
+      LeetCode 73 - 矩阵置零（Matrix Zeroes）解题思路与错误分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-number">1.</span> <span class="nav-text">Redis主从复制详解</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%EF%BC%9F"><span class="nav-number">1.2.</span> <span class="nav-text">什么是主从复制？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="nav-number">1.3.</span> <span class="nav-text">主从复制的工作原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BB%BA%E7%AB%8B%E4%B8%BB%E4%BB%8E%E5%85%B3%E7%B3%BB"><span class="nav-number">1.3.1.</span> <span class="nav-text">建立主从关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%90%8C%E6%AD%A5%E8%BF%87%E7%A8%8B"><span class="nav-number">1.3.2.</span> <span class="nav-text">第一次同步过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E9%98%B6%E6%AE%B5%EF%BC%9A%E5%BB%BA%E7%AB%8B%E8%BF%9E%E6%8E%A5%E3%80%81%E5%8D%8F%E5%95%86%E5%90%8C%E6%AD%A5"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">第一阶段：建立连接、协商同步</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E9%98%B6%E6%AE%B5%EF%BC%9A%E4%B8%BB%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%90%8C%E6%AD%A5%E6%95%B0%E6%8D%AE"><span class="nav-number">1.3.2.2.</span> <span class="nav-text">第二阶段：主服务器同步数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E9%98%B6%E6%AE%B5%EF%BC%9A%E5%8F%91%E9%80%81%E5%A2%9E%E9%87%8F%E6%95%B0%E6%8D%AE"><span class="nav-number">1.3.2.3.</span> <span class="nav-text">第三阶段：发送增量数据</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%91%BD%E4%BB%A4%E4%BC%A0%E6%92%AD"><span class="nav-number">1.3.3.</span> <span class="nav-text">命令传播</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5"><span class="nav-number">1.4.</span> <span class="nav-text">性能优化策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%91%8A%E4%B8%BB%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%8E%8B%E5%8A%9B"><span class="nav-number">1.4.1.</span> <span class="nav-text">分摊主服务器压力</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A2%9E%E9%87%8F%E5%A4%8D%E5%88%B6%E6%9C%BA%E5%88%B6"><span class="nav-number">1.5.</span> <span class="nav-text">增量复制机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C%E6%96%AD%E5%BC%80%E9%87%8D%E8%BF%9E%E9%97%AE%E9%A2%98"><span class="nav-number">1.5.1.</span> <span class="nav-text">网络断开重连问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A2%9E%E9%87%8F%E5%A4%8D%E5%88%B6%E8%BF%87%E7%A8%8B"><span class="nav-number">1.5.2.</span> <span class="nav-text">增量复制过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E7%BB%84%E4%BB%B6"><span class="nav-number">1.5.3.</span> <span class="nav-text">关键组件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#repl-backlog-buffer%E7%8E%AF%E5%BD%A2%E7%BC%93%E5%86%B2%E5%8C%BA"><span class="nav-number">1.5.3.1.</span> <span class="nav-text">repl_backlog_buffer环形缓冲区</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#replication-offset%E5%A4%8D%E5%88%B6%E5%81%8F%E7%A7%BB%E9%87%8F"><span class="nav-number">1.5.3.2.</span> <span class="nav-text">replication offset复制偏移量</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E7%AD%96%E7%95%A5%E5%88%A4%E6%96%AD"><span class="nav-number">1.5.4.</span> <span class="nav-text">同步策略判断</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BC%93%E5%86%B2%E5%8C%BA%E5%A4%A7%E5%B0%8F%E4%BC%98%E5%8C%96"><span class="nav-number">1.5.5.</span> <span class="nav-text">缓冲区大小优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E9%A2%98%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.7.</span> <span class="nav-text">面试题详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Redis%E4%B8%BB%E4%BB%8E%E8%8A%82%E7%82%B9%E6%98%AF%E9%95%BF%E8%BF%9E%E6%8E%A5%E8%BF%98%E6%98%AF%E7%9F%AD%E8%BF%9E%E6%8E%A5%EF%BC%9F"><span class="nav-number">1.7.1.</span> <span class="nav-text">Redis主从节点是长连接还是短连接？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%8E%E4%B9%88%E5%88%A4%E6%96%ADRedis%E6%9F%90%E4%B8%AA%E8%8A%82%E7%82%B9%E6%98%AF%E5%90%A6%E6%AD%A3%E5%B8%B8%E5%B7%A5%E4%BD%9C%EF%BC%9F"><span class="nav-number">1.7.2.</span> <span class="nav-text">怎么判断Redis某个节点是否正常工作？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E6%9E%B6%E6%9E%84%E4%B8%AD%EF%BC%8C%E8%BF%87%E6%9C%9Fkey%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86%EF%BC%9F"><span class="nav-number">1.7.3.</span> <span class="nav-text">主从复制架构中，过期key如何处理？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Redis%E6%98%AF%E5%90%8C%E6%AD%A5%E5%A4%8D%E5%88%B6%E8%BF%98%E6%98%AF%E5%BC%82%E6%AD%A5%E5%A4%8D%E5%88%B6%EF%BC%9F"><span class="nav-number">1.7.4.</span> <span class="nav-text">Redis是同步复制还是异步复制？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E4%B8%AD%E4%B8%A4%E4%B8%AABuffer%E6%9C%89%E4%BB%80%E4%B9%88%E5%8C%BA%E5%88%AB%EF%BC%9F"><span class="nav-number">1.7.5.</span> <span class="nav-text">主从复制中两个Buffer有什么区别？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%BA%94%E5%AF%B9%E4%B8%BB%E4%BB%8E%E6%95%B0%E6%8D%AE%E4%B8%8D%E4%B8%80%E8%87%B4%EF%BC%9F"><span class="nav-number">1.7.6.</span> <span class="nav-text">如何应对主从数据不一致？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E4%BB%8E%E5%88%87%E6%8D%A2%E5%A6%82%E4%BD%95%E5%87%8F%E5%B0%91%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F"><span class="nav-number">1.7.7.</span> <span class="nav-text">主从切换如何减少数据丢失？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%BC%82%E6%AD%A5%E5%A4%8D%E5%88%B6%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1"><span class="nav-number">1.7.7.1.</span> <span class="nav-text">1. 异步复制数据丢失</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E8%84%91%E8%A3%82%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1"><span class="nav-number">1.7.7.2.</span> <span class="nav-text">2. 脑裂数据丢失</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E4%BB%8E%E5%A6%82%E4%BD%95%E5%81%9A%E5%88%B0%E6%95%85%E9%9A%9C%E8%87%AA%E5%8A%A8%E5%88%87%E6%8D%A2%EF%BC%9F"><span class="nav-number">1.7.8.</span> <span class="nav-text">主从如何做到故障自动切换？</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">154</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">204</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">683k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">10:21</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : 'aeeebe4107cbe2b1de730d59a12cb97d',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-26",1],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",1],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-21",5],["2025-06-22",3]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2025-04","2025-05","2025-06"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [32,81,41],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":74},{"name":"Medium","value":62},{"name":"Hot100","value":58},{"name":"数组","value":31},{"name":"❌错题集","value":25},{"name":"八股文","value":23},{"name":"MySQL","value":22},{"name":"深度优先搜索","value":19}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":74},{"name":"Medium","value":62},{"name":"Hot100","value":58},{"name":"数组","value":31},{"name":"❌错题集","value":25},{"name":"八股文","value":23},{"name":"MySQL","value":22},{"name":"深度优先搜索","value":19}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":87},{"name":"LeetCode","value":86},{"name":"Hot100","value":63},{"name":"八股文","value":49},{"name":"REDIS","value":25}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":87},{"name":"LeetCode","value":86},{"name":"Hot100","value":63},{"name":"八股文","value":49},{"name":"REDIS","value":25}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"面试经验","children":[],"count":7,"path":"面试经验"},{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[],"count":22,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":86,"path":"算法刷题/LeetCode"}],"count":87,"path":"算法刷题"},{"name":"八股文","children":[{"name":"Go语言","children":[],"count":1,"path":"八股文/Go语言"},{"name":"计算机网络","children":[],"count":1,"path":"八股文/计算机网络"},{"name":"REDIS","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/REDIS/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/REDIS/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/REDIS/高可用"},{"name":"基础知识","children":[{"name":"内存管理","children":[],"count":1,"path":"八股文/REDIS/基础知识/内存管理"},{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":19,"path":"八股文/REDIS/基础知识"}],"count":25,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":49,"path":"八股文"},{"name":"技术八股","children":[{"name":"Go语言","children":[],"count":8,"path":"技术八股/Go语言"}],"count":9,"path":"技术八股"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>

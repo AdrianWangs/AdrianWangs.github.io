@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="用最简单的方式理解Redis AOF持久化：就像记日记一样，把每个操作都写下来，需要的时候再重新执行一遍">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis AOF 持久化详解：就像给数据库写日记一样简单">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/index.html">
+<meta property="og:site_name" content="小王的blog">
+<meta property="og:description" content="用最简单的方式理解Redis AOF持久化：就像记日记一样，把每个操作都写下来，需要的时候再重新执行一遍">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595527508.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595534663.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595541605.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595562255.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595570963.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595577012.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595586549.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595595181.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595625080.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595635910.png">
+<meta property="article:published_time" content="2025-05-30T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-06-21T16:54:19.323Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="AOF">
+<meta property="article:tag" content="持久化">
+<meta property="article:tag" content="fsync">
+<meta property="article:tag" content="重写机制">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595527508.png">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>Redis AOF 持久化详解：就像给数据库写日记一样简单 | 小王的blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小王的blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Adrian Wang's blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-计算机网络">
+
+    <a href="/network" rel="section"><i class="fa fa-globe fa-fw"></i>计算机网络</a>
+
+  </li>
+        <li class="menu-item menu-item-golang">
+
+    <a href="/golang" rel="section"><i class="fa fa-brands fa-golang fa-fw"></i>Golang</a>
+
+  </li>
+        <li class="menu-item menu-item-面试经验">
+
+    <a href="/interview" rel="section"><i class="fa fa-briefcase fa-fw"></i>面试经验</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小王的blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis AOF 持久化详解：就像给数据库写日记一样简单
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-05-30 16:00:00" itemprop="dateCreated datePublished" datetime="2025-05-30T16:00:00+00:00">2025-05-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-21 16:54:19" itemprop="dateModified" datetime="2025-06-21T16:54:19+00:00">2025-06-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/" itemprop="url" rel="index"><span itemprop="name">REDIS</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+            <div class="post-description">用最简单的方式理解Redis AOF持久化：就像记日记一样，把每个操作都写下来，需要的时候再重新执行一遍</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1>Redis AOF 持久化：给数据库写&quot;日记&quot;</h1>
+<h2 id="什么是AOF？一个简单的比喻">什么是AOF？一个简单的比喻</h2>
+<p>想象一下，你每天都在记日记，把今天做了什么事情都详细记录下来：</p>
+<ul>
+<li>“今天买了一个苹果”</li>
+<li>“把苹果吃掉了”</li>
+<li>“又买了一个橙子”</li>
+</ul>
+<p>如果有一天你失忆了，只要翻看日记，按照上面记录的事情重新做一遍，就能恢复到失忆前的状态。</p>
+<p><strong>Redis的AOF持久化就是这个道理！</strong></p>
+<p><img src="/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595527508.png" alt="1748595527508"></p>
+<p>AOF (Append Only File) 就是Redis的&quot;日记本&quot;：</p>
+<ul>
+<li>每当有人修改数据（写操作），Redis就把这个操作记录到AOF文件里</li>
+<li>如果Redis重启了，它就读取AOF文件，把里面的操作重新执行一遍</li>
+<li>这样数据就恢复了！</li>
+</ul>
+<blockquote>
+<p><strong>注意</strong>：Redis只记录&quot;写操作&quot;（增删改），不记录&quot;读操作&quot;，因为读操作不会改变数据，记录了也没用。</p>
+</blockquote>
+<h2 id="开启AOF功能">开启AOF功能</h2>
+<p>AOF功能默认是关闭的，需要在配置文件里开启：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在 redis.conf 文件中设置</span></span><br><span class="line">appendonly <span class="built_in">yes</span></span><br></pre></td></tr></table></figure>
+<p><img src="/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595534663.png" alt="1748595534663"></p>
+<h2 id="AOF文件长什么样？">AOF文件长什么样？</h2>
+<p>AOF文件其实就是个普通的文本文件，我们来看个例子。</p>
+<p>当你执行 <code>set name xiaolin</code> 这个命令时，AOF文件里会记录：</p>
+<p><img src="/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595541605.png" alt="1748595541605"></p>
+<p>这看起来有点复杂，让我解释一下：</p>
+<ul>
+<li><code>*3</code>：表示这个命令有3个部分</li>
+<li><code>$3 set</code>：表示第一部分是&quot;set&quot;，长度是3个字符</li>
+<li><code>$4 name</code>：表示第二部分是&quot;name&quot;，长度是4个字符</li>
+<li><code>$7 xiaolin</code>：表示第三部分是&quot;xiaolin&quot;，长度是7个字符</li>
+</ul>
+<p>就像是把 <code>set name xiaolin</code> 这个命令拆解并详细记录下来。</p>
+<h2 id="AOF的两个优点">AOF的两个优点</h2>
+<p>Redis采用了&quot;<strong>先执行命令，再记录日志</strong>&quot;的方式，这样做有两个好处：</p>
+<h3 id="优点1：避免记录错误命令">优点1：避免记录错误命令</h3>
+<p>就像写日记一样，你只会记录真正发生的事情。如果命令执行失败了，Redis就不会把它写进AOF文件，保证AOF里的命令都是正确的。</p>
+<h3 id="优点2：不影响当前操作的速度">优点2：不影响当前操作的速度</h3>
+<p>因为是先执行再记录，所以当前的命令不会被记录操作拖慢。</p>
+<h2 id="AOF的两个风险">AOF的两个风险</h2>
+<p>当然，这种方式也有风险：</p>
+<h3 id="风险1：数据丢失">风险1：数据丢失</h3>
+<p>就像写日记一样，如果你刚做完一件事，还没来得及记到日记里，突然失忆了，这件事就丢了。</p>
+<p>Redis也是一样，如果刚执行完命令，还没来得及写入硬盘，服务器就宕机了，这个数据就丢了。</p>
+<h3 id="风险2：可能影响下一个操作">风险2：可能影响下一个操作</h3>
+<p>虽然当前操作不受影响，但如果写日记的过程很慢（比如硬盘很忙），就会影响下一个操作。</p>
+<h2 id="三种写入策略：什么时候把日记写到硬盘？">三种写入策略：什么时候把日记写到硬盘？</h2>
+<p><img src="/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595562255.png" alt="1748595562255"></p>
+<p>Redis写入AOF的过程分三步：</p>
+<ol>
+<li><strong>执行命令</strong>：比如执行 <code>set name xiaolin</code></li>
+<li><strong>写入缓冲区</strong>：先把命令写到内存的缓冲区里</li>
+<li><strong>写入硬盘</strong>：再从缓冲区写到硬盘上</li>
+</ol>
+<p>第三步&quot;什么时候写入硬盘&quot;有三种策略：</p>
+<h3 id="策略1：Always（总是立即写入）">策略1：Always（总是立即写入）</h3>
+<p><strong>特点</strong>：每执行一个写命令，立即写入硬盘</p>
+<ul>
+<li><strong>优点</strong>：数据最安全，几乎不会丢失</li>
+<li><strong>缺点</strong>：速度最慢，因为每次都要等硬盘写入完成</li>
+</ul>
+<p><strong>适用场景</strong>：对数据安全要求极高的场景</p>
+<h3 id="策略2：Everysec（每秒写入一次）">策略2：Everysec（每秒写入一次）</h3>
+<p><strong>特点</strong>：每秒钟把缓冲区的内容写入硬盘一次</p>
+<ul>
+<li><strong>优点</strong>：平衡了安全性和性能</li>
+<li><strong>缺点</strong>：最多可能丢失1秒的数据</li>
+</ul>
+<p><strong>适用场景</strong>：大多数应用的推荐选择</p>
+<h3 id="策略3：No（交给操作系统决定）">策略3：No（交给操作系统决定）</h3>
+<p><strong>特点</strong>：Redis不管，由操作系统决定什么时候写入硬盘</p>
+<ul>
+<li><strong>优点</strong>：性能最好</li>
+<li><strong>缺点</strong>：可能丢失较多数据</li>
+</ul>
+<p><strong>适用场景</strong>：对性能要求高，能容忍数据丢失的场景</p>
+<p><img src="/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595570963.png" alt="1748595570963"></p>
+<h3 id="三种策略的技术原理">三种策略的技术原理</h3>
+<p>这三种策略其实是在控制<code>fsync()</code>函数的调用时机：</p>
+<p><img src="/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595577012.png" alt="1748595577012"></p>
+<ul>
+<li><strong>Always</strong>：每次写入后立即调用fsync()</li>
+<li><strong>Everysec</strong>：创建后台任务每秒调用fsync()</li>
+<li><strong>No</strong>：从不调用fsync()，让操作系统自己决定</li>
+</ul>
+<blockquote>
+<p><strong>fsync()函数</strong>：告诉操作系统&quot;现在立即把数据写到硬盘上&quot;，不要再等了。</p>
+</blockquote>
+<h2 id="AOF重写：给日记本-瘦身">AOF重写：给日记本&quot;瘦身&quot;</h2>
+<h3 id="为什么需要重写？">为什么需要重写？</h3>
+<p>想象一下，你的日记本记录了：</p>
+<ul>
+<li>“买了一个苹果”</li>
+<li>“把苹果吃掉了”</li>
+<li>“又买了一个苹果”</li>
+<li>“把苹果又吃掉了”</li>
+<li>“再买了一个苹果”</li>
+</ul>
+<p>日记本越来越厚，但其实最后的状态就是&quot;有一个苹果&quot;。如果重写日记，只需要写&quot;有一个苹果&quot;就够了。</p>
+<p><img src="/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595586549.png" alt="1748595586549"></p>
+<p><strong>AOF重写就是这个道理</strong>：</p>
+<ul>
+<li>不管一个数据被修改了多少次</li>
+<li>重写时只看它现在的最终状态</li>
+<li>用一条命令就能表示这个状态</li>
+</ul>
+<h3 id="重写的好处">重写的好处</h3>
+<ol>
+<li><strong>AOF文件变小</strong>：减少了冗余命令</li>
+<li><strong>恢复数据更快</strong>：执行的命令更少了</li>
+<li><strong>节省存储空间</strong>：文件小了，占用磁盘空间少</li>
+</ol>
+<h3 id="为什么要创建新文件？">为什么要创建新文件？</h3>
+<p>重写时不直接修改原AOF文件，而是创建一个新文件，原因很简单：</p>
+<ul>
+<li>如果重写过程中出错了，原文件还在，数据不会丢失</li>
+<li>就像重新写一本新日记，写坏了大不了扔掉，原来的日记还在</li>
+</ul>
+<h2 id="AOF后台重写：不影响正常服务">AOF后台重写：不影响正常服务</h2>
+<h3 id="为什么要后台重写？">为什么要后台重写？</h3>
+<p>重写AOF文件是个耗时的工作，就像整理一本很厚的日记本。如果Redis停下来专门做这件事，就没法处理用户的请求了。</p>
+<p>所以Redis采用了**“分身术”**：</p>
+<p><img src="/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595595181.png" alt="1748595595181"></p>
+<ol>
+<li><strong>主进程</strong>：继续处理用户请求</li>
+<li><strong>子进程</strong>：专门负责重写AOF文件</li>
+</ol>
+<h3 id="写时复制技术：神奇的-分身术">写时复制技术：神奇的&quot;分身术&quot;</h3>
+<p>当Redis需要重写AOF时：</p>
+<ol>
+<li><strong>创建子进程</strong>：Redis创建一个&quot;分身&quot;（子进程）</li>
+<li><strong>共享内存</strong>：分身和本体共享同一份数据，节省内存</li>
+<li><strong>写时复制</strong>：如果本体修改了数据，操作系统会自动为分身复制一份独立的数据</li>
+</ol>
+<p><img src="/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595625080.png" alt="1748595625080"></p>
+<p>这就像是：</p>
+<ul>
+<li>你和你的分身共享一本笔记本</li>
+<li>平时你们都只是看笔记本，没问题</li>
+<li>如果你要修改笔记，系统会自动给分身复印一份独立的笔记本</li>
+<li>这样你们各自修改各自的，互不影响</li>
+</ul>
+<h3 id="数据一致性问题：怎么保证分身的数据是最新的？">数据一致性问题：怎么保证分身的数据是最新的？</h3>
+<p>问题来了：分身在重写AOF期间，本体还在处理新的命令，这样分身的数据就不是最新的了。</p>
+<p>Redis的解决方案是&quot;<strong>双写</strong>&quot;：</p>
+<p><img src="/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/AOF/1748595635910.png" alt="1748595635910"></p>
+<p>在重写期间，每个写命令都会被写入两个地方：</p>
+<ol>
+<li><strong>AOF缓冲区</strong>：正常的AOF文件</li>
+<li><strong>AOF重写缓冲区</strong>：专门给重写用的缓冲区</li>
+</ol>
+<p>当分身完成重写后：</p>
+<ol>
+<li>分身告诉本体：“我写完了！”</li>
+<li>本体把重写缓冲区里的新命令追加到新AOF文件后面</li>
+<li>用新AOF文件替换掉旧的AOF文件</li>
+</ol>
+<p>这样就保证了数据的完整性和一致性。</p>
+<h3 id="哪些操作会阻塞主进程？">哪些操作会阻塞主进程？</h3>
+<p>虽然重写是在后台进行的，但有两个时候会阻塞主进程：</p>
+<ol>
+<li><strong>创建子进程时</strong>：需要复制页表等数据结构，数据越大阻塞时间越长</li>
+<li><strong>写时复制时</strong>：如果修改的是大数据（bigkey），复制内存的时间会比较长</li>
+</ol>
+<h2 id="总结：AOF就像给数据库写日记">总结：AOF就像给数据库写日记</h2>
+<p>让我们用最简单的话总结一下AOF：</p>
+<ol>
+<li><strong>基本原理</strong>：像写日记一样，把每个写操作都记录下来</li>
+<li><strong>恢复数据</strong>：重启时按照日记重新执行一遍操作</li>
+<li><strong>写入策略</strong>：可以选择立即写入、每秒写入或让系统决定</li>
+<li><strong>文件重写</strong>：定期整理日记，去掉重复和过时的内容</li>
+<li><strong>后台重写</strong>：用&quot;分身&quot;来整理日记，不影响正常工作</li>
+</ol>
+<p><strong>选择建议</strong>：</p>
+<ul>
+<li>要求数据绝对安全：选择Always策略</li>
+<li>平衡安全和性能：选择Everysec策略（推荐）</li>
+<li>追求最高性能：选择No策略</li>
+</ul>
+<p>AOF持久化虽然恢复数据比较慢（因为要重新执行所有命令），但它的优点是数据丢失少，特别适合对数据安全要求高的场景。</p>
+<hr>
+<p><strong>参考资料</strong></p>
+<ul>
+<li>《Redis 设计与实现》</li>
+<li>《Redis 核心技术与实战 - 极客时间》</li>
+<li>《Redis 源码分析》</li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/AOF/" rel="tag"># AOF</a>
+              <a href="/tags/%E6%8C%81%E4%B9%85%E5%8C%96/" rel="tag"># 持久化</a>
+              <a href="/tags/fsync/" rel="tag"># fsync</a>
+              <a href="/tags/%E9%87%8D%E5%86%99%E6%9C%BA%E5%88%B6/" rel="tag"># 重写机制</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/05/30/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-68-%E6%96%87%E6%9C%AC%E5%B7%A6%E5%8F%B3%E5%AF%B9%E9%BD%90/" rel="prev" title="LeetCode 68 - 文本左右对齐（Text Justification）">
+      <i class="fa fa-chevron-left"></i> LeetCode 68 - 文本左右对齐（Text Justification）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/05/30/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8C%81%E4%B9%85%E5%8C%96/RDB/" rel="next" title="Redis RDB 快照持久化：原理、优化与混合持久化">
+      Redis RDB 快照持久化：原理、优化与混合持久化 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-number">1.</span> <span class="nav-text">Redis AOF 持久化：给数据库写&quot;日记&quot;</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFAOF%EF%BC%9F%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84%E6%AF%94%E5%96%BB"><span class="nav-number">1.1.</span> <span class="nav-text">什么是AOF？一个简单的比喻</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%80%E5%90%AFAOF%E5%8A%9F%E8%83%BD"><span class="nav-number">1.2.</span> <span class="nav-text">开启AOF功能</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AOF%E6%96%87%E4%BB%B6%E9%95%BF%E4%BB%80%E4%B9%88%E6%A0%B7%EF%BC%9F"><span class="nav-number">1.3.</span> <span class="nav-text">AOF文件长什么样？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AOF%E7%9A%84%E4%B8%A4%E4%B8%AA%E4%BC%98%E7%82%B9"><span class="nav-number">1.4.</span> <span class="nav-text">AOF的两个优点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%98%E7%82%B91%EF%BC%9A%E9%81%BF%E5%85%8D%E8%AE%B0%E5%BD%95%E9%94%99%E8%AF%AF%E5%91%BD%E4%BB%A4"><span class="nav-number">1.4.1.</span> <span class="nav-text">优点1：避免记录错误命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%98%E7%82%B92%EF%BC%9A%E4%B8%8D%E5%BD%B1%E5%93%8D%E5%BD%93%E5%89%8D%E6%93%8D%E4%BD%9C%E7%9A%84%E9%80%9F%E5%BA%A6"><span class="nav-number">1.4.2.</span> <span class="nav-text">优点2：不影响当前操作的速度</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AOF%E7%9A%84%E4%B8%A4%E4%B8%AA%E9%A3%8E%E9%99%A9"><span class="nav-number">1.5.</span> <span class="nav-text">AOF的两个风险</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A3%8E%E9%99%A91%EF%BC%9A%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1"><span class="nav-number">1.5.1.</span> <span class="nav-text">风险1：数据丢失</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A3%8E%E9%99%A92%EF%BC%9A%E5%8F%AF%E8%83%BD%E5%BD%B1%E5%93%8D%E4%B8%8B%E4%B8%80%E4%B8%AA%E6%93%8D%E4%BD%9C"><span class="nav-number">1.5.2.</span> <span class="nav-text">风险2：可能影响下一个操作</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E7%A7%8D%E5%86%99%E5%85%A5%E7%AD%96%E7%95%A5%EF%BC%9A%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E6%8A%8A%E6%97%A5%E8%AE%B0%E5%86%99%E5%88%B0%E7%A1%AC%E7%9B%98%EF%BC%9F"><span class="nav-number">1.6.</span> <span class="nav-text">三种写入策略：什么时候把日记写到硬盘？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AD%96%E7%95%A51%EF%BC%9AAlways%EF%BC%88%E6%80%BB%E6%98%AF%E7%AB%8B%E5%8D%B3%E5%86%99%E5%85%A5%EF%BC%89"><span class="nav-number">1.6.1.</span> <span class="nav-text">策略1：Always（总是立即写入）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AD%96%E7%95%A52%EF%BC%9AEverysec%EF%BC%88%E6%AF%8F%E7%A7%92%E5%86%99%E5%85%A5%E4%B8%80%E6%AC%A1%EF%BC%89"><span class="nav-number">1.6.2.</span> <span class="nav-text">策略2：Everysec（每秒写入一次）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AD%96%E7%95%A53%EF%BC%9ANo%EF%BC%88%E4%BA%A4%E7%BB%99%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%86%B3%E5%AE%9A%EF%BC%89"><span class="nav-number">1.6.3.</span> <span class="nav-text">策略3：No（交给操作系统决定）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E7%A7%8D%E7%AD%96%E7%95%A5%E7%9A%84%E6%8A%80%E6%9C%AF%E5%8E%9F%E7%90%86"><span class="nav-number">1.6.4.</span> <span class="nav-text">三种策略的技术原理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AOF%E9%87%8D%E5%86%99%EF%BC%9A%E7%BB%99%E6%97%A5%E8%AE%B0%E6%9C%AC-%E7%98%A6%E8%BA%AB"><span class="nav-number">1.7.</span> <span class="nav-text">AOF重写：给日记本&quot;瘦身&quot;</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E9%87%8D%E5%86%99%EF%BC%9F"><span class="nav-number">1.7.1.</span> <span class="nav-text">为什么需要重写？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E5%86%99%E7%9A%84%E5%A5%BD%E5%A4%84"><span class="nav-number">1.7.2.</span> <span class="nav-text">重写的好处</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%88%9B%E5%BB%BA%E6%96%B0%E6%96%87%E4%BB%B6%EF%BC%9F"><span class="nav-number">1.7.3.</span> <span class="nav-text">为什么要创建新文件？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AOF%E5%90%8E%E5%8F%B0%E9%87%8D%E5%86%99%EF%BC%9A%E4%B8%8D%E5%BD%B1%E5%93%8D%E6%AD%A3%E5%B8%B8%E6%9C%8D%E5%8A%A1"><span class="nav-number">1.8.</span> <span class="nav-text">AOF后台重写：不影响正常服务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%90%8E%E5%8F%B0%E9%87%8D%E5%86%99%EF%BC%9F"><span class="nav-number">1.8.1.</span> <span class="nav-text">为什么要后台重写？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6%E6%8A%80%E6%9C%AF%EF%BC%9A%E7%A5%9E%E5%A5%87%E7%9A%84-%E5%88%86%E8%BA%AB%E6%9C%AF"><span class="nav-number">1.8.2.</span> <span class="nav-text">写时复制技术：神奇的&quot;分身术&quot;</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%E6%80%A7%E9%97%AE%E9%A2%98%EF%BC%9A%E6%80%8E%E4%B9%88%E4%BF%9D%E8%AF%81%E5%88%86%E8%BA%AB%E7%9A%84%E6%95%B0%E6%8D%AE%E6%98%AF%E6%9C%80%E6%96%B0%E7%9A%84%EF%BC%9F"><span class="nav-number">1.8.3.</span> <span class="nav-text">数据一致性问题：怎么保证分身的数据是最新的？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%93%AA%E4%BA%9B%E6%93%8D%E4%BD%9C%E4%BC%9A%E9%98%BB%E5%A1%9E%E4%B8%BB%E8%BF%9B%E7%A8%8B%EF%BC%9F"><span class="nav-number">1.8.4.</span> <span class="nav-text">哪些操作会阻塞主进程？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9AAOF%E5%B0%B1%E5%83%8F%E7%BB%99%E6%95%B0%E6%8D%AE%E5%BA%93%E5%86%99%E6%97%A5%E8%AE%B0"><span class="nav-number">1.9.</span> <span class="nav-text">总结：AOF就像给数据库写日记</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">154</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">204</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">683k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">10:21</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : '4c93b7c3bba7346836a3f859da3111d6',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-26",1],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",1],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-21",5],["2025-06-22",3]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2025-04","2025-05","2025-06"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [32,81,41],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":74},{"name":"Medium","value":62},{"name":"Hot100","value":58},{"name":"数组","value":31},{"name":"❌错题集","value":25},{"name":"八股文","value":23},{"name":"MySQL","value":22},{"name":"深度优先搜索","value":19}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":74},{"name":"Medium","value":62},{"name":"Hot100","value":58},{"name":"数组","value":31},{"name":"❌错题集","value":25},{"name":"八股文","value":23},{"name":"MySQL","value":22},{"name":"深度优先搜索","value":19}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":87},{"name":"LeetCode","value":86},{"name":"Hot100","value":63},{"name":"八股文","value":49},{"name":"REDIS","value":25}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":87},{"name":"LeetCode","value":86},{"name":"Hot100","value":63},{"name":"八股文","value":49},{"name":"REDIS","value":25}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"面试经验","children":[],"count":7,"path":"面试经验"},{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[],"count":22,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":86,"path":"算法刷题/LeetCode"}],"count":87,"path":"算法刷题"},{"name":"八股文","children":[{"name":"Go语言","children":[],"count":1,"path":"八股文/Go语言"},{"name":"计算机网络","children":[],"count":1,"path":"八股文/计算机网络"},{"name":"REDIS","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/REDIS/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/REDIS/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/REDIS/高可用"},{"name":"基础知识","children":[{"name":"内存管理","children":[],"count":1,"path":"八股文/REDIS/基础知识/内存管理"},{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":19,"path":"八股文/REDIS/基础知识"}],"count":25,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":49,"path":"八股文"},{"name":"技术八股","children":[{"name":"Go语言","children":[],"count":8,"path":"技术八股/Go语言"}],"count":9,"path":"技术八股"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>
