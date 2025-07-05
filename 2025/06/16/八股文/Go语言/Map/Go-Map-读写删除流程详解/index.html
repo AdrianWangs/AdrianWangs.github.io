@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="深入解析Go语言map的读写删除操作流程，包括mapaccess、mapassign、mapdelete等核心函数的实现原理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="技术八股: Go Map 读写删除流程详解">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E8%AF%BB%E5%86%99%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="深入解析Go语言map的读写删除操作流程，包括mapaccess、mapassign、mapdelete等核心函数的实现原理">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E8%AF%BB%E5%86%99%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3/1750126774765.png">
+<meta property="article:published_time" content="2025-06-16T20:56:03.000Z">
+<meta property="article:modified_time" content="2025-07-05T04:36:28.524Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="数据结构">
+<meta property="article:tag" content="Go语言">
+<meta property="article:tag" content="八股文">
+<meta property="article:tag" content="面试题">
+<meta property="article:tag" content="后端">
+<meta property="article:tag" content="算法实现">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E8%AF%BB%E5%86%99%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3/1750126774765.png">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E8%AF%BB%E5%86%99%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>技术八股: Go Map 读写删除流程详解 | Adrian Wang's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Adrian Wang's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">一个完全由AI生成，但是内容高质量的Blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-全部文章">
+
+    <a href="/archives" rel="section"><i class="fa fa-th-list fa-fw"></i>全部文章</a>
+
+  </li>
+        <li class="menu-item menu-item-面试经验">
+
+    <a href="/interview" rel="section"><i class="fa fa-briefcase fa-fw"></i>面试经验</a>
+
+  </li>
+        <li class="menu-item menu-item-golang">
+
+    <a href="/golang" rel="section"><i class="fa fa-brands fa-golang fa-fw"></i>Golang</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-计算机网络">
+
+    <a href="/network" rel="section"><i class="fa fa-globe fa-fw"></i>计算机网络</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E8%AF%BB%E5%86%99%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="一个完全由AI生成，但是内容高质量的Blog">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Adrian Wang's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          技术八股: Go Map 读写删除流程详解
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-06-16 20:56:03" itemprop="dateCreated datePublished" datetime="2025-06-16T20:56:03+00:00">2025-06-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-07-05 04:36:28" itemprop="dateModified" datetime="2025-07-05T04:36:28+00:00">2025-07-05</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF%E5%85%AB%E8%82%A1/" itemprop="url" rel="index"><span itemprop="name">技术八股</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF%E5%85%AB%E8%82%A1/Go%E8%AF%AD%E8%A8%80/" itemprop="url" rel="index"><span itemprop="name">Go语言</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>8.9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>8 mins.</span>
+            </span>
+            <div class="post-description">深入解析Go语言map的读写删除操作流程，包括mapaccess、mapassign、mapdelete等核心函数的实现原理</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1>Go Map 读写删除流程详解</h1>
+<h2 id="读流程详解">读流程详解</h2>
+<h3 id="读流程概述">读流程概述</h3>
+<p>map 读流程主要分为以下几步：</p>
+<p>（1）根据 key 取 hash 值；</p>
+<p>（2）根据 hash 值对桶数组取模，确定所在的桶；</p>
+<p>（3）沿着桶链表依次遍历各个桶内的 key-value 对；</p>
+<p>（4）命中相同的 key，则返回 value；倘若 key 不存在，则返回零值。</p>
+<p>map 读操作最终会走进 runtime/map.go 的 mapaccess 方法中。</p>
+<h3 id="mapaccess-方法源码详解">mapaccess 方法源码详解</h3>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">mapaccess1</span><span class="params">(t *maptype, h *hmap, key unsafe.Pointer)</span></span> unsafe.Pointer &#123;</span><br><span class="line">	<span class="keyword">if</span> h == <span class="literal">nil</span> || h.count == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> unsafe.Pointer(&amp;zeroVal[<span class="number">0</span>])</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> h.flags&amp;hashWriting != <span class="number">0</span> &#123;</span><br><span class="line">		fatal(<span class="string">&quot;concurrent map read and map write&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	hash := t.hasher(key, <span class="type">uintptr</span>(h.hash0))</span><br><span class="line">	m := bucketMask(h.B)</span><br><span class="line">	b := (*bmap)(add(h.buckets, (hash&amp;m)*<span class="type">uintptr</span>(t.bucketsize)))</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> c := h.oldbuckets; c != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">if</span> !h.sameSizeGrow() &#123;</span><br><span class="line">			m &gt;&gt;= <span class="number">1</span></span><br><span class="line">		&#125;</span><br><span class="line">		oldb := (*bmap)(add(c, (hash&amp;m)*<span class="type">uintptr</span>(t.bucketsize)))</span><br><span class="line">		<span class="keyword">if</span> !evacuated(oldb) &#123;</span><br><span class="line">			b = oldb</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	top := tophash(hash)</span><br><span class="line">bucketloop:</span><br><span class="line">	<span class="keyword">for</span> ; b != <span class="literal">nil</span>; b = b.overflow(t) &#123;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="type">uintptr</span>(<span class="number">0</span>); i &lt; bucketCnt; i++ &#123;</span><br><span class="line">			<span class="keyword">if</span> b.tophash[i] != top &#123;</span><br><span class="line">				<span class="keyword">if</span> b.tophash[i] == emptyRest &#123;</span><br><span class="line">					<span class="keyword">break</span> bucketloop</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line">			k := add(unsafe.Pointer(b), dataOffset+i*<span class="type">uintptr</span>(t.keysize))</span><br><span class="line">			<span class="keyword">if</span> t.indirectkey() &#123;</span><br><span class="line">				k = *((*unsafe.Pointer)(k))</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> t.key.equal(key, k) &#123;</span><br><span class="line">				e := add(unsafe.Pointer(b), dataOffset+bucketCnt*<span class="type">uintptr</span>(t.keysize)+i*<span class="type">uintptr</span>(t.elemsize))</span><br><span class="line">				<span class="keyword">if</span> t.indirectelem() &#123;</span><br><span class="line">					e = *((*unsafe.Pointer)(e))</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">return</span> e</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> unsafe.Pointer(&amp;zeroVal[<span class="number">0</span>])</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="读流程详细步骤">读流程详细步骤</h3>
+<h4 id="1-边界条件检查">1. 边界条件检查</h4>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> h == <span class="literal">nil</span> || h.count == <span class="number">0</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> unsafe.Pointer(&amp;zeroVal[<span class="number">0</span>])</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>倘若 map 未初始化，或此时存在 key-value 对数量为 0，直接返回零值。</p>
+<h4 id="2-并发安全检查">2. 并发安全检查</h4>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> h.flags&amp;hashWriting != <span class="number">0</span> &#123;</span><br><span class="line">	fatal(<span class="string">&quot;concurrent map read and map write&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>倘若发现存在其他 goroutine 在写 map，直接抛出并发读写的 fatal error。其中，并发写标记，位于 hmap.flags 的第 3 个 bit 位。</p>
+<h4 id="3-哈希计算与桶定位">3. 哈希计算与桶定位</h4>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">hash := t.hasher(key, <span class="type">uintptr</span>(h.hash0))</span><br><span class="line">m := bucketMask(h.B)</span><br><span class="line">b := (*bmap)(add(h.buckets, (hash&amp;m)*<span class="type">uintptr</span>(t.bucketsize)))</span><br></pre></td></tr></table></figure>
+<p>通过 maptype.hasher() 方法计算得到 key 的 hash 值，并对桶数组长度取模，取得对应的桶。</p>
+<p><code>bucketMask</code> 方法会根据 B 求得桶数组长度 - 1 的值，用于后续的 &amp; 运算，实现取模的效果：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">bucketMask</span><span class="params">(b <span class="type">uint8</span>)</span></span> <span class="type">uintptr</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> bucketShift(b) - <span class="number">1</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="4-扩容期间的特殊处理">4. 扩容期间的特殊处理</h4>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> c := h.oldbuckets; c != <span class="literal">nil</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> !h.sameSizeGrow() &#123;</span><br><span class="line">		m &gt;&gt;= <span class="number">1</span></span><br><span class="line">	&#125;</span><br><span class="line">	oldb := (*bmap)(add(c, (hash&amp;m)*<span class="type">uintptr</span>(t.bucketsize)))</span><br><span class="line">	<span class="keyword">if</span> !evacuated(oldb) &#123;</span><br><span class="line">		b = oldb</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在取桶时，会关注当前 map 是否处于扩容的流程，倘若是的话，需要在老的桶数组 oldBuckets 中取桶，通过 evacuated 方法判断桶数据是已迁到新桶还是仍存留在老桶。</p>
+<h4 id="5-tophash-优化">5. tophash 优化</h4>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">top := tophash(hash)</span><br></pre></td></tr></table></figure>
+<p>取 key hash 值的高 8 位值 top。倘若该值 &lt; 5，会累加 5，以避开 0 ~ 4 的取值，因为这几个值会用于枚举，具有特殊的含义。</p>
+<h4 id="6-桶链表遍历">6. 桶链表遍历</h4>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">bucketloop:</span><br><span class="line"><span class="keyword">for</span> ; b != <span class="literal">nil</span>; b = b.overflow(t) &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="type">uintptr</span>(<span class="number">0</span>); i &lt; bucketCnt; i++ &#123;</span><br><span class="line">		<span class="keyword">if</span> b.tophash[i] != top &#123;</span><br><span class="line">			<span class="keyword">if</span> b.tophash[i] == emptyRest &#123;</span><br><span class="line">				<span class="keyword">break</span> bucketloop</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// 找到匹配的tophash，进一步比较完整key</span></span><br><span class="line">		k := add(unsafe.Pointer(b), dataOffset+i*<span class="type">uintptr</span>(t.keysize))</span><br><span class="line">		<span class="keyword">if</span> t.indirectkey() &#123;</span><br><span class="line">			k = *((*unsafe.Pointer)(k))</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> t.key.equal(key, k) &#123;</span><br><span class="line">			e := add(unsafe.Pointer(b), dataOffset+bucketCnt*<span class="type">uintptr</span>(t.keysize)+i*<span class="type">uintptr</span>(t.elemsize))</span><br><span class="line">			<span class="keyword">if</span> t.indirectelem() &#123;</span><br><span class="line">				e = *((*unsafe.Pointer)(e))</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> e</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>开启两层 for 循环进行遍历流程：</p>
+<ul>
+<li>外层：基于桶链表，依次遍历首个桶和后续的每个溢出桶</li>
+<li>内层：依次遍历一个桶内的 key-value 对</li>
+</ul>
+<h2 id="写流程详解">写流程详解</h2>
+<p><img src="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E8%AF%BB%E5%86%99%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3/1750126774765.png" alt="1750126774765"></p>
+<h3 id="写流程概述">写流程概述</h3>
+<p>map 写流程主要分为以下几步：</p>
+<p>（1）根据 key 取 hash 值；</p>
+<p>（2）根据 hash 值对桶数组取模，确定所在的桶；</p>
+<p>（3）倘若 map 处于扩容，则迁移命中的桶，帮助推进渐进式扩容；</p>
+<p>（4）沿着桶链表依次遍历各个桶内的 key-value 对；</p>
+<p>（5）倘若命中相同的 key，则对 value 进行更新；</p>
+<p>（6）倘若 key 不存在，则插入 key-value 对；</p>
+<p>（7）倘若发现 map 达成扩容条件，则会开启扩容模式，并重新返回第（2）步。</p>
+<h3 id="mapassign-方法核心实现">mapassign 方法核心实现</h3>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">mapassign</span><span class="params">(t *maptype, h *hmap, key unsafe.Pointer)</span></span> unsafe.Pointer &#123;</span><br><span class="line">	<span class="keyword">if</span> h == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="built_in">panic</span>(<span class="string">&quot;assignment to entry in nil map&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> h.flags&amp;hashWriting != <span class="number">0</span> &#123;</span><br><span class="line">		fatal(<span class="string">&quot;concurrent map writes&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	hash := t.hasher(key, <span class="type">uintptr</span>(h.hash0))</span><br><span class="line">	h.flags ^= hashWriting</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> h.buckets == <span class="literal">nil</span> &#123;</span><br><span class="line">		h.buckets = newobject(t.bucket)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">again:</span><br><span class="line">	bucket := hash &amp; bucketMask(h.B)</span><br><span class="line">	<span class="keyword">if</span> h.growing() &#123;</span><br><span class="line">		growWork(t, h, bucket)</span><br><span class="line">	&#125;</span><br><span class="line">	b := (*bmap)(add(h.buckets, bucket*<span class="type">uintptr</span>(t.bucketsize)))</span><br><span class="line">	top := tophash(hash)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> inserti *<span class="type">uint8</span></span><br><span class="line">	<span class="keyword">var</span> insertk unsafe.Pointer</span><br><span class="line">	<span class="keyword">var</span> elem unsafe.Pointer</span><br><span class="line"></span><br><span class="line">bucketloop:</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="type">uintptr</span>(<span class="number">0</span>); i &lt; bucketCnt; i++ &#123;</span><br><span class="line">			<span class="keyword">if</span> b.tophash[i] != top &#123;</span><br><span class="line">				<span class="keyword">if</span> isEmpty(b.tophash[i]) &amp;&amp; inserti == <span class="literal">nil</span> &#123;</span><br><span class="line">					inserti = &amp;b.tophash[i]</span><br><span class="line">					insertk = add(unsafe.Pointer(b), dataOffset+i*<span class="type">uintptr</span>(t.keysize))</span><br><span class="line">					elem = add(unsafe.Pointer(b), dataOffset+bucketCnt*<span class="type">uintptr</span>(t.keysize)+i*<span class="type">uintptr</span>(t.elemsize))</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">if</span> b.tophash[i] == emptyRest &#123;</span><br><span class="line">					<span class="keyword">break</span> bucketloop</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line">			k := add(unsafe.Pointer(b), dataOffset+i*<span class="type">uintptr</span>(t.keysize))</span><br><span class="line">			<span class="keyword">if</span> t.indirectkey() &#123;</span><br><span class="line">				k = *((*unsafe.Pointer)(k))</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> !t.key.equal(key, k) &#123;</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line">			<span class="comment">// key已存在，更新操作</span></span><br><span class="line">			<span class="keyword">if</span> t.needkeyupdate() &#123;</span><br><span class="line">				typedmemmove(t.key, k, key)</span><br><span class="line">			&#125;</span><br><span class="line">			elem = add(unsafe.Pointer(b), dataOffset+bucketCnt*<span class="type">uintptr</span>(t.keysize)+i*<span class="type">uintptr</span>(t.elemsize))</span><br><span class="line">			<span class="keyword">goto</span> done</span><br><span class="line">		&#125;</span><br><span class="line">		ovf := b.overflow(t)</span><br><span class="line">		<span class="keyword">if</span> ovf == <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		&#125;</span><br><span class="line">		b = ovf</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 检查是否需要扩容</span></span><br><span class="line">	<span class="keyword">if</span> !h.growing() &amp;&amp; (overLoadFactor(h.count+<span class="number">1</span>, h.B) || tooManyOverflowBuckets(h.noverflow, h.B)) &#123;</span><br><span class="line">		hashGrow(t, h)</span><br><span class="line">		<span class="keyword">goto</span> again</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 分配新的插入位置</span></span><br><span class="line">	<span class="keyword">if</span> inserti == <span class="literal">nil</span> &#123;</span><br><span class="line">		newb := h.newoverflow(t, b)</span><br><span class="line">		inserti = &amp;newb.tophash[<span class="number">0</span>]</span><br><span class="line">		insertk = add(unsafe.Pointer(newb), dataOffset)</span><br><span class="line">		elem = add(insertk, bucketCnt*<span class="type">uintptr</span>(t.keysize))</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 插入新的key-value对</span></span><br><span class="line">	<span class="keyword">if</span> t.indirectkey() &#123;</span><br><span class="line">		kmem := newobject(t.key)</span><br><span class="line">		*(*unsafe.Pointer)(insertk) = kmem</span><br><span class="line">		insertk = kmem</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> t.indirectelem() &#123;</span><br><span class="line">		vmem := newobject(t.elem)</span><br><span class="line">		*(*unsafe.Pointer)(elem) = vmem</span><br><span class="line">	&#125;</span><br><span class="line">	typedmemmove(t.key, insertk, key)</span><br><span class="line">	*inserti = top</span><br><span class="line">	h.count++</span><br><span class="line"></span><br><span class="line">done:</span><br><span class="line">	<span class="keyword">if</span> h.flags&amp;hashWriting == <span class="number">0</span> &#123;</span><br><span class="line">		fatal(<span class="string">&quot;concurrent map writes&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	h.flags &amp;^= hashWriting</span><br><span class="line">	<span class="keyword">if</span> t.indirectelem() &#123;</span><br><span class="line">		elem = *((*unsafe.Pointer)(elem))</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> elem</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="写流程关键步骤">写流程关键步骤</h3>
+<h4 id="1-写标记设置">1. 写标记设置</h4>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">h.flags ^= hashWriting</span><br></pre></td></tr></table></figure>
+<p>通过异或位运算，将 map.flags 的第 3 个 bit 位置为 1，添加写标记。</p>
+<h4 id="2-扩容协助">2. 扩容协助</h4>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> h.growing() &#123;</span><br><span class="line">	growWork(t, h, bucket)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>倘若发现当前 map 正处于扩容过程，则帮助其渐进扩容。</p>
+<h4 id="3-空位记录">3. 空位记录</h4>
+<p>在遍历桶的过程中，会记录第一个可用的空位：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> isEmpty(b.tophash[i]) &amp;&amp; inserti == <span class="literal">nil</span> &#123;</span><br><span class="line">	inserti = &amp;b.tophash[i]</span><br><span class="line">	insertk = add(unsafe.Pointer(b), dataOffset+i*<span class="type">uintptr</span>(t.keysize))</span><br><span class="line">	elem = add(unsafe.Pointer(b), dataOffset+bucketCnt*<span class="type">uintptr</span>(t.keysize)+i*<span class="type">uintptr</span>(t.elemsize))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="4-扩容条件检查">4. 扩容条件检查</h4>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> !h.growing() &amp;&amp; (overLoadFactor(h.count+<span class="number">1</span>, h.B) || tooManyOverflowBuckets(h.noverflow, h.B)) &#123;</span><br><span class="line">	hashGrow(t, h)</span><br><span class="line">	<span class="keyword">goto</span> again</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果没有找到已存在的 key 且需要插入新元素时，检查是否需要扩容。</p>
+<h2 id="删除流程详解">删除流程详解</h2>
+<h3 id="删除流程概述">删除流程概述</h3>
+<p>map 删除 kv 对流程主要分为以下几步：</p>
+<p>（1）根据 key 取 hash 值；</p>
+<p>（2）根据 hash 值对桶数组取模，确定所在的桶；</p>
+<p>（3）倘若 map 处于扩容，则迁移命中的桶，帮助推进渐进式扩容；</p>
+<p>（4）沿着桶链表依次遍历各个桶内的 key-value 对；</p>
+<p>（5）倘若命中相同的 key，删除对应的 key-value 对；并将当前位置的 tophash 置为 emptyOne，表示为空；</p>
+<p>（6）倘若当前位置为末位，或者下一个位置的 tophash 为 emptyRest，则沿当前位置向前遍历，将毗邻的 emptyOne 统一更新为 emptyRest。</p>
+<h3 id="mapdelete-方法实现">mapdelete 方法实现</h3>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">mapdelete</span><span class="params">(t *maptype, h *hmap, key unsafe.Pointer)</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> h == <span class="literal">nil</span> || h.count == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> h.flags&amp;hashWriting != <span class="number">0</span> &#123;</span><br><span class="line">		fatal(<span class="string">&quot;concurrent map writes&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	hash := t.hasher(key, <span class="type">uintptr</span>(h.hash0))</span><br><span class="line">	h.flags ^= hashWriting</span><br><span class="line"></span><br><span class="line">	bucket := hash &amp; bucketMask(h.B)</span><br><span class="line">	<span class="keyword">if</span> h.growing() &#123;</span><br><span class="line">		growWork(t, h, bucket)</span><br><span class="line">	&#125;</span><br><span class="line">	b := (*bmap)(add(h.buckets, bucket*<span class="type">uintptr</span>(t.bucketsize)))</span><br><span class="line">	bOrig := b</span><br><span class="line">	top := tophash(hash)</span><br><span class="line"></span><br><span class="line">search:</span><br><span class="line">	<span class="keyword">for</span> ; b != <span class="literal">nil</span>; b = b.overflow(t) &#123;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="type">uintptr</span>(<span class="number">0</span>); i &lt; bucketCnt; i++ &#123;</span><br><span class="line">			<span class="keyword">if</span> b.tophash[i] != top &#123;</span><br><span class="line">				<span class="keyword">if</span> b.tophash[i] == emptyRest &#123;</span><br><span class="line">					<span class="keyword">break</span> search</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line">			k := add(unsafe.Pointer(b), dataOffset+i*<span class="type">uintptr</span>(t.keysize))</span><br><span class="line">			k2 := k</span><br><span class="line">			<span class="keyword">if</span> t.indirectkey() &#123;</span><br><span class="line">				k2 = *((*unsafe.Pointer)(k2))</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> !t.key.equal(key, k2) &#123;</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// 清理key</span></span><br><span class="line">			<span class="keyword">if</span> t.indirectkey() &#123;</span><br><span class="line">				*(*unsafe.Pointer)(k) = <span class="literal">nil</span></span><br><span class="line">			&#125; <span class="keyword">else</span> <span class="keyword">if</span> t.key.ptrdata != <span class="number">0</span> &#123;</span><br><span class="line">				memclrHasPointers(k, t.key.size)</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// 清理value</span></span><br><span class="line">			e := add(unsafe.Pointer(b), dataOffset+bucketCnt*<span class="type">uintptr</span>(t.keysize)+i*<span class="type">uintptr</span>(t.elemsize))</span><br><span class="line">			<span class="keyword">if</span> t.indirectelem() &#123;</span><br><span class="line">				*(*unsafe.Pointer)(e) = <span class="literal">nil</span></span><br><span class="line">			&#125; <span class="keyword">else</span> <span class="keyword">if</span> t.elem.ptrdata != <span class="number">0</span> &#123;</span><br><span class="line">				memclrHasPointers(e, t.elem.size)</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				memclrNoHeapPointers(e, t.elem.size)</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			b.tophash[i] = emptyOne</span><br><span class="line"></span><br><span class="line">			<span class="comment">// 优化空槽标记</span></span><br><span class="line">			<span class="keyword">if</span> i == bucketCnt<span class="number">-1</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> b.overflow(t) != <span class="literal">nil</span> &amp;&amp; b.overflow(t).tophash[<span class="number">0</span>] != emptyRest &#123;</span><br><span class="line">					<span class="keyword">goto</span> notLast</span><br><span class="line">				&#125;</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> b.tophash[i+<span class="number">1</span>] != emptyRest &#123;</span><br><span class="line">					<span class="keyword">goto</span> notLast</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// 向前合并空槽</span></span><br><span class="line">			<span class="keyword">for</span> &#123;</span><br><span class="line">				b.tophash[i] = emptyRest</span><br><span class="line">				<span class="keyword">if</span> i == <span class="number">0</span> &#123;</span><br><span class="line">					<span class="keyword">if</span> b == bOrig &#123;</span><br><span class="line">						<span class="keyword">break</span></span><br><span class="line">					&#125;</span><br><span class="line">					<span class="comment">// 找到前一个桶</span></span><br><span class="line">					c := b</span><br><span class="line">					<span class="keyword">for</span> b = bOrig; b.overflow(t) != c; b = b.overflow(t) &#123;</span><br><span class="line">					&#125;</span><br><span class="line">					i = bucketCnt - <span class="number">1</span></span><br><span class="line">				&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">					i--</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">if</span> b.tophash[i] != emptyOne &#123;</span><br><span class="line">					<span class="keyword">break</span></span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		notLast:</span><br><span class="line">			h.count--</span><br><span class="line">			<span class="keyword">if</span> h.count == <span class="number">0</span> &#123;</span><br><span class="line">				h.hash0 = fastrand()</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">break</span> search</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> h.flags&amp;hashWriting == <span class="number">0</span> &#123;</span><br><span class="line">		fatal(<span class="string">&quot;concurrent map writes&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	h.flags &amp;^= hashWriting</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="删除流程关键特性">删除流程关键特性</h3>
+<h4 id="1-空槽标记优化">1. 空槽标记优化</h4>
+<p>删除操作使用两种空槽标记：</p>
+<ul>
+<li><code>emptyOne</code>：单个空槽</li>
+<li><code>emptyRest</code>：连续空槽的结束标记</li>
+</ul>
+<h4 id="2-向前合并机制">2. 向前合并机制</h4>
+<p>删除元素后，会向前遍历，将连续的 <code>emptyOne</code> 标记合并为 <code>emptyRest</code>，这样可以在查找时提前终止，提高性能。</p>
+<h4 id="3-内存清理">3. 内存清理</h4>
+<p>根据 key 和 value 的类型特性，选择合适的内存清理方式：</p>
+<ul>
+<li>指针类型：设置为 nil</li>
+<li>包含指针的类型：调用<code>memclrHasPointers</code></li>
+<li>不包含指针的类型：调用<code>memclrNoHeapPointers</code></li>
+</ul>
+<h2 id="性能优化技巧">性能优化技巧</h2>
+<h3 id="tophash-快速比较">tophash 快速比较</h3>
+<p>使用 hash 值的高 8 位作为快速比较，避免完整 key 比较：</p>
+<ol>
+<li>首先比较 tophash，不匹配直接跳过</li>
+<li>tophash 匹配后才进行完整 key 比较</li>
+<li>减少了大部分不必要的 key 比较操作</li>
+</ol>
+<h3 id="内存布局优化">内存布局优化</h3>
+<ol>
+<li><strong>数据局部性</strong>：key 和 value 分别连续存储，提高缓存命中率</li>
+<li><strong>对齐优化</strong>：数据结构按照字长对齐，提高访问效率</li>
+<li><strong>预取优化</strong>：连续的内存布局有利于 CPU 预取</li>
+</ol>
+<h3 id="渐进式扩容">渐进式扩容</h3>
+<ol>
+<li><strong>分摊开销</strong>：将扩容开销分摊到多次操作中</li>
+<li><strong>避免阻塞</strong>：避免单次操作耗时过长</li>
+<li><strong>双数组设计</strong>：新老数组并存，支持渐进迁移</li>
+</ol>
+<h2 id="面试重点">面试重点</h2>
+<h3 id="常见面试题">常见面试题</h3>
+<p><strong>Q1: Go map 的读写删除操作时间复杂度是多少？</strong></p>
+<p>A:</p>
+<ul>
+<li><strong>平均情况</strong>：O(1)</li>
+<li><strong>最坏情况</strong>：O(n)，当所有 key 都哈希到同一个桶时</li>
+<li><strong>实际表现</strong>：由于负载因子控制和扩容机制，实际性能接近 O(1)</li>
+</ul>
+<p><strong>Q2: Go map 在扩容过程中如何处理读写操作？</strong></p>
+<p>A:</p>
+<ul>
+<li><strong>渐进式扩容</strong>：不会一次性迁移所有数据</li>
+<li><strong>双数组查找</strong>：读操作会同时检查新老数组</li>
+<li><strong>协助迁移</strong>：写操作会协助迁移对应的桶</li>
+<li><strong>无阻塞</strong>：操作不会被扩容阻塞</li>
+</ul>
+<p><strong>Q3: tophash 的作用是什么？</strong></p>
+<p>A:</p>
+<ul>
+<li><strong>快速过滤</strong>：避免不必要的完整 key 比较</li>
+<li><strong>状态标记</strong>：标记空槽、迁移状态等信息</li>
+<li><strong>性能优化</strong>：减少内存访问和比较操作</li>
+</ul>
+<p>理解这些读写删除流程的细节，有助于更好地使用和优化 Go 语言中的 map 操作。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag"># 数据结构</a>
+              <a href="/tags/Go%E8%AF%AD%E8%A8%80/" rel="tag"># Go语言</a>
+              <a href="/tags/%E5%85%AB%E8%82%A1%E6%96%87/" rel="tag"># 八股文</a>
+              <a href="/tags/%E9%9D%A2%E8%AF%95%E9%A2%98/" rel="tag"># 面试题</a>
+              <a href="/tags/%E5%90%8E%E7%AB%AF/" rel="tag"># 后端</a>
+              <a href="/tags/%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0/" rel="tag"># 算法实现</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E9%81%8D%E5%8E%86%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/" rel="prev" title="技术八股: Go Map 遍历机制解析">
+      <i class="fa fa-chevron-left"></i> 技术八股: Go Map 遍历机制解析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E6%A0%B8%E5%BF%83%E5%8E%9F%E7%90%86%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="next" title="技术八股: Go Map 核心原理与数据结构">
+      技术八股: Go Map 核心原理与数据结构 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-number">1.</span> <span class="nav-text">Go Map 读写删除流程详解</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.1.</span> <span class="nav-text">读流程详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%BB%E6%B5%81%E7%A8%8B%E6%A6%82%E8%BF%B0"><span class="nav-number">1.1.1.</span> <span class="nav-text">读流程概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mapaccess-%E6%96%B9%E6%B3%95%E6%BA%90%E7%A0%81%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.1.2.</span> <span class="nav-text">mapaccess 方法源码详解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%BB%E6%B5%81%E7%A8%8B%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4"><span class="nav-number">1.1.3.</span> <span class="nav-text">读流程详细步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E8%BE%B9%E7%95%8C%E6%9D%A1%E4%BB%B6%E6%A3%80%E6%9F%A5"><span class="nav-number">1.1.3.1.</span> <span class="nav-text">1. 边界条件检查</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%B9%B6%E5%8F%91%E5%AE%89%E5%85%A8%E6%A3%80%E6%9F%A5"><span class="nav-number">1.1.3.2.</span> <span class="nav-text">2. 并发安全检查</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E5%93%88%E5%B8%8C%E8%AE%A1%E7%AE%97%E4%B8%8E%E6%A1%B6%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.1.3.3.</span> <span class="nav-text">3. 哈希计算与桶定位</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E6%89%A9%E5%AE%B9%E6%9C%9F%E9%97%B4%E7%9A%84%E7%89%B9%E6%AE%8A%E5%A4%84%E7%90%86"><span class="nav-number">1.1.3.4.</span> <span class="nav-text">4. 扩容期间的特殊处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-tophash-%E4%BC%98%E5%8C%96"><span class="nav-number">1.1.3.5.</span> <span class="nav-text">5. tophash 优化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-%E6%A1%B6%E9%93%BE%E8%A1%A8%E9%81%8D%E5%8E%86"><span class="nav-number">1.1.3.6.</span> <span class="nav-text">6. 桶链表遍历</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.2.</span> <span class="nav-text">写流程详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%99%E6%B5%81%E7%A8%8B%E6%A6%82%E8%BF%B0"><span class="nav-number">1.2.1.</span> <span class="nav-text">写流程概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mapassign-%E6%96%B9%E6%B3%95%E6%A0%B8%E5%BF%83%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.2.2.</span> <span class="nav-text">mapassign 方法核心实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%99%E6%B5%81%E7%A8%8B%E5%85%B3%E9%94%AE%E6%AD%A5%E9%AA%A4"><span class="nav-number">1.2.3.</span> <span class="nav-text">写流程关键步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%86%99%E6%A0%87%E8%AE%B0%E8%AE%BE%E7%BD%AE"><span class="nav-number">1.2.3.1.</span> <span class="nav-text">1. 写标记设置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E6%89%A9%E5%AE%B9%E5%8D%8F%E5%8A%A9"><span class="nav-number">1.2.3.2.</span> <span class="nav-text">2. 扩容协助</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E7%A9%BA%E4%BD%8D%E8%AE%B0%E5%BD%95"><span class="nav-number">1.2.3.3.</span> <span class="nav-text">3. 空位记录</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E6%89%A9%E5%AE%B9%E6%9D%A1%E4%BB%B6%E6%A3%80%E6%9F%A5"><span class="nav-number">1.2.3.4.</span> <span class="nav-text">4. 扩容条件检查</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.3.</span> <span class="nav-text">删除流程详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B%E6%A6%82%E8%BF%B0"><span class="nav-number">1.3.1.</span> <span class="nav-text">删除流程概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mapdelete-%E6%96%B9%E6%B3%95%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.3.2.</span> <span class="nav-text">mapdelete 方法实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B%E5%85%B3%E9%94%AE%E7%89%B9%E6%80%A7"><span class="nav-number">1.3.3.</span> <span class="nav-text">删除流程关键特性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E7%A9%BA%E6%A7%BD%E6%A0%87%E8%AE%B0%E4%BC%98%E5%8C%96"><span class="nav-number">1.3.3.1.</span> <span class="nav-text">1. 空槽标记优化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%90%91%E5%89%8D%E5%90%88%E5%B9%B6%E6%9C%BA%E5%88%B6"><span class="nav-number">1.3.3.2.</span> <span class="nav-text">2. 向前合并机制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E5%86%85%E5%AD%98%E6%B8%85%E7%90%86"><span class="nav-number">1.3.3.3.</span> <span class="nav-text">3. 内存清理</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E6%8A%80%E5%B7%A7"><span class="nav-number">1.4.</span> <span class="nav-text">性能优化技巧</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#tophash-%E5%BF%AB%E9%80%9F%E6%AF%94%E8%BE%83"><span class="nav-number">1.4.1.</span> <span class="nav-text">tophash 快速比较</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80%E4%BC%98%E5%8C%96"><span class="nav-number">1.4.2.</span> <span class="nav-text">内存布局优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B8%90%E8%BF%9B%E5%BC%8F%E6%89%A9%E5%AE%B9"><span class="nav-number">1.4.3.</span> <span class="nav-text">渐进式扩容</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E9%87%8D%E7%82%B9"><span class="nav-number">1.5.</span> <span class="nav-text">面试重点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E9%9D%A2%E8%AF%95%E9%A2%98"><span class="nav-number">1.5.1.</span> <span class="nav-text">常见面试题</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description">一个完全由AI生成，但是内容高质量的Blog</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">162</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">221</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">730k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">11:04</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : '77c412a5a32645bcaa275fa037b07fee',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",1],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,46,3],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":81},{"name":"Medium","value":68},{"name":"Hot100","value":58},{"name":"数组","value":32},{"name":"面试经典150","value":26},{"name":"❌错题集","value":25},{"name":"八股文","value":24},{"name":"深度优先搜索","value":22}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":81},{"name":"Medium","value":68},{"name":"Hot100","value":58},{"name":"数组","value":32},{"name":"面试经典150","value":26},{"name":"❌错题集","value":25},{"name":"八股文","value":24},{"name":"深度优先搜索","value":22}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":94},{"name":"LeetCode","value":93},{"name":"Hot100","value":63},{"name":"八股文","value":50},{"name":"面试经典150","value":29}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":94},{"name":"LeetCode","value":93},{"name":"Hot100","value":63},{"name":"八股文","value":50},{"name":"面试经典150","value":29}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"},{"name":"面试经典150","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/面试经典150/错题集"}],"count":29,"path":"算法刷题/LeetCode/面试经典150"}],"count":93,"path":"算法刷题/LeetCode"}],"count":94,"path":"算法刷题"},{"name":"八股文","children":[{"name":"操作系统","children":[],"count":1,"path":"八股文/操作系统"},{"name":"Go语言","children":[],"count":1,"path":"八股文/Go语言"},{"name":"计算机网络","children":[],"count":1,"path":"八股文/计算机网络"},{"name":"REDIS","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/REDIS/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/REDIS/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/REDIS/高可用"},{"name":"基础知识","children":[{"name":"内存管理","children":[],"count":1,"path":"八股文/REDIS/基础知识/内存管理"},{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":19,"path":"八股文/REDIS/基础知识"}],"count":25,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":50,"path":"八股文"},{"name":"面试经验","children":[],"count":7,"path":"面试经验"},{"name":"技术八股","children":[{"name":"Go语言","children":[],"count":8,"path":"技术八股/Go语言"}],"count":9,"path":"技术八股"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>
