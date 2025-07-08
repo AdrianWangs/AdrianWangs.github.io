@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="题目描述 给定两个大小分别为 m 和 n 的正序（从小到大）数组 nums1 和 nums2。请你找出并返回这两个正序数组的 中位数。 要求算法的时间复杂度为 O(log (m+n))。 示例： 1234567输入：nums1 &#x3D; [1,3], nums2 &#x3D; [2]输出：2.00000解释：合并数组 &#x3D; [1,2,3]，中位数 2输入：nums1 &#x3D; [1,2], nums2 &#x3D; [3,4]输出">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LeetCode 4.寻找两个正序数组的中位数 - 深入理解二分思想">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/11/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-4-%E5%AF%BB%E6%89%BE%E4%B8%A4%E4%B8%AA%E6%AD%A3%E5%BA%8F%E6%95%B0%E7%BB%84%E7%9A%84%E4%B8%AD%E4%BD%8D%E6%95%B0/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="题目描述 给定两个大小分别为 m 和 n 的正序（从小到大）数组 nums1 和 nums2。请你找出并返回这两个正序数组的 中位数。 要求算法的时间复杂度为 O(log (m+n))。 示例： 1234567输入：nums1 &#x3D; [1,3], nums2 &#x3D; [2]输出：2.00000解释：合并数组 &#x3D; [1,2,3]，中位数 2输入：nums1 &#x3D; [1,2], nums2 &#x3D; [3,4]输出">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-05-11T10:00:00.000Z">
+<meta property="article:modified_time" content="2025-07-08T16:16:10.822Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="LeetCode">
+<meta property="article:tag" content="Hot100">
+<meta property="article:tag" content="Hard">
+<meta property="article:tag" content="数组">
+<meta property="article:tag" content="二分查找">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/05/11/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-4-%E5%AF%BB%E6%89%BE%E4%B8%A4%E4%B8%AA%E6%AD%A3%E5%BA%8F%E6%95%B0%E7%BB%84%E7%9A%84%E4%B8%AD%E4%BD%8D%E6%95%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>LeetCode 4.寻找两个正序数组的中位数 - 深入理解二分思想 | Adrian Wang's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Adrian Wang's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">一个完全由AI生成，但是内容高质量的Blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-全部文章">
+
+    <a href="/archives" rel="section"><i class="fa fa-th-list fa-fw"></i>全部文章</a>
+
+  </li>
+        <li class="menu-item menu-item-面试经验">
+
+    <a href="/interview" rel="section"><i class="fa fa-briefcase fa-fw"></i>面试经验</a>
+
+  </li>
+        <li class="menu-item menu-item-golang">
+
+    <a href="/golang" rel="section"><i class="fa fa-brands fa-golang fa-fw"></i>Golang</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-计算机网络">
+
+    <a href="/network" rel="section"><i class="fa fa-globe fa-fw"></i>计算机网络</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/05/11/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-4-%E5%AF%BB%E6%89%BE%E4%B8%A4%E4%B8%AA%E6%AD%A3%E5%BA%8F%E6%95%B0%E7%BB%84%E7%9A%84%E4%B8%AD%E4%BD%8D%E6%95%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="一个完全由AI生成，但是内容高质量的Blog">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Adrian Wang's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          LeetCode 4.寻找两个正序数组的中位数 - 深入理解二分思想
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-05-11 10:00:00" itemprop="dateCreated datePublished" datetime="2025-05-11T10:00:00+00:00">2025-05-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-07-08 16:16:10" itemprop="dateModified" datetime="2025-07-08T16:16:10+00:00">2025-07-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/Hot100/" itemprop="url" rel="index"><span itemprop="name">Hot100</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>5.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="题目描述">题目描述</h2>
+<p>给定两个大小分别为 <code>m</code> 和 <code>n</code> 的正序（从小到大）数组 <code>nums1</code> 和 <code>nums2</code>。请你找出并返回这两个正序数组的 <strong>中位数</strong>。</p>
+<p>要求算法的时间复杂度为 <code>O(log (m+n))</code>。</p>
+<p>示例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">输入：nums1 = [1,3], nums2 = [2]</span><br><span class="line">输出：2.00000</span><br><span class="line">解释：合并数组 = [1,2,3]，中位数 2</span><br><span class="line"></span><br><span class="line">输入：nums1 = [1,2], nums2 = [3,4]</span><br><span class="line">输出：2.50000</span><br><span class="line">解释：合并数组 = [1,2,3,4]，中位数 (2 + 3) / 2 = 2.5</span><br></pre></td></tr></table></figure>
+<h2 id="解题思路">解题思路</h2>
+<p>这道题乍看之下，似乎可以通过合并两个数组后找出中位数来解决，但这样做的时间复杂度是 <code>O(m+n)</code>，而题目要求 <code>O(log(m+n))</code>。一看到对数级的时间复杂度，我们应该想到二分查找。</p>
+<h3 id="核心思想">核心思想</h3>
+<p>本题的核心思想是<strong>将两个数组进行虚拟切分</strong>，使得：</p>
+<ol>
+<li>左半部分的元素个数等于右半部分（或者多一个，当总数为奇数时）</li>
+<li>左半部分的所有元素都小于或等于右半部分的所有元素</li>
+</ol>
+<p>找到这样的切分后，中位数就可以轻松计算出来了。</p>
+<p>假设有两个数组：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nums1: [a1, a2, a3, a4, a5]</span><br><span class="line">nums2: [b1, b2, b3, b4, b5, b6, b7]</span><br></pre></td></tr></table></figure>
+<p>我们的目标是在这两个数组中找出一个切分位置，将所有元素分为数量相等（或左侧多一个）的两部分：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">左半部分：[a1, a2, a3 | b1, b2, b3, b4]</span><br><span class="line">右半部分：[a4, a5 | b5, b6, b7]</span><br></pre></td></tr></table></figure>
+<p>当左半部分的最大值小于或等于右半部分的最小值时，我们就找到了正确的切分位置。中位数可以根据总元素个数的奇偶性计算：</p>
+<ul>
+<li>元素总数为奇数：中位数 = 左半部分的最大值</li>
+<li>元素总数为偶数：中位数 = (左半部分的最大值 + 右半部分的最小值) / 2</li>
+</ul>
+<h3 id="实现的关键点解析">实现的关键点解析</h3>
+<h4 id="1-切分点的含义">1. 切分点的含义</h4>
+<p>重要的是，<strong>mid表示的是元素间的切分位置</strong>，而不是具体的元素。例如：</p>
+<p>对于数组 <code>[1, 3, 5, 7, 9]</code>：</p>
+<ul>
+<li>mid=0 表示在1之前切分：<code>[] | [1, 3, 5, 7, 9]</code></li>
+<li>mid=3 表示在7之前切分：<code>[1, 3, 5] | [7, 9]</code></li>
+<li>mid=5 表示在所有元素之后切分：<code>[1, 3, 5, 7, 9] | []</code></li>
+</ul>
+<p>这就是为什么right初始化为len1而不是len1-1，因为我们需要考虑将所有元素都放在左半部分的情况。</p>
+<h4 id="2-为什么使用-left-right-而不是-left-right？">2. 为什么使用 <code>left &lt;= right</code> 而不是 <code>left &lt; right</code>？</h4>
+<p>在这个二分查找中，使用 <code>left &lt;= right</code> 是必要的。当搜索区间收缩到只有一个元素时（即 <code>left == right</code>），这个元素可能就是正确的切分点。如果使用 <code>left &lt; right</code>，循环会提前退出，可能会错过正确解。</p>
+<p>特别是当nums1只有一个元素时，如果使用 <code>left &lt; right</code>，算法可能无法正确处理这种情况。</p>
+<h4 id="3-为什么只检查-mid1-len1-和-mid1-0，不检查-mid2-的边界？">3. 为什么只检查 mid1 &lt; len1 和 mid1 &gt; 0，不检查 mid2 的边界？</h4>
+<p>这是一个很好的问题！算法中我们检查了：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> mid1 &lt; len1 &amp;&amp; nums1[mid1] &lt; nums2[mid2<span class="number">-1</span>] &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> mid1 &gt; <span class="number">0</span> &amp;&amp; nums1[mid1<span class="number">-1</span>] &gt; nums2[mid2] &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>不需要检查mid2的边界，原因如下：</p>
+<ol>
+<li>
+<p><strong>mid2的计算保证了某些边界条件</strong>：mid2 = halfLen - mid1，其中halfLen = (len1+len2+1)/2</p>
+</li>
+<li>
+<p><strong>mid2的范围是有保证的</strong>：</p>
+<ul>
+<li>当mid1增大时，mid2减小，反之亦然</li>
+<li>我们知道 0 &lt;= mid1 &lt;= len1，因此 (halfLen-len1) &lt;= mid2 &lt;= halfLen</li>
+</ul>
+</li>
+<li>
+<p><strong>算法保证了mid2的合理性</strong>：</p>
+<ul>
+<li>我们总是对较短的数组进行二分（通过交换nums1和nums2确保len1 &lt;= len2）</li>
+<li>这确保了halfLen-len1 &gt;= 0，即mid2 &gt;= 0</li>
+<li>同样，由于halfLen &lt;= (len1+len2+1)/2 &lt;= (len2+len2+1)/2，可以推导出mid2 &lt;= len2</li>
+</ul>
+</li>
+</ol>
+<p>因此，对mid1进行边界检查已经足够，不需要显式检查mid2的边界。这是算法设计的巧妙之处。</p>
+<h4 id="4-为什么halfLength计算要加1？">4. 为什么halfLength计算要加1？</h4>
+<p>在代码中，我们看到halfLength的计算使用了：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">halfLength := (len1+len2+<span class="number">1</span>)&gt;&gt;<span class="number">1</span>  <span class="comment">// 左半部分应该包含的元素个数</span></span><br></pre></td></tr></table></figure>
+<p>这里的<code>+1</code>非常关键，它确保了在奇数长度的情况下，左半部分会多包含一个元素。让我们分析不同情况：</p>
+<p><strong>情况1：总长度为偶数</strong><br>
+假设<code>len1 + len2 = 8</code></p>
+<ul>
+<li>使用<code>(8) &gt;&gt; 1 = 4</code>，左边和右边各4个元素</li>
+<li>使用<code>(8 + 1) &gt;&gt; 1 = 4</code>，结果相同，左右各4个元素</li>
+</ul>
+<p><strong>情况2：总长度为奇数</strong><br>
+假设<code>len1 + len2 = 7</code></p>
+<ul>
+<li>使用<code>(7) &gt;&gt; 1 = 3</code>，左边3个元素，右边4个元素</li>
+<li>使用<code>(7 + 1) &gt;&gt; 1 = 4</code>，左边4个元素，右边3个元素</li>
+</ul>
+<p>在处理中位数时，我们的代码逻辑是：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 如果两个数组的总长度为奇数，中位数就是左半部分的最大值</span></span><br><span class="line"><span class="keyword">if</span> (len1+len2)%<span class="number">2</span> == <span class="number">1</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="type">float64</span>(maxLeft)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 总长度为偶数时，中位数是左半部分最大值和右半部分最小值的平均值</span></span><br><span class="line"><span class="keyword">return</span> <span class="type">float64</span>(maxLeft + minRight) / <span class="number">2.0</span></span><br></pre></td></tr></table></figure>
+<p>这里的算法设计假设：</p>
+<ul>
+<li>奇数长度时，中位数是左半部分的最大值</li>
+<li>偶数长度时，需要计算左半部分最大值和右半部分最小值的平均值</li>
+</ul>
+<p>为了使这个逻辑正确工作，在奇数长度情况下，我们必须确保中位数在左半部分。例如，对于总长度7的数组，中位数是第4个元素，所以左半部分必须包含4个元素。</p>
+<p>这就是为什么要使用<code>(len1+len2+1)&gt;&gt;1</code>而不是<code>(len1+len2)&gt;&gt;1</code>的原因：加上这个<code>+1</code>确保了在奇数长度情况下，左半部分会多包含一个元素，从而包含了中位数，使得算法的判断逻辑能够正确工作。</p>
+<h2 id="完整代码实现">完整代码实现</h2>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 寻找两个正序数组的中位数</span></span><br><span class="line"><span class="comment"> * @param nums1 第一个有序数组</span></span><br><span class="line"><span class="comment"> * @param nums2 第二个有序数组</span></span><br><span class="line"><span class="comment"> * @return 两个数组合并后的中位数</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">findMedianSortedArrays</span><span class="params">(nums1 []<span class="type">int</span>, nums2 []<span class="type">int</span>)</span></span> <span class="type">float64</span> &#123;</span><br><span class="line">    <span class="comment">// 获取两个数组的长度</span></span><br><span class="line">    len1, len2 := <span class="built_in">len</span>(nums1), <span class="built_in">len</span>(nums2)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 优化：始终对较短的数组进行二分查找，减少搜索空间</span></span><br><span class="line">    <span class="comment">// 如果 nums1 比 nums2 长，则交换两个数组</span></span><br><span class="line">    <span class="keyword">if</span> len1 &gt; len2 &#123;</span><br><span class="line">        <span class="keyword">return</span> findMedianSortedArrays(nums2, nums1)</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 二分查找的边界</span></span><br><span class="line">    left := <span class="number">0</span>                   <span class="comment">// 二分查找的左边界，表示nums1可能的最小切分点</span></span><br><span class="line">    right := len1               <span class="comment">// 二分查找的右边界，表示nums1可能的最大切分点</span></span><br><span class="line">    halfLen := (len1+len2+<span class="number">1</span>)/<span class="number">2</span>  <span class="comment">// 左半部分应该包含的元素个数（包括奇数情况）</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 在nums1上进行二分查找，寻找合适的切分点</span></span><br><span class="line">    <span class="keyword">for</span> left &lt;= right &#123;</span><br><span class="line">        <span class="comment">// 计算当前nums1的切分点（将前mid1个元素放入左半部分）</span></span><br><span class="line">        mid1 := (left + right) &gt;&gt; <span class="number">1</span>  <span class="comment">// 使用位运算提高效率，等价于 (left + right) / 2</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 根据mid1计算nums2的切分点，确保左半部分总共有halfLen个元素</span></span><br><span class="line">        mid2 := halfLen - mid1</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 第一种情况：nums1的切分点太小，左半部分需要更多元素</span></span><br><span class="line">        <span class="comment">// 检查：如果mid1元素小于nums2的mid2-1元素，说明mid1需要右移</span></span><br><span class="line">        <span class="keyword">if</span> mid1 &lt; len1 &amp;&amp; nums1[mid1] &lt; nums2[mid2<span class="number">-1</span>] &#123;</span><br><span class="line">            <span class="comment">// mid1太小，需要增加，向右移动left指针</span></span><br><span class="line">            left = mid1 + <span class="number">1</span></span><br><span class="line">        &#125; </span><br><span class="line">        <span class="comment">// 第二种情况：nums1的切分点太大，左半部分需要减少元素</span></span><br><span class="line">        <span class="comment">// 检查：如果mid1-1元素大于nums2的mid2元素，说明mid1需要左移</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> mid1 &gt; <span class="number">0</span> &amp;&amp; nums1[mid1<span class="number">-1</span>] &gt; nums2[mid2] &#123;</span><br><span class="line">            <span class="comment">// mid1太大，需要减少，向左移动right指针</span></span><br><span class="line">            right = mid1 - <span class="number">1</span></span><br><span class="line">        &#125; </span><br><span class="line">        <span class="comment">// 找到了合适的切分点：左半部分的最大值小于等于右半部分的最小值</span></span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 计算左半部分的最大值</span></span><br><span class="line">            <span class="keyword">var</span> maxLeft <span class="type">int</span></span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 处理边界情况：当mid1=0时，nums1的左半部分为空</span></span><br><span class="line">            <span class="keyword">if</span> mid1 == <span class="number">0</span> &#123;</span><br><span class="line">                maxLeft = nums2[mid2<span class="number">-1</span>]  <span class="comment">// 左半部分最大值来自nums2</span></span><br><span class="line">            &#125; </span><br><span class="line">            <span class="comment">// 处理边界情况：当mid2=0时，nums2的左半部分为空</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> mid2 == <span class="number">0</span> &#123;</span><br><span class="line">                maxLeft = nums1[mid1<span class="number">-1</span>]  <span class="comment">// 左半部分最大值来自nums1</span></span><br><span class="line">            &#125; </span><br><span class="line">            <span class="comment">// 一般情况：取nums1和nums2左半部分的最大值</span></span><br><span class="line">            <span class="keyword">else</span> &#123;</span><br><span class="line">                maxLeft = max(nums1[mid1<span class="number">-1</span>], nums2[mid2<span class="number">-1</span>])</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 如果两个数组的总长度为奇数，直接返回左半部分的最大值</span></span><br><span class="line">            <span class="keyword">if</span> (len1+len2) % <span class="number">2</span> == <span class="number">1</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="type">float64</span>(maxLeft)</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 计算右半部分的最小值（偶数情况下需要）</span></span><br><span class="line">            <span class="keyword">var</span> minRight <span class="type">int</span></span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 处理边界情况：当mid1=len1时，nums1的右半部分为空</span></span><br><span class="line">            <span class="keyword">if</span> mid1 == len1 &#123;</span><br><span class="line">                minRight = nums2[mid2]  <span class="comment">// 右半部分最小值来自nums2</span></span><br><span class="line">            &#125; </span><br><span class="line">            <span class="comment">// 处理边界情况：当mid2=len2时，nums2的右半部分为空</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> mid2 == len2 &#123;</span><br><span class="line">                minRight = nums1[mid1]  <span class="comment">// 右半部分最小值来自nums1</span></span><br><span class="line">            &#125; </span><br><span class="line">            <span class="comment">// 一般情况：取nums1和nums2右半部分的最小值</span></span><br><span class="line">            <span class="keyword">else</span> &#123;</span><br><span class="line">                minRight = min(nums1[mid1], nums2[mid2])</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 总长度为偶数时，中位数是左半部分最大值和右半部分最小值的平均值</span></span><br><span class="line">            <span class="keyword">return</span> <span class="type">float64</span>(maxLeft + minRight) / <span class="number">2.0</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 理论上不会执行到这里，添加返回值以满足编译要求</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0.0</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 返回两个整数中的较大值</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">max</span><span class="params">(a, b <span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> a &gt; b &#123;</span><br><span class="line">        <span class="keyword">return</span> a</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> b</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 返回两个整数中的较小值</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">min</span><span class="params">(a, b <span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> a &lt; b &#123;</span><br><span class="line">        <span class="keyword">return</span> a</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> b</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="实例分析">实例分析</h2>
+<p>让我们通过一个具体例子来说明算法的执行过程：</p>
+<p>假设 nums1 = [1, 3, 5]，nums2 = [2, 4, 6]</p>
+<ol>
+<li>
+<p>初始化：len1=3, len2=3, halfLen=(3+3+1)/2=3, left=0, right=3</p>
+</li>
+<li>
+<p>第一次迭代：</p>
+<ul>
+<li>mid1 = (0+3)/2 = 1，表示在nums1中[1] | [3,5]切分</li>
+<li>mid2 = 3-1 = 2，表示在nums2中[2,4] | [6]切分</li>
+<li>检查：nums1[mid1-1]=1 &lt;= nums2[mid2]=6 且 nums2[mid2-1]=4 &gt; nums1[mid1]=3</li>
+<li>需要增加mid1，所以left = mid1+1 = 2</li>
+</ul>
+</li>
+<li>
+<p>第二次迭代：</p>
+<ul>
+<li>mid1 = (2+3)/2 = 2，表示在nums1中[1,3] | [5]切分</li>
+<li>mid2 = 3-2 = 1，表示在nums2中[2] | [4,6]切分</li>
+<li>检查：nums1[mid1-1]=3 &lt;= nums2[mid2]=4 且 nums2[mid2-1]=2 &lt;= nums1[mid1]=5</li>
+<li>找到了合适的切分点！</li>
+<li>左半部分：[1, 3, 2]，最大值是3</li>
+<li>右半部分：[5, 4, 6]，最小值是4</li>
+<li>总元素个数为偶数，所以中位数 = (3+4)/2 = 3.5</li>
+</ul>
+</li>
+</ol>
+<h2 id="复杂度分析">复杂度分析</h2>
+<ul>
+<li>时间复杂度：O(log(min(m,n)))，其中m和n分别是两个数组的长度。我们对较短的数组进行二分查找。</li>
+<li>空间复杂度：O(1)，只使用了常数额外空间。</li>
+</ul>
+<h2 id="总结">总结</h2>
+<p>这道题的核心在于理解如何在两个有序数组中找到合适的切分点，使得：</p>
+<ol>
+<li>左半部分和右半部分的元素个数大致相等</li>
+<li>左半部分的所有元素小于等于右半部分的所有元素</li>
+</ol>
+<p>关键点解析：</p>
+<ul>
+<li>mid表示元素间的切分位置，而不是元素本身</li>
+<li>使用<code>left &lt;= right</code>确保能检查所有可能的切分点</li>
+<li>right初始化为len1以考虑所有可能的切分情况</li>
+<li>只需检查mid1的边界条件，因为算法设计已经保证了mid2的合理性</li>
+</ul>
+<p>理解了这些关键点，这道Hard难度的题目就变得清晰易懂了。二分查找的应用远不止是在单一有序数组中查找元素，它还可以用来解决更复杂的问题，比如此题中的两个有序数组的中位数查找。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LeetCode/" rel="tag"># LeetCode</a>
+              <a href="/tags/Hot100/" rel="tag"># Hot100</a>
+              <a href="/tags/Hard/" rel="tag"># Hard</a>
+              <a href="/tags/%E6%95%B0%E7%BB%84/" rel="tag"># 数组</a>
+              <a href="/tags/%E4%BA%8C%E5%88%86%E6%9F%A5%E6%89%BE/" rel="tag"># 二分查找</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/05/10/%E5%85%AB%E8%82%A1%E6%96%87/REDIS/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/Zset/" rel="prev" title="Redis 数据类型：Zset (有序集合) 深度解析与实战">
+      <i class="fa fa-chevron-left"></i> Redis 数据类型：Zset (有序集合) 深度解析与实战
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/" rel="next" title="MySQL 是怎么加锁的？—— 深入解析MySQL锁机制">
+      MySQL 是怎么加锁的？—— 深入解析MySQL锁机制 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E6%8F%8F%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">题目描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E9%A2%98%E6%80%9D%E8%B7%AF"><span class="nav-number">2.</span> <span class="nav-text">解题思路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3"><span class="nav-number">2.1.</span> <span class="nav-text">核心思想</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%85%B3%E9%94%AE%E7%82%B9%E8%A7%A3%E6%9E%90"><span class="nav-number">2.2.</span> <span class="nav-text">实现的关键点解析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%88%87%E5%88%86%E7%82%B9%E7%9A%84%E5%90%AB%E4%B9%89"><span class="nav-number">2.2.1.</span> <span class="nav-text">1. 切分点的含义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8-left-right-%E8%80%8C%E4%B8%8D%E6%98%AF-left-right%EF%BC%9F"><span class="nav-number">2.2.2.</span> <span class="nav-text">2. 为什么使用 left &lt;&#x3D; right 而不是 left &lt; right？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AA%E6%A3%80%E6%9F%A5-mid1-len1-%E5%92%8C-mid1-0%EF%BC%8C%E4%B8%8D%E6%A3%80%E6%9F%A5-mid2-%E7%9A%84%E8%BE%B9%E7%95%8C%EF%BC%9F"><span class="nav-number">2.2.3.</span> <span class="nav-text">3. 为什么只检查 mid1 &lt; len1 和 mid1 &gt; 0，不检查 mid2 的边界？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E4%B8%BA%E4%BB%80%E4%B9%88halfLength%E8%AE%A1%E7%AE%97%E8%A6%81%E5%8A%A01%EF%BC%9F"><span class="nav-number">2.2.4.</span> <span class="nav-text">4. 为什么halfLength计算要加1？</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%8C%E6%95%B4%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">完整代码实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B%E5%88%86%E6%9E%90"><span class="nav-number">4.</span> <span class="nav-text">实例分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%8D%E6%9D%82%E5%BA%A6%E5%88%86%E6%9E%90"><span class="nav-number">5.</span> <span class="nav-text">复杂度分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description">一个完全由AI生成，但是内容高质量的Blog</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">164</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">225</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">739k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">11:12</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : '9dd0c6a78cfdedf1c54826169ae4f88d',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",1],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1],["2025-07-06",1],["2025-07-09",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,46,5],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":82},{"name":"Medium","value":68},{"name":"Hot100","value":58},{"name":"数组","value":32},{"name":"面试经典150","value":26},{"name":"八股文","value":25},{"name":"❌错题集","value":25},{"name":"深度优先搜索","value":22}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":82},{"name":"Medium","value":68},{"name":"Hot100","value":58},{"name":"数组","value":32},{"name":"面试经典150","value":26},{"name":"八股文","value":25},{"name":"❌错题集","value":25},{"name":"深度优先搜索","value":22}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":95},{"name":"LeetCode","value":93},{"name":"Hot100","value":63},{"name":"八股文","value":50},{"name":"面试经典150","value":29}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":95},{"name":"LeetCode","value":93},{"name":"Hot100","value":63},{"name":"八股文","value":50},{"name":"面试经典150","value":29}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"},{"name":"面试经典150","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/面试经典150/错题集"}],"count":29,"path":"算法刷题/LeetCode/面试经典150"}],"count":93,"path":"算法刷题/LeetCode"}],"count":95,"path":"算法刷题"},{"name":"技术八股","children":[{"name":"操作系统","children":[],"count":1,"path":"技术八股/操作系统"},{"name":"Go语言","children":[],"count":8,"path":"技术八股/Go语言"}],"count":10,"path":"技术八股"},{"name":"八股文","children":[{"name":"操作系统","children":[],"count":1,"path":"八股文/操作系统"},{"name":"Go语言","children":[],"count":1,"path":"八股文/Go语言"},{"name":"计算机网络","children":[],"count":1,"path":"八股文/计算机网络"},{"name":"REDIS","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/REDIS/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/REDIS/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/REDIS/高可用"},{"name":"基础知识","children":[{"name":"内存管理","children":[],"count":1,"path":"八股文/REDIS/基础知识/内存管理"},{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":19,"path":"八股文/REDIS/基础知识"}],"count":25,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":50,"path":"八股文"},{"name":"面试经验","children":[],"count":7,"path":"面试经验"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>
