@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="全面解析幂等性的概念、原理和在现代软件开发中的应用，包括API设计、分布式系统、函数式编程等方面的实际案例和最佳实践。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解幂等性原理及应用">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/05/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/%E5%B9%82%E7%AD%89%E6%80%A7/2025-05-05-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E5%B9%82%E7%AD%89%E6%80%A7%E5%8E%9F%E7%90%86%E5%8F%8A%E5%BA%94%E7%94%A8/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="全面解析幂等性的概念、原理和在现代软件开发中的应用，包括API设计、分布式系统、函数式编程等方面的实际案例和最佳实践。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-05-05T14:52:17.000Z">
+<meta property="article:modified_time" content="2025-07-29T14:38:34.802Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="架构设计">
+<meta property="article:tag" content="API设计">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="幂等性">
+<meta property="article:tag" content="RESTful API">
+<meta property="article:tag" content="消息队列">
+<meta property="article:tag" content="最佳实践">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/05/05/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/%E5%B9%82%E7%AD%89%E6%80%A7/2025-05-05-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E5%B9%82%E7%AD%89%E6%80%A7%E5%8E%9F%E7%90%86%E5%8F%8A%E5%BA%94%E7%94%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>深入理解幂等性原理及应用 | Adrian Wang's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Adrian Wang's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">一个完全由AI生成，但是内容高质量的Blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-全部文章">
+
+    <a href="/archives" rel="section"><i class="fa fa-th-list fa-fw"></i>全部文章</a>
+
+  </li>
+        <li class="menu-item menu-item-面试经验">
+
+    <a href="/interview" rel="section"><i class="fa fa-briefcase fa-fw"></i>面试经验</a>
+
+  </li>
+        <li class="menu-item menu-item-golang">
+
+    <a href="/golang" rel="section"><i class="fa fa-brands fa-golang fa-fw"></i>Golang</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-计算机网络">
+
+    <a href="/network" rel="section"><i class="fa fa-globe fa-fw"></i>计算机网络</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/05/05/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/%E5%B9%82%E7%AD%89%E6%80%A7/2025-05-05-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E5%B9%82%E7%AD%89%E6%80%A7%E5%8E%9F%E7%90%86%E5%8F%8A%E5%BA%94%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="一个完全由AI生成，但是内容高质量的Blog">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Adrian Wang's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深入理解幂等性原理及应用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-05-05 14:52:17" itemprop="dateCreated datePublished" datetime="2025-05-05T14:52:17+00:00">2025-05-05</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-07-29 14:38:34" itemprop="dateModified" datetime="2025-07-29T14:38:34+00:00">2025-07-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/" itemprop="url" rel="index"><span itemprop="name">系统设计</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>9.9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>9 mins.</span>
+            </span>
+            <div class="post-description">全面解析幂等性的概念、原理和在现代软件开发中的应用，包括API设计、分布式系统、函数式编程等方面的实际案例和最佳实践。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="引言">引言</h2>
+<p>在分布式系统和微服务架构日益普及的今天，系统的可靠性、一致性和容错性变得尤为重要。在这样的背景下，**幂等性(Idempotence)**作为一种核心设计原则，在确保系统可靠性方面发挥着至关重要的作用。</p>
+<p>无论是设计RESTful API、消息队列处理系统、还是分布式事务处理，幂等性都是构建健壮系统的关键特性。本文将系统地介绍幂等性概念，并通过实际案例分析其在各种场景下的应用方法和最佳实践。</p>
+<h2 id="幂等性的基本概念">幂等性的基本概念</h2>
+<h3 id="定义与起源">定义与起源</h3>
+<p>幂等性最初源自数学领域，描述了一种特殊的运算性质：对于操作 $f$，如果满足 $f(f(x)) = f(x)$，则称 $f$ 是幂等的。简单来说，就是无论对某个元素应用一次操作还是多次操作，结果都是相同的。</p>
+<p>在计算机科学和系统设计中，幂等性被扩展为：<strong>对系统进行一次操作与多次重复同样的操作，产生的系统状态变化是一致的</strong>。</p>
+<h3 id="幂等性的核心特征">幂等性的核心特征</h3>
+<ol>
+<li><strong>结果一致性</strong>：多次执行同一操作，最终系统状态相同</li>
+<li><strong>副作用可控</strong>：重复操作不会产生意外的副作用</li>
+<li><strong>状态收敛</strong>：无论执行多少次，系统最终会收敛到同一状态</li>
+<li><strong>操作可重试</strong>：失败后可以安全地进行重试</li>
+</ol>
+<h3 id="幂等与非幂等操作对比">幂等与非幂等操作对比</h3>
+<table>
+<thead>
+<tr>
+<th>幂等操作</th>
+<th>非幂等操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>读取资源 (GET)</td>
+<td>创建新资源 (POST)</td>
+</tr>
+<tr>
+<td>设置资源为特定状态</td>
+<td>递增计数器</td>
+</tr>
+<tr>
+<td>删除特定资源</td>
+<td>向列表追加元素</td>
+</tr>
+<tr>
+<td>根据条件更新资源</td>
+<td>无条件追加数据</td>
+</tr>
+</tbody>
+</table>
+<h2 id="为什么幂等性如此重要？">为什么幂等性如此重要？</h2>
+<p>在分布式系统设计中，幂等性解决了许多关键挑战：</p>
+<h3 id="1-分布式系统的不确定性">1. 分布式系统的不确定性</h3>
+<p>分布式环境中存在诸多不确定因素：网络延迟、分区、节点故障等。这些因素可能导致：</p>
+<ul>
+<li>客户端超时后进行重试，但原操作实际已成功</li>
+<li>消息重复投递到消费者</li>
+<li>服务之间的通信失败，需要重新发送请求</li>
+</ul>
+<p>在这些情况下，幂等操作确保系统不会因为重复处理而进入不一致状态。</p>
+<h3 id="2-提升系统可靠性">2. 提升系统可靠性</h3>
+<ul>
+<li><strong>简化错误恢复</strong>：系统可以简单地重试失败的幂等操作，而无需复杂的补偿逻辑</li>
+<li><strong>增强容错能力</strong>：即使某些操作重复执行，系统也能保持一致状态</li>
+<li><strong>减少数据不一致风险</strong>：防止因重试导致的数据异常（如重复扣款、多次下单）</li>
+</ul>
+<h3 id="3-改善用户体验">3. 改善用户体验</h3>
+<ul>
+<li>防止用户因网络问题导致的&quot;双重提交&quot;</li>
+<li>允许用户安全地刷新页面或重试操作</li>
+<li>提供更可预测和一致的系统行为</li>
+</ul>
+<h2 id="HTTP方法的幂等性分析">HTTP方法的幂等性分析</h2>
+<p>在RESTful API设计中，HTTP方法的幂等性是一个核心设计考量：</p>
+<pre class="mermaid">graph TD
+    A[HTTP方法] --&gt; B{是否幂等?}
+    B --&gt;|幂等| C[GET]
+    B --&gt;|幂等| D[PUT]
+    B --&gt;|幂等| E[DELETE]
+    B --&gt;|幂等| F[HEAD]
+    B --&gt;|幂等| G[OPTIONS]
+    B --&gt;|非幂等| H[POST]
+    B --&gt;|通常非幂等| I[PATCH]</pre>
+<h3 id="幂等的HTTP方法">幂等的HTTP方法</h3>
+<table>
+<thead>
+<tr>
+<th>HTTP方法</th>
+<th>幂等性</th>
+<th>安全性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td>✅</td>
+<td>✅</td>
+<td>只检索资源，不修改服务器状态</td>
+</tr>
+<tr>
+<td>HEAD</td>
+<td>✅</td>
+<td>✅</td>
+<td>与GET类似，但只返回头信息</td>
+</tr>
+<tr>
+<td>OPTIONS</td>
+<td>✅</td>
+<td>✅</td>
+<td>获取资源支持的方法，不修改状态</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td>✅</td>
+<td>❌</td>
+<td>替换目标资源，重复操作结果相同</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td>✅</td>
+<td>❌</td>
+<td>删除资源，多次删除效果相同</td>
+</tr>
+</tbody>
+</table>
+<h3 id="非幂等的HTTP方法">非幂等的HTTP方法</h3>
+<table>
+<thead>
+<tr>
+<th>HTTP方法</th>
+<th>幂等性</th>
+<th>安全性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td>❌</td>
+<td>❌</td>
+<td>通常用于创建资源，多次调用可能创建多个资源</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td>❌/✅</td>
+<td>❌</td>
+<td>部分更新资源，根据实现可能是幂等的</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>注意: 这里的&quot;安全性&quot;指的是方法是否会修改服务器上的资源，而非安全防护措施。</p>
+</blockquote>
+<h2 id="API设计中的幂等性实现">API设计中的幂等性实现</h2>
+<p>在API设计中实现幂等性有多种策略，以下是三种最常用的方法：</p>
+<h3 id="1-使用幂等键-Idempotency-Keys">1. 使用幂等键 (Idempotency Keys)</h3>
+<p>为每个请求分配唯一标识符，服务器记录和检查这些标识符以防止重复处理：</p>
+<pre class="mermaid">sequenceDiagram
+    participant 客户端
+    participant 服务器
+    participant 数据库
+    
+    客户端-&gt;&gt;服务器: POST /orders {idempotency-key: &quot;abc123&quot;, ...}
+    服务器-&gt;&gt;数据库: 检查key &quot;abc123&quot; 是否已处理
+    数据库--&gt;&gt;服务器: 未处理
+    服务器-&gt;&gt;数据库: 创建订单并存储 key &quot;abc123&quot;
+    数据库--&gt;&gt;服务器: 成功
+    服务器--&gt;&gt;客户端: 201 Created
+    
+    Note over 客户端,服务器: 网络问题导致客户端超时
+    
+    客户端-&gt;&gt;服务器: 重试相同请求 {idempotency-key: &quot;abc123&quot;, ...}
+    服务器-&gt;&gt;数据库: 检查key &quot;abc123&quot; 是否已处理
+    数据库--&gt;&gt;服务器: 已处理
+    服务器--&gt;&gt;客户端: 返回之前的响应结果</pre>
+<p><strong>关键实现点</strong>：</p>
+<ul>
+<li>客户端生成全局唯一的幂等键（如UUID）</li>
+<li>服务器存储已处理的幂等键及其响应</li>
+<li>对于包含相同幂等键的请求，服务器返回存储的响应</li>
+<li>设置幂等键的过期策略（TTL）</li>
+</ul>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 服务器端伪代码</span></span><br><span class="line"><span class="keyword">const</span> processedRequests = <span class="keyword">new</span> <span class="title class_">Map</span>();</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">processOrder</span>(<span class="params">req, res</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> idempotencyKey = req.<span class="property">headers</span>[<span class="string">&#x27;idempotency-key&#x27;</span>];</span><br><span class="line">  </span><br><span class="line">  <span class="keyword">if</span> (!idempotencyKey) &#123;</span><br><span class="line">    <span class="keyword">return</span> res.<span class="title function_">status</span>(<span class="number">400</span>).<span class="title function_">send</span>(<span class="string">&#x27;Missing idempotency key&#x27;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 检查是否已处理过该请求</span></span><br><span class="line">  <span class="keyword">if</span> (processedRequests.<span class="title function_">has</span>(idempotencyKey)) &#123;</span><br><span class="line">    <span class="keyword">const</span> previousResponse = processedRequests.<span class="title function_">get</span>(idempotencyKey);</span><br><span class="line">    <span class="keyword">return</span> res.<span class="title function_">status</span>(previousResponse.<span class="property">status</span>).<span class="title function_">send</span>(previousResponse.<span class="property">data</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 处理新请求</span></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// 创建订单逻辑...</span></span><br><span class="line">    <span class="keyword">const</span> order = <span class="title function_">createOrder</span>(req.<span class="property">body</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 保存响应以备后续重试</span></span><br><span class="line">    processedRequests.<span class="title function_">set</span>(idempotencyKey, &#123;</span><br><span class="line">      <span class="attr">status</span>: <span class="number">201</span>,</span><br><span class="line">      <span class="attr">data</span>: &#123; <span class="attr">orderId</span>: order.<span class="property">id</span> &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> res.<span class="title function_">status</span>(<span class="number">201</span>).<span class="title function_">send</span>(&#123; <span class="attr">orderId</span>: order.<span class="property">id</span> &#125;);</span><br><span class="line">  &#125; <span class="keyword">catch</span> (error) &#123;</span><br><span class="line">    <span class="comment">// 处理错误...</span></span><br><span class="line">    processedRequests.<span class="title function_">set</span>(idempotencyKey, &#123;</span><br><span class="line">      <span class="attr">status</span>: <span class="number">500</span>,</span><br><span class="line">      <span class="attr">data</span>: &#123; <span class="attr">error</span>: error.<span class="property">message</span> &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> res.<span class="title function_">status</span>(<span class="number">500</span>).<span class="title function_">send</span>(&#123; <span class="attr">error</span>: error.<span class="property">message</span> &#125;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="2-条件请求与乐观锁">2. 条件请求与乐观锁</h3>
+<p>使用HTTP条件请求头和资源版本控制来确保幂等更新：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 客户端代码示例</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">function</span> <span class="title function_">updateUser</span>(<span class="params">userId, userData</span>) &#123;</span><br><span class="line">  <span class="comment">// 先获取当前资源状态和ETag</span></span><br><span class="line">  <span class="keyword">const</span> response = <span class="keyword">await</span> <span class="title function_">fetch</span>(<span class="string">`/users/<span class="subst">$&#123;userId&#125;</span>`</span>);</span><br><span class="line">  <span class="keyword">const</span> etag = response.<span class="property">headers</span>.<span class="title function_">get</span>(<span class="string">&#x27;ETag&#x27;</span>);</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 使用If-Match头进行条件更新</span></span><br><span class="line">  <span class="keyword">return</span> <span class="title function_">fetch</span>(<span class="string">`/users/<span class="subst">$&#123;userId&#125;</span>`</span>, &#123;</span><br><span class="line">    <span class="attr">method</span>: <span class="string">&#x27;PUT&#x27;</span>,</span><br><span class="line">    <span class="attr">headers</span>: &#123;</span><br><span class="line">      <span class="string">&#x27;Content-Type&#x27;</span>: <span class="string">&#x27;application/json&#x27;</span>,</span><br><span class="line">      <span class="string">&#x27;If-Match&#x27;</span>: etag</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">body</span>: <span class="title class_">JSON</span>.<span class="title function_">stringify</span>(userData)</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>优势</strong>：</p>
+<ul>
+<li>防止并发更新导致的数据覆盖</li>
+<li>符合HTTP标准，不需要额外的存储机制</li>
+<li>客户端可以检测到资源已被修改并作出相应处理</li>
+</ul>
+<h3 id="3-使用业务自然键">3. 使用业务自然键</h3>
+<p>利用业务领域的自然唯一标识符来确保幂等性：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 使用业务自然键作为资源标识符</span></span><br><span class="line"><span class="comment">// POST /users</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="string">&quot;email&quot;</span>: <span class="string">&quot;user@example.com&quot;</span>,  <span class="comment">// 用作自然键</span></span><br><span class="line">  <span class="string">&quot;name&quot;</span>: <span class="string">&quot;John Doe&quot;</span>,</span><br><span class="line">  <span class="string">&quot;role&quot;</span>: <span class="string">&quot;admin&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 服务器端伪代码</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">createUser</span>(<span class="params">req, res</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> &#123; email, name, role &#125; = req.<span class="property">body</span>;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 检查用户是否已存在</span></span><br><span class="line">  <span class="keyword">const</span> existingUser = <span class="title function_">findUserByEmail</span>(email);</span><br><span class="line">  <span class="keyword">if</span> (existingUser) &#123;</span><br><span class="line">    <span class="comment">// 用户已存在，返回现有用户</span></span><br><span class="line">    <span class="keyword">return</span> res.<span class="title function_">status</span>(<span class="number">200</span>).<span class="title function_">send</span>(existingUser);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 创建新用户</span></span><br><span class="line">  <span class="keyword">const</span> newUser = <span class="title function_">createNewUser</span>(email, name, role);</span><br><span class="line">  <span class="keyword">return</span> res.<span class="title function_">status</span>(<span class="number">201</span>).<span class="title function_">send</span>(newUser);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>适用场景</strong>：</p>
+<ul>
+<li>用户注册（邮箱作为自然键）</li>
+<li>产品目录（产品编码作为自然键）</li>
+<li>配置项（配置键作为自然键）</li>
+</ul>
+<h2 id="分布式系统中的幂等性">分布式系统中的幂等性</h2>
+<p>在分布式系统中，幂等性是确保系统稳定性和数据一致性的关键机制。</p>
+<h3 id="消息队列与事件处理">消息队列与事件处理</h3>
+<p>消息队列系统（如Kafka、RabbitMQ）通常会在网络故障后重试消息投递，而消费者必须准备好处理重复消息：</p>
+<pre class="mermaid">flowchart LR
+    A[生产者] --&gt;|发送消息| B[消息队列]
+    B --&gt;|投递消息| C[消费者]
+    C --&gt;|处理消息| D{是否幂等处理?}
+    D --&gt;|是| E[安全重复处理]
+    D --&gt;|否| F[可能导致数据不一致]</pre>
+<p><strong>非幂等与幂等消费者对比</strong>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 非幂等消费者示例（有问题）</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processPayment</span><span class="params">(PaymentMessage message)</span> &#123;</span><br><span class="line">    <span class="comment">// 直接处理付款 - 重复处理会导致多次付款</span></span><br><span class="line">    paymentService.deductAmount(message.getAccountId(), message.getAmount());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 幂等消费者示例（安全）</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processPayment</span><span class="params">(PaymentMessage message)</span> &#123;</span><br><span class="line">    <span class="comment">// 检查支付ID是否已处理</span></span><br><span class="line">    <span class="keyword">if</span> (paymentRepository.existsById(message.getPaymentId())) &#123;</span><br><span class="line">        log.info(<span class="string">&quot;Payment &#123;&#125; already processed, skipping&quot;</span>, message.getPaymentId());</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 处理付款并记录已处理的支付ID</span></span><br><span class="line">    paymentService.deductAmount(message.getAccountId(), message.getAmount());</span><br><span class="line">    paymentRepository.saveProcessedId(message.getPaymentId());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="实现消息队列幂等性的策略">实现消息队列幂等性的策略</h3>
+<ol>
+<li><strong>唯一消息ID</strong>：为每条消息分配全局唯一ID</li>
+<li><strong>消息去重表</strong>：在消费者端维护已处理消息ID的记录</li>
+<li><strong>业务状态检查</strong>：基于业务状态判断是否已处理</li>
+<li><strong>幂等性窗口期</strong>：仅在特定时间窗口内进行去重处理</li>
+</ol>
+<h3 id="分布式事务中的幂等性">分布式事务中的幂等性</h3>
+<p>在分布式事务中，幂等操作可以极大简化补偿逻辑和故障恢复：</p>
+<pre class="mermaid">sequenceDiagram
+    participant 服务A
+    participant 服务B
+    participant 服务C
+    
+    Note over 服务A,服务C: 分布式事务开始
+    
+    服务A-&gt;&gt;服务B: 操作1 (幂等)
+    服务B--&gt;&gt;服务A: 成功
+    服务A-&gt;&gt;服务C: 操作2 (幂等)
+    
+    Note over 服务C: 服务C失败
+    服务C--&gt;&gt;服务A: 失败
+    
+    Note over 服务A,服务C: 重试整个事务
+    
+    服务A-&gt;&gt;服务B: 操作1 (幂等重试)
+    服务B--&gt;&gt;服务A: 成功 (无副作用)
+    服务A-&gt;&gt;服务C: 操作2 (幂等重试)
+    服务C--&gt;&gt;服务A: 成功
+    
+    Note over 服务A,服务C: 事务完成</pre>
+<h3 id="微服务架构中的幂等性传播">微服务架构中的幂等性传播</h3>
+<p>在微服务调用链中，幂等性应当从最外层API一直传播到所有下游服务：</p>
+<ol>
+<li><strong>幂等键传播</strong>：上游服务生成的幂等键通过请求头或消息属性传递给下游服务</li>
+<li><strong>全链路跟踪</strong>：使用分布式追踪工具（如Jaeger、Zipkin）来跟踪请求在服务间的流转</li>
+<li><strong>一致性哈希</strong>：确保相同请求始终路由到相同服务实例</li>
+</ol>
+<h2 id="基础设施中的幂等性">基础设施中的幂等性</h2>
+<h3 id="Infrastructure-as-Code-IaC">Infrastructure as Code (IaC)</h3>
+<p>现代基础设施工具如Terraform、Ansible通过声明式配置实现幂等性操作：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Ansible幂等任务示例</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">name:</span> <span class="string">确保Nginx已安装</span></span><br><span class="line">  <span class="attr">apt:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="attr">state:</span> <span class="string">present</span></span><br><span class="line">    </span><br><span class="line"><span class="bullet">-</span> <span class="attr">name:</span> <span class="string">确保Nginx服务运行</span></span><br><span class="line">  <span class="attr">service:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="attr">state:</span> <span class="string">started</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">yes</span></span><br></pre></td></tr></table></figure>
+<p>Terraform示例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># 幂等的Terraform配置</span><br><span class="line">resource &quot;aws_s3_bucket&quot; &quot;example_bucket&quot; &#123;</span><br><span class="line">  bucket = &quot;example-bucket&quot;</span><br><span class="line">  acl    = &quot;private&quot;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">resource &quot;aws_iam_user&quot; &quot;example_user&quot; &#123;</span><br><span class="line">  name = &quot;example-user&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="容器编排与Kubernetes">容器编排与Kubernetes</h3>
+<p>Kubernetes以声明式API为特色，使基础设施变更具有幂等性：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Kubernetes幂等资源定义</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Deployment</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">nginx-deployment</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">app:</span> <span class="string">nginx</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="attr">metadata:</span></span><br><span class="line">      <span class="attr">labels:</span></span><br><span class="line">        <span class="attr">app:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">nginx</span></span><br><span class="line">        <span class="attr">image:</span> <span class="string">nginx:1.14.2</span></span><br><span class="line">        <span class="attr">ports:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">80</span></span><br></pre></td></tr></table></figure>
+<h2 id="幂等性实现的挑战与解决方案">幂等性实现的挑战与解决方案</h2>
+<h3 id="常见挑战">常见挑战</h3>
+<ol>
+<li><strong>并发处理</strong>: 多个请求同时到达时如何确保幂等性</li>
+<li><strong>幂等键存储</strong>: 如何高效存储和查询幂等键</li>
+<li><strong>跨服务幂等</strong>: 如何在微服务架构中传播幂等性</li>
+<li><strong>长时间运行的操作</strong>: 如何处理长时间运行操作的幂等性</li>
+<li><strong>幂等与业务规则冲突</strong>: 某些业务场景可能本质上不是幂等的</li>
+</ol>
+<h3 id="解决方案">解决方案</h3>
+<h4 id="1-并发问题">1. 并发问题</h4>
+<p>多个客户端同时发送幂等请求时，可能导致竞态条件：</p>
+<p><strong>解决方案</strong>:</p>
+<ul>
+<li><strong>分布式锁</strong>: 使用Redis、ZooKeeper实现分布式锁</li>
+<li><strong>乐观锁</strong>: 使用版本号或条件更新防止并发冲突</li>
+<li><strong>唯一约束</strong>: 在数据库层使用唯一约束确保幂等</li>
+<li><strong>事务隔离</strong>: 选择适当的事务隔离级别（如SERIALIZABLE）</li>
+</ul>
+<h4 id="2-幂等键管理">2. 幂等键管理</h4>
+<p>幂等键的生成、存储和过期策略需要仔细设计：</p>
+<p><strong>解决方案</strong>:</p>
+<ul>
+<li><strong>客户端生成</strong>: 在客户端生成UUID作为幂等键</li>
+<li><strong>TTL机制</strong>: 实现幂等键的自动过期机制</li>
+<li><strong>分区存储</strong>: 根据时间或业务维度分区存储幂等键</li>
+<li><strong>异步清理</strong>: 定期清理过期的幂等键记录</li>
+</ul>
+<h4 id="3-系统边界与幂等性传播">3. 系统边界与幂等性传播</h4>
+<p>在复杂系统中维持端到端的幂等性：</p>
+<p><strong>解决方案</strong>:</p>
+<ul>
+<li><strong>请求上下文</strong>: 在整个调用链中传递请求上下文（包含幂等键）</li>
+<li><strong>分布式事务</strong>: 使用TCC或Saga模式确保分布式事务的一致性</li>
+<li><strong>补偿逻辑</strong>: 为非幂等操作设计补偿逻辑</li>
+<li><strong>异步确认</strong>: 使用确认/回执机制防止重复处理</li>
+</ul>
+<h2 id="实际应用案例">实际应用案例</h2>
+<h3 id="案例1：支付系统的幂等性">案例1：支付系统的幂等性</h3>
+<p>支付处理是幂等性的典型应用场景，同一笔支付不能重复执行：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Transactional</span></span><br><span class="line"><span class="keyword">public</span> PaymentResponse <span class="title function_">processPayment</span><span class="params">(PaymentRequest request)</span> &#123;</span><br><span class="line">    <span class="comment">// 检查是否已存在相同支付ID的记录</span></span><br><span class="line">    <span class="keyword">if</span> (paymentRepository.existsByPaymentId(request.getPaymentId())) &#123;</span><br><span class="line">        <span class="comment">// 返回已存在的支付结果</span></span><br><span class="line">        <span class="type">Payment</span> <span class="variable">existingPayment</span> <span class="operator">=</span> paymentRepository.findByPaymentId(request.getPaymentId());</span><br><span class="line">        <span class="keyword">return</span> mapToResponse(existingPayment);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 处理新支付</span></span><br><span class="line">    <span class="type">Payment</span> <span class="variable">payment</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Payment</span>();</span><br><span class="line">    payment.setPaymentId(request.getPaymentId());</span><br><span class="line">    payment.setAmount(request.getAmount());</span><br><span class="line">    payment.setStatus(PaymentStatus.PROCESSING);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 保存初始状态</span></span><br><span class="line">    paymentRepository.save(payment);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 调用支付网关</span></span><br><span class="line">        <span class="type">PaymentGatewayResponse</span> <span class="variable">gatewayResponse</span> <span class="operator">=</span> paymentGateway.processPayment(</span><br><span class="line">            request.getPaymentMethod(),</span><br><span class="line">            request.getAmount()</span><br><span class="line">        );</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 更新支付状态</span></span><br><span class="line">        payment.setStatus(gatewayResponse.isSuccessful() ? </span><br><span class="line">                          PaymentStatus.COMPLETED : PaymentStatus.FAILED);</span><br><span class="line">        payment.setTransactionId(gatewayResponse.getTransactionId());</span><br><span class="line">        paymentRepository.save(payment);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> mapToResponse(payment);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        <span class="comment">// 更新支付状态为失败</span></span><br><span class="line">        payment.setStatus(PaymentStatus.FAILED);</span><br><span class="line">        payment.setFailureReason(e.getMessage());</span><br><span class="line">        paymentRepository.save(payment);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">PaymentException</span>(<span class="string">&quot;Payment processing failed&quot;</span>, e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="案例2：库存管理系统">案例2：库存管理系统</h3>
+<p>电子商务系统中的库存管理必须确保不会多次扣减同一订单的库存：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Transactional</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processOrderInventory</span><span class="params">(OrderInventoryRequest request)</span> &#123;</span><br><span class="line">    <span class="comment">// 检查订单ID是否已处理</span></span><br><span class="line">    <span class="keyword">if</span> (inventoryTransactionRepository.existsByOrderId(request.getOrderId())) &#123;</span><br><span class="line">        log.info(<span class="string">&quot;Order &#123;&#125; inventory already processed&quot;</span>, request.getOrderId());</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 处理库存</span></span><br><span class="line">    <span class="keyword">for</span> (OrderItem item : request.getItems()) &#123;</span><br><span class="line">        <span class="type">Product</span> <span class="variable">product</span> <span class="operator">=</span> productRepository.findById(item.getProductId())</span><br><span class="line">            .orElseThrow(() -&gt; <span class="keyword">new</span> <span class="title class_">ProductNotFoundException</span>(item.getProductId()));</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 检查库存</span></span><br><span class="line">        <span class="keyword">if</span> (product.getAvailableStock() &lt; item.getQuantity()) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">InsufficientStockException</span>(product.getId());</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 减少库存</span></span><br><span class="line">        product.setAvailableStock(product.getAvailableStock() - item.getQuantity());</span><br><span class="line">        productRepository.save(product);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 记录库存交易</span></span><br><span class="line">        <span class="type">InventoryTransaction</span> <span class="variable">transaction</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InventoryTransaction</span>();</span><br><span class="line">        transaction.setOrderId(request.getOrderId());</span><br><span class="line">        transaction.setProductId(product.getId());</span><br><span class="line">        transaction.setQuantity(item.getQuantity());</span><br><span class="line">        transaction.setType(TransactionType.DEDUCT);</span><br><span class="line">        transaction.setTimestamp(LocalDateTime.now());</span><br><span class="line">        inventoryTransactionRepository.save(transaction);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="幂等性设计最佳实践">幂等性设计最佳实践</h2>
+<h3 id="系统设计阶段">系统设计阶段</h3>
+<ol>
+<li><strong>明确幂等性需求</strong>：在设计阶段识别哪些操作需要幂等性</li>
+<li><strong>选择合适的幂等策略</strong>：根据业务场景选择最适合的幂等实现方式</li>
+<li><strong>统一幂等机制</strong>：在整个系统中使用统一的幂等性处理框架</li>
+<li><strong>考虑性能影响</strong>：评估幂等性实现对系统性能的影响</li>
+<li><strong>设计异常处理</strong>：合理处理幂等性检查过程中的异常情况</li>
+</ol>
+<h3 id="API设计">API设计</h3>
+<ol>
+<li><strong>优先使用幂等HTTP方法</strong>：尽可能使用GET、PUT、DELETE等幂等方法</li>
+<li><strong>文档化幂等性行为</strong>：在API文档中明确说明每个接口的幂等性特性</li>
+<li><strong>标准化幂等键处理</strong>：定义清晰的幂等键格式和处理规范</li>
+<li><strong>实现请求去重</strong>：为非幂等接口实现请求去重机制</li>
+<li><strong>重试策略</strong>：为客户端提供明确的重试指导</li>
+</ol>
+<h3 id="实现与测试">实现与测试</h3>
+<ol>
+<li><strong>编写幂等性测试</strong>：专门测试系统在重复操作下的行为</li>
+<li><strong>模拟网络故障</strong>：测试在各种网络故障场景下的系统行为</li>
+<li><strong>压力测试</strong>：在高并发场景下测试幂等性机制的有效性</li>
+<li><strong>审计与监控</strong>：记录和监控幂等性相关的事件和指标</li>
+<li><strong>定期审查</strong>：定期审查幂等机制的有效性和性能</li>
+</ol>
+<h2 id="结论">结论</h2>
+<p>幂等性是现代分布式系统架构中确保可靠性和一致性的核心原则。通过在API设计、消息处理、分布式事务等各个层面实现幂等性，系统可以更好地应对网络不稳定性、服务故障和并发操作等挑战。</p>
+<p>关键收益包括：</p>
+<ol>
+<li><strong>提高系统可靠性</strong>：即使在网络不稳定或服务故障的情况下，系统也能保持数据一致性</li>
+<li><strong>简化错误处理</strong>：客户端可以安全地进行重试，而无需担心副作用</li>
+<li><strong>改善用户体验</strong>：防止因网络问题或用户重复操作导致的数据错误</li>
+<li><strong>支持自动化</strong>：使自动化脚本和工具能够安全地重复执行</li>
+<li><strong>降低运维复杂度</strong>：简化故障恢复和系统维护流程</li>
+</ol>
+<p>幂等性不仅是一个技术概念，更是一种系统设计哲学。在设计新系统或改进现有系统时，将幂等性作为核心设计原则之一，可以大幅提高系统的健壮性和可靠性。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://medium.com/cache-me-out/understanding-idempotency-68a50a837fc1">Understanding Idempotency</a></li>
+<li><a target="_blank" rel="noopener" href="https://hackernoon.com/the-idempotence-principle-in-software-architecture">The Idempotence Principle in Software Architecture</a></li>
+<li><a target="_blank" rel="noopener" href="https://restfulapi.net/idempotent-rest-apis/">REST API Design: Idempotent Operations</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.confluent.io/blog/idempotent-kafka-consumers/">Idempotency Patterns in Event-Driven Systems</a></li>
+<li><a target="_blank" rel="noopener" href="https://tools.ietf.org/html/rfc7231#section-4.2.2">HTTP Semantics: Idempotent Methods</a></li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag"># 架构设计</a>
+              <a href="/tags/API%E8%AE%BE%E8%AE%A1/" rel="tag"># API设计</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag"># 分布式系统</a>
+              <a href="/tags/%E5%B9%82%E7%AD%89%E6%80%A7/" rel="tag"># 幂等性</a>
+              <a href="/tags/RESTful-API/" rel="tag"># RESTful API</a>
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" rel="tag"># 消息队列</a>
+              <a href="/tags/%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5/" rel="tag"># 最佳实践</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/Mysql%E4%B8%AD%E4%BD%BF%E7%94%A8Like%E4%B8%80%E5%AE%9A%E4%BC%9A%E5%AF%BC%E8%87%B4%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88%E5%90%97/" rel="prev" title="MySQL中使用'Like'一定会导致索引失效吗？">
+      <i class="fa fa-chevron-left"></i> MySQL中使用'Like'一定会导致索引失效吗？
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/05/05/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-208-%E5%AE%9E%E7%8E%B0-Trie-%E5%89%8D%E7%BC%80%E6%A0%91/" rel="next" title="LeetCode 208 - 实现 Trie (前缀树)">
+      LeetCode 208 - 实现 Trie (前缀树) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%82%E7%AD%89%E6%80%A7%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="nav-number">2.</span> <span class="nav-text">幂等性的基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89%E4%B8%8E%E8%B5%B7%E6%BA%90"><span class="nav-number">2.1.</span> <span class="nav-text">定义与起源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%82%E7%AD%89%E6%80%A7%E7%9A%84%E6%A0%B8%E5%BF%83%E7%89%B9%E5%BE%81"><span class="nav-number">2.2.</span> <span class="nav-text">幂等性的核心特征</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%82%E7%AD%89%E4%B8%8E%E9%9D%9E%E5%B9%82%E7%AD%89%E6%93%8D%E4%BD%9C%E5%AF%B9%E6%AF%94"><span class="nav-number">2.3.</span> <span class="nav-text">幂等与非幂等操作对比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%B9%82%E7%AD%89%E6%80%A7%E5%A6%82%E6%AD%A4%E9%87%8D%E8%A6%81%EF%BC%9F"><span class="nav-number">3.</span> <span class="nav-text">为什么幂等性如此重要？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E7%9A%84%E4%B8%8D%E7%A1%AE%E5%AE%9A%E6%80%A7"><span class="nav-number">3.1.</span> <span class="nav-text">1. 分布式系统的不确定性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%8F%90%E5%8D%87%E7%B3%BB%E7%BB%9F%E5%8F%AF%E9%9D%A0%E6%80%A7"><span class="nav-number">3.2.</span> <span class="nav-text">2. 提升系统可靠性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%94%B9%E5%96%84%E7%94%A8%E6%88%B7%E4%BD%93%E9%AA%8C"><span class="nav-number">3.3.</span> <span class="nav-text">3. 改善用户体验</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTP%E6%96%B9%E6%B3%95%E7%9A%84%E5%B9%82%E7%AD%89%E6%80%A7%E5%88%86%E6%9E%90"><span class="nav-number">4.</span> <span class="nav-text">HTTP方法的幂等性分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%82%E7%AD%89%E7%9A%84HTTP%E6%96%B9%E6%B3%95"><span class="nav-number">4.1.</span> <span class="nav-text">幂等的HTTP方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9D%9E%E5%B9%82%E7%AD%89%E7%9A%84HTTP%E6%96%B9%E6%B3%95"><span class="nav-number">4.2.</span> <span class="nav-text">非幂等的HTTP方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#API%E8%AE%BE%E8%AE%A1%E4%B8%AD%E7%9A%84%E5%B9%82%E7%AD%89%E6%80%A7%E5%AE%9E%E7%8E%B0"><span class="nav-number">5.</span> <span class="nav-text">API设计中的幂等性实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E4%BD%BF%E7%94%A8%E5%B9%82%E7%AD%89%E9%94%AE-Idempotency-Keys"><span class="nav-number">5.1.</span> <span class="nav-text">1. 使用幂等键 (Idempotency Keys)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%9D%A1%E4%BB%B6%E8%AF%B7%E6%B1%82%E4%B8%8E%E4%B9%90%E8%A7%82%E9%94%81"><span class="nav-number">5.2.</span> <span class="nav-text">2. 条件请求与乐观锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%BD%BF%E7%94%A8%E4%B8%9A%E5%8A%A1%E8%87%AA%E7%84%B6%E9%94%AE"><span class="nav-number">5.3.</span> <span class="nav-text">3. 使用业务自然键</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%AD%E7%9A%84%E5%B9%82%E7%AD%89%E6%80%A7"><span class="nav-number">6.</span> <span class="nav-text">分布式系统中的幂等性</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E4%B8%8E%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86"><span class="nav-number">6.1.</span> <span class="nav-text">消息队列与事件处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%B9%82%E7%AD%89%E6%80%A7%E7%9A%84%E7%AD%96%E7%95%A5"><span class="nav-number">6.2.</span> <span class="nav-text">实现消息队列幂等性的策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E4%B8%AD%E7%9A%84%E5%B9%82%E7%AD%89%E6%80%A7"><span class="nav-number">6.3.</span> <span class="nav-text">分布式事务中的幂等性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E4%B8%AD%E7%9A%84%E5%B9%82%E7%AD%89%E6%80%A7%E4%BC%A0%E6%92%AD"><span class="nav-number">6.4.</span> <span class="nav-text">微服务架构中的幂等性传播</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD%E4%B8%AD%E7%9A%84%E5%B9%82%E7%AD%89%E6%80%A7"><span class="nav-number">7.</span> <span class="nav-text">基础设施中的幂等性</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Infrastructure-as-Code-IaC"><span class="nav-number">7.1.</span> <span class="nav-text">Infrastructure as Code (IaC)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%B9%E5%99%A8%E7%BC%96%E6%8E%92%E4%B8%8EKubernetes"><span class="nav-number">7.2.</span> <span class="nav-text">容器编排与Kubernetes</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%82%E7%AD%89%E6%80%A7%E5%AE%9E%E7%8E%B0%E7%9A%84%E6%8C%91%E6%88%98%E4%B8%8E%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">8.</span> <span class="nav-text">幂等性实现的挑战与解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E6%8C%91%E6%88%98"><span class="nav-number">8.1.</span> <span class="nav-text">常见挑战</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">8.2.</span> <span class="nav-text">解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%B9%B6%E5%8F%91%E9%97%AE%E9%A2%98"><span class="nav-number">8.2.1.</span> <span class="nav-text">1. 并发问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%B9%82%E7%AD%89%E9%94%AE%E7%AE%A1%E7%90%86"><span class="nav-number">8.2.2.</span> <span class="nav-text">2. 幂等键管理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E7%B3%BB%E7%BB%9F%E8%BE%B9%E7%95%8C%E4%B8%8E%E5%B9%82%E7%AD%89%E6%80%A7%E4%BC%A0%E6%92%AD"><span class="nav-number">8.2.3.</span> <span class="nav-text">3. 系统边界与幂等性传播</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%99%85%E5%BA%94%E7%94%A8%E6%A1%88%E4%BE%8B"><span class="nav-number">9.</span> <span class="nav-text">实际应用案例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B1%EF%BC%9A%E6%94%AF%E4%BB%98%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%B9%82%E7%AD%89%E6%80%A7"><span class="nav-number">9.1.</span> <span class="nav-text">案例1：支付系统的幂等性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B2%EF%BC%9A%E5%BA%93%E5%AD%98%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F"><span class="nav-number">9.2.</span> <span class="nav-text">案例2：库存管理系统</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%82%E7%AD%89%E6%80%A7%E8%AE%BE%E8%AE%A1%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5"><span class="nav-number">10.</span> <span class="nav-text">幂等性设计最佳实践</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E9%98%B6%E6%AE%B5"><span class="nav-number">10.1.</span> <span class="nav-text">系统设计阶段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#API%E8%AE%BE%E8%AE%A1"><span class="nav-number">10.2.</span> <span class="nav-text">API设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E4%B8%8E%E6%B5%8B%E8%AF%95"><span class="nav-number">10.3.</span> <span class="nav-text">实现与测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA"><span class="nav-number">11.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">12.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description">一个完全由AI生成，但是内容高质量的Blog</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">169</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">229</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">751k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">11:22</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : '49edd10bcb1864568af97983043e5360',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",1],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1],["2025-07-06",1],["2025-07-09",1],["2025-07-20",3],["2025-07-26",2]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,46,10],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":87},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":31},{"name":"八股文","value":25},{"name":"❌错题集","value":25},{"name":"深度优先搜索","value":22}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":87},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":31},{"name":"八股文","value":25},{"name":"❌错题集","value":25},{"name":"深度优先搜索","value":22}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":100},{"name":"LeetCode","value":98},{"name":"Hot100","value":63},{"name":"八股文","value":50},{"name":"面试经典150","value":34}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":100},{"name":"LeetCode","value":98},{"name":"Hot100","value":63},{"name":"八股文","value":50},{"name":"面试经典150","value":34}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/面试经典150/错题集"}],"count":34,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":98,"path":"算法刷题/LeetCode"}],"count":100,"path":"算法刷题"},{"name":"技术八股","children":[{"name":"操作系统","children":[],"count":1,"path":"技术八股/操作系统"},{"name":"Go语言","children":[],"count":8,"path":"技术八股/Go语言"}],"count":10,"path":"技术八股"},{"name":"八股文","children":[{"name":"操作系统","children":[],"count":1,"path":"八股文/操作系统"},{"name":"Go语言","children":[],"count":1,"path":"八股文/Go语言"},{"name":"计算机网络","children":[],"count":1,"path":"八股文/计算机网络"},{"name":"REDIS","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/REDIS/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/REDIS/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/REDIS/高可用"},{"name":"基础知识","children":[{"name":"内存管理","children":[],"count":1,"path":"八股文/REDIS/基础知识/内存管理"},{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":19,"path":"八股文/REDIS/基础知识"}],"count":25,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":50,"path":"八股文"},{"name":"面试经验","children":[],"count":7,"path":"面试经验"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>

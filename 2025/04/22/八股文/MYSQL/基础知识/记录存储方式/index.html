@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="MYSQL 记录存储方式">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MYSQL 记录存储方式">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="MYSQL 记录存储方式">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745323847902.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/COMPACT-ROW.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459344704.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459442389.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459442389.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459724424.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459735372.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459744703.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459751962.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459765680.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459796350.png">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745466102232.png">
+<meta property="article:published_time" content="2025-04-22T19:51:40.000Z">
+<meta property="article:modified_time" content="2025-07-29T14:38:34.434Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="八股文">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="记录存储方式">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745323847902.png">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>MYSQL 记录存储方式 | Adrian Wang's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Adrian Wang's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">一个完全由AI生成，但是内容高质量的Blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-全部文章">
+
+    <a href="/archives" rel="section"><i class="fa fa-th-list fa-fw"></i>全部文章</a>
+
+  </li>
+        <li class="menu-item menu-item-面试经验">
+
+    <a href="/interview" rel="section"><i class="fa fa-briefcase fa-fw"></i>面试经验</a>
+
+  </li>
+        <li class="menu-item menu-item-golang">
+
+    <a href="/golang" rel="section"><i class="fa fa-brands fa-golang fa-fw"></i>Golang</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-计算机网络">
+
+    <a href="/network" rel="section"><i class="fa fa-globe fa-fw"></i>计算机网络</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="一个完全由AI生成，但是内容高质量的Blog">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Adrian Wang's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MYSQL 记录存储方式
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-04-22 19:51:40" itemprop="dateCreated datePublished" datetime="2025-04-22T19:51:40+00:00">2025-04-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-07-29 14:38:34" itemprop="dateModified" datetime="2025-07-29T14:38:34+00:00">2025-07-29</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">八股文</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" itemprop="url" rel="index"><span itemprop="name">基础知识</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>4.5k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+            <div class="post-description">MYSQL 记录存储方式</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="MYSQL-数据文件存放位置">MYSQL 数据文件存放位置</h2>
+<p>使用 <code>show variables like 'datadir';</code> 命令查看数据文件存放位置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like <span class="string">&#x27;datadir&#x27;</span>;</span><br><span class="line">+---------------+-----------------+</span><br><span class="line">| Variable_name | Value           |</span><br><span class="line">+---------------+-----------------+</span><br><span class="line">| datadir       | /var/lib/mysql/ |</span><br><span class="line">+---------------+-----------------+</span><br></pre></td></tr></table></figure>
+<p>比如我们的数据库是 <code>test</code>，那么数据文件存放位置就是 <code>/var/lib/mysql/test/</code>。</p>
+<p>该目录下有以下文件：</p>
+<ul>
+<li><code>db.opt</code>：数据库选项文件，记录了数据库的字符集和校验规则</li>
+<li><code>test.frm</code>：表结构文件，记录了表的结构</li>
+<li><code>test.ibd</code>：表数据文件，记录了表的数据，包括数据页和索引页，它也被称作 <code>InnoDB</code> 存储引擎的 <code>表空间文件</code></li>
+</ul>
+<h2 id="表空间文件结构">表空间文件结构</h2>
+<p>表空间主要由 <strong>段(segment)</strong>、<strong>区(extent)</strong>、<strong>页(page)</strong>、<strong>行(row)</strong> 组成。</p>
+<ul>
+<li>
+<p><strong>行(row)</strong>：行是表空间的最小存储单位，是 <code>InnoDB</code> 存储引擎中数据存储的基本单位。</p>
+</li>
+<li>
+<p><strong>页(page)</strong>：页是 <code>InnoDB</code> 存储引擎中数据存储的基本单位，一个页默认大小为 <code>16KB</code>,页是为了方便管理数据，否则直接以行来存储数据，那么每次存取数据都要进行 <code>I/O</code> 操作，效率低下。每次数据库的读写操作都是以页为单位进行的。页的类型有很多，比如数据页、索引页、回滚页、溢出页、临时页、系统页、事务数据页、文件页等，具体参考<a href="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/MySQL%E9%A1%B5%E7%B1%BB%E5%9E%8B/">MySQL 页类型</a>。</p>
+</li>
+<li>
+<p><strong>区(extent)</strong>：区是 <code>InnoDB</code> 存储引擎中数据存储的基本单位，一个区默认大小为 <code>1MB</code>，一个区由 <code>64</code> 个页组成。</p>
+<blockquote>
+<p>首先我们知道 <code>InnoDB</code> 存储引擎是 <code>B+</code> 树结构，<code>B+</code> 树结构的最后一层是使用双向链表连接的，那么如果链表中相邻的页的物理位置很远，那么磁盘查询会带来大量的<strong>随机 I/O</strong>（跟磁盘的机械运动有关），影响查询效率。</p>
+<p>因此 <code>InnoDB</code> 存储引擎引入了区的概念，一个区由 <code>64</code> 个页组成，这样就可以将物理位置相邻的页放到一个区中，从而减少磁盘的随机 <code>I/O</code> 操作，提高<strong>顺序 I/O</strong>的频率，提高查询效率。</p>
+</blockquote>
+</li>
+<li>
+<p><strong>段(segment)</strong>：表空间是由多个段组成的，段是由多个区组成的，一般来说，段分为数据段、索引段、回滚段等。</p>
+<ul>
+<li>数据段：存放 <code>InnoDB</code> 存储引擎中叶子节点的区的集合。</li>
+<li>索引段：存放 <code>InnoDB</code> 存储引擎中非叶子节点的区的集合。</li>
+<li>回滚段：存放 <code>InnoDB</code> 存储引擎中表的回滚数据的集合。就是事务隔离部分，使用 <code>MVCC</code> 机制，就利用了回滚段来实现多版本查询数据。</li>
+</ul>
+</li>
+</ul>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745323847902.png" alt="1745323847902"></p>
+<h2 id="InnoDB-行格式">InnoDB 行格式</h2>
+<p>InnoDB 提供了 <code>Compact</code>、<code>Redundant</code>、<code>Dynamic</code>、<code>Compressed</code> 四种行格式，5.1 版本后默认使用 <code>Compact</code> 行格式，5.7 版本后默认使用 <code>Dynamic</code> 行格式。</p>
+<blockquote>
+<p>这里的 <code>Redundant</code> 行格式是 <code>InnoDB</code> 早期版本使用的行格式，现在已经不再使用。因为 Redundant 不是一种紧凑的行格式，所以现在使用 <code>Compact</code> 行格式。</p>
+<p><code>Dynamic</code> 和 <code>Compressed</code> 行格式都和 <code>Compact</code> 行格式类似，都是对 <code>Compact</code> 行格式的一种优化。</p>
+</blockquote>
+<h3 id="Compact-行格式">Compact 行格式</h3>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/COMPACT-ROW.png" alt="1745324130903"></p>
+<p>如上图所示，一条完整的记录被分为了“记录的额外信息”和“记录的真实数据”两部分。</p>
+<ul>
+<li>
+<p>“记录的额外信息”：</p>
+<ul>
+<li><code>变长字段长度列表</code>：表示该条记录中变长字段的长度。</li>
+<li><code>NULL 值列表</code>：表示该条记录中哪些字段为 <code>NULL</code>。</li>
+<li><code>记录头信息</code>：表示该条记录的一些信息，比如记录的类型、长度、是否被删除等。</li>
+</ul>
+</li>
+<li>
+<p>“记录的真实数据”：</p>
+<ul>
+<li><code>row_id</code>：表示该条记录的唯一标识，如果表中没有定义主键，那么 <code>InnoDB</code> 会自动生成一个 <code>row_id</code> 作为主键。</li>
+<li><code>事务ID</code>：表示该条记录的事务 ID。</li>
+<li><code>回滚指针</code>：表示该条记录的回滚指针。</li>
+<li><code>列1...列N</code>：表示该条记录的列数据。</li>
+</ul>
+</li>
+</ul>
+<h4 id="变长字段长度列表">变长字段长度列表</h4>
+<p>比如 <code>varchar</code>、<code>varbinary</code>、<code>text</code>、<code>blob</code> 等这种属于变长字段，就需要把它的长度存起来，因此需要一个列表来记录每个变长字段的长度。</p>
+<p>假设我们有如下的表：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> `t_user` (</span><br><span class="line">  `id` <span class="type">int</span>(<span class="number">11</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">  `name` <span class="type">varchar</span>(<span class="number">20</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `phone` <span class="type">varchar</span>(<span class="number">20</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `age` <span class="type">int</span>(<span class="number">11</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  <span class="keyword">PRIMARY KEY</span> (`id`) <span class="keyword">USING</span> BTREE</span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB <span class="keyword">DEFAULT</span> <span class="keyword">CHARACTER SET</span> <span class="operator">=</span> ascii ROW_FORMAT <span class="operator">=</span> COMPACT;</span><br></pre></td></tr></table></figure>
+<p>假设这里有三条记录:</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>name</th>
+<th>phone</th>
+<th>age</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>a</td>
+<td>123</td>
+<td>18</td>
+</tr>
+<tr>
+<td>2</td>
+<td>bb</td>
+<td>1234</td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>3</td>
+<td>ccc</td>
+<td>NULL</td>
+<td>NULL</td>
+</tr>
+</tbody>
+</table>
+<p>我们先来看第一条记录：</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>name</th>
+<th>phone</th>
+<th>age</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>a</td>
+<td>123</td>
+<td>18</td>
+</tr>
+</tbody>
+</table>
+<p><code>name</code> 列的值为 a，真实数据占用 1 字节，十六进制为 0x01，<code>phone</code> 列的值为 123，真实数据占用 3 字节，十六进制为 0x03，<code>age</code> 和 <code>id</code> 列都是定长字段，这里不用记录长度。</p>
+<p>这些变长字段的真实数据占用的字节数会按照列的顺序<strong>逆序存放</strong>（等下会说为什么要这么设计），所以「变长字段长度列表」里的内容是「03 01」，而不是「01 03」。</p>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459344704.png" alt="1745459344704"></p>
+<p>同样的道理，我们也可以得出<strong>第二条记录</strong>的行格式中，「变长字段长度列表」里的内容是「04 02」，如下图：</p>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459442389.png" alt="1745459442389"></p>
+<p><strong>第三条记录</strong>中 phone 列的值是 NULL，<strong>NULL 是不会存放在行格式中记录的真实数据部分里的</strong>，所以「变长字段长度列表」里不需要保存值为 NULL 的变长字段的长度。</p>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459442389.png" alt="1745459442389"></p>
+<blockquote>
+<p>为什么「变长字段长度列表」的信息要按照逆序存放？</p>
+</blockquote>
+<p>这个设计是有想法的，主要是因为「记录头信息」中指向下一个记录的指针，指向的是下一条记录的「记录头信息」和「真实数据」之间的位置，这样的好处是向左读就是记录头信息，向右读就是真实数据，比较方便。</p>
+<p>「变长字段长度列表」中的信息之所以要逆序存放，是因为这样可以<strong>使得位置靠前的记录的真实数据和数据对应的字段长度信息可以同时在一个 CPU Cache Line 中，这样就可以提高 CPU Cache 的命中率</strong>。</p>
+<p>同样的道理，NULL 值列表的信息也需要逆序存放。</p>
+<p>如果你不知道什么是 CPU Cache，可以看<a target="_blank" rel="noopener" href="https://xiaolincoding.com/os/1_hardware/how_to_make_cpu_run_faster.html">这篇文章</a>，这属于计算机组成的知识。</p>
+<blockquote>
+<p>每个数据库表的行格式都有「变长字段字节数列表」吗？</p>
+</blockquote>
+<p>其实变长字段字节数列表不是必须的。</p>
+<p><strong>当数据表没有变长字段的时候，比如全部都是 int 类型的字段，这时候表里的行格式就不会有「变长字段长度列表」了</strong>，因为没必要，不如去掉以节省空间。</p>
+<p>所以「变长字段长度列表」只出现在数据表有变长字段的时候。</p>
+<h4 id="2-NULL-值列表">2. NULL 值列表</h4>
+<p>表中的某些列可能会存储 NULL 值，如果把这些 NULL 值都放到记录的真实数据中会比较浪费空间，所以 Compact 行格式把这些值为 NULL 的列存储到 NULL 值列表中。</p>
+<p>如果存在允许 NULL 值的列，则每个列对应一个二进制位（bit），二进制位按照列的顺序逆序排列。</p>
+<ul>
+<li>二进制位的值为 <code>1</code>时，代表该列的值为 NULL。</li>
+<li>二进制位的值为 <code>0</code>时，代表该列的值不为 NULL。</li>
+</ul>
+<p>另外，NULL 值列表必须用整数个字节的位表示（1 字节 8 位），如果使用的二进制位个数不足整数个字节，则在字节的高位补 <code>0</code>。</p>
+<p>还是以 t_user 表的这三条记录作为例子：</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>name</th>
+<th>phone</th>
+<th>age</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>a</td>
+<td>123</td>
+<td>18</td>
+</tr>
+<tr>
+<td>2</td>
+<td>bb</td>
+<td>1234</td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>3</td>
+<td>ccc</td>
+<td>NULL</td>
+<td>NULL</td>
+</tr>
+</tbody>
+</table>
+<p>接下来，我们看看看看这三条记录的行格式中的 NULL 值列表是怎样存储的。</p>
+<p>先来看<strong>第一条记录</strong>，第一条记录所有列都有值，不存在 NULL 值，所以用二进制来表示是酱紫的：</p>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459724424.png" alt="1745459724424"></p>
+<p>但是 InnoDB 是用整数字节的二进制位来表示 NULL 值列表的，现在不足 8 位，所以要在高位补 0，最终用二进制来表示是酱紫的：</p>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459735372.png" alt="1745459735372"></p>
+<p>所以，对于第一条数据，NULL 值列表用十六进制表示是 0x00。</p>
+<p>接下来看<strong>第二条记录</strong>，第二条记录 age 列是 NULL 值，所以，对于第二条数据，NULL 值列表用十六进制表示是 0x04。</p>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459744703.png" alt="1745459744703"></p>
+<p>最后<strong>第三条记录</strong>，第三条记录 phone 列 和 age 列是 NULL 值，所以，对于第三条数据，NULL 值列表用十六进制表示是 0x06。</p>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459751962.png" alt="1745459751962"></p>
+<p>我们把三条记录的 NULL 值列表都填充完毕后，它们的行格式是这样的：</p>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459765680.png" alt="1745459765680"></p>
+<blockquote>
+<p>每个数据库表的行格式都有「NULL 值列表」吗？</p>
+</blockquote>
+<p>NULL 值列表也不是必须的。</p>
+<p><strong>当数据表的字段都定义成 NOT NULL 的时候，这时候表里的行格式就不会有 NULL 值列表了</strong>。</p>
+<p>所以在设计数据库表的时候，通常都是建议将字段设置为 NOT NULL，这样可以至少节省 1 字节的空间（NULL 值列表至少占用 1 字节空间）。</p>
+<blockquote>
+<p>「NULL 值列表」是固定 1 字节空间吗？如果这样的话，一条记录有 9 个字段值都是 NULL，这时候怎么表示？</p>
+</blockquote>
+<p>「NULL 值列表」的空间不是固定 1 字节的。</p>
+<p>当一条记录有 9 个字段值都是 NULL，那么就会创建 2 字节空间的「NULL 值列表」，以此类推。</p>
+<h4 id="3-记录头信息">3. 记录头信息</h4>
+<p>记录头信息中包含的内容很多，我就不一一列举了，这里说几个比较重要的：</p>
+<ul>
+<li>delete_mask：标识此条数据是否被删除。从这里可以知道，我们执行 detele 删除记录的时候，并不会真正的删除记录，只是将这个记录的 delete_mask 标记为 1。</li>
+<li>next_record：下一条记录的位置。从这里可以知道，记录与记录之间是通过链表组织的。在前面我也提到了，指向的是下一条记录的「记录头信息」和「真实数据」之间的位置，这样的好处是向左读就是记录头信息，向右读就是真实数据，比较方便。</li>
+<li>record_type：表示当前记录的类型，0 表示普通记录，1 表示 B+树非叶子节点记录，2 表示最小记录，3 表示最大记录</li>
+</ul>
+<h3 id="记录的真实数据">记录的真实数据</h3>
+<p>记录真实数据部分除了我们定义的字段，还有三个隐藏字段，分别为：row_id、trx_id、roll_pointer，我们来看下这三个字段是什么。</p>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745459796350.png" alt="1745459796350"></p>
+<ul>
+<li>row_id</li>
+</ul>
+<p>如果我们建表的时候指定了主键或者唯一约束列，那么就没有 row_id 隐藏字段了。如果既没有指定主键，又没有唯一约束，那么 InnoDB 就会为记录添加 row_id 隐藏字段。row_id 不是必需的，占用 6 个字节。</p>
+<ul>
+<li>trx_id</li>
+</ul>
+<p>事务 id，表示这个数据是由哪个事务生成的。trx_id 是必需的，占用 6 个字节。</p>
+<ul>
+<li>roll_pointer</li>
+</ul>
+<p>这条记录上一个版本的指针。roll_pointer 是必需的，占用 7 个字节。</p>
+<p>如果你熟悉 MVCC 机制，你应该就清楚 trx_id 和 roll_pointer 的作用了，如果你还不知道 MVCC 机制，可以看完<a href="/2025/05/06/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E4%BA%8B%E5%8A%A1/2025-05-06-MySQL%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/">这篇文章</a>，一定要掌握，面试也很经常问 MVCC 是怎么实现的。</p>
+<blockquote>
+<p>Mysql 中规定，<strong>除了 <code>Text</code>、<code>Blob</code>类型，其他类型其他所有的列（不包括隐藏列和记录头信息）占用的字节长度加起来不能超过 65535 个字节</strong>，这里注意一下，65535 是 <code>&lt;font color=&quot;red&quot;&gt;</code>一行 <code>&lt;/font&gt;</code>的最大字节数，而不是一个列的最大字节数。</p>
+<p>如果有多个字段的话，要保证所有字段的长度 + 变长字段字节数列表所占用的字节数 + NULL 值列表所占用的字节数 &lt;= 65535。</p>
+<p><img src="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/1745466102232.png" alt="1745466102232"></p>
+</blockquote>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%85%AB%E8%82%A1%E6%96%87/" rel="tag"># 八股文</a>
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+              <a href="/tags/%E8%AE%B0%E5%BD%95%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/" rel="tag"># 记录存储方式</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/04/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-142-Linked-List-Cycle-II/" rel="prev" title="LeetCode 142 - 环形链表 II (Linked List Cycle II)">
+      <i class="fa fa-chevron-left"></i> LeetCode 142 - 环形链表 II (Linked List Cycle II)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/04/22/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/MySQL%E9%A1%B5%E7%B1%BB%E5%9E%8B/" rel="next" title="MySQL 页类型详解">
+      MySQL 页类型详解 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#MYSQL-%E6%95%B0%E6%8D%AE%E6%96%87%E4%BB%B6%E5%AD%98%E6%94%BE%E4%BD%8D%E7%BD%AE"><span class="nav-number">1.</span> <span class="nav-text">MYSQL 数据文件存放位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A8%E7%A9%BA%E9%97%B4%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">表空间文件结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#InnoDB-%E8%A1%8C%E6%A0%BC%E5%BC%8F"><span class="nav-number">3.</span> <span class="nav-text">InnoDB 行格式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Compact-%E8%A1%8C%E6%A0%BC%E5%BC%8F"><span class="nav-number">3.1.</span> <span class="nav-text">Compact 行格式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%98%E9%95%BF%E5%AD%97%E6%AE%B5%E9%95%BF%E5%BA%A6%E5%88%97%E8%A1%A8"><span class="nav-number">3.1.1.</span> <span class="nav-text">变长字段长度列表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-NULL-%E5%80%BC%E5%88%97%E8%A1%A8"><span class="nav-number">3.1.2.</span> <span class="nav-text">2. NULL 值列表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E8%AE%B0%E5%BD%95%E5%A4%B4%E4%BF%A1%E6%81%AF"><span class="nav-number">3.1.3.</span> <span class="nav-text">3. 记录头信息</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%B0%E5%BD%95%E7%9A%84%E7%9C%9F%E5%AE%9E%E6%95%B0%E6%8D%AE"><span class="nav-number">3.2.</span> <span class="nav-text">记录的真实数据</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description">一个完全由AI生成，但是内容高质量的Blog</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">169</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">229</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">751k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">11:22</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : 'e023cb96f31ce2eec8317b04aafa793a',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",1],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1],["2025-07-06",1],["2025-07-09",1],["2025-07-20",3],["2025-07-26",2]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,46,10],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":87},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":31},{"name":"八股文","value":25},{"name":"❌错题集","value":25},{"name":"深度优先搜索","value":22}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":87},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":31},{"name":"八股文","value":25},{"name":"❌错题集","value":25},{"name":"深度优先搜索","value":22}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":100},{"name":"LeetCode","value":98},{"name":"Hot100","value":63},{"name":"八股文","value":50},{"name":"面试经典150","value":34}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":100},{"name":"LeetCode","value":98},{"name":"Hot100","value":63},{"name":"八股文","value":50},{"name":"面试经典150","value":34}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/面试经典150/错题集"}],"count":34,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":98,"path":"算法刷题/LeetCode"}],"count":100,"path":"算法刷题"},{"name":"技术八股","children":[{"name":"操作系统","children":[],"count":1,"path":"技术八股/操作系统"},{"name":"Go语言","children":[],"count":8,"path":"技术八股/Go语言"}],"count":10,"path":"技术八股"},{"name":"八股文","children":[{"name":"操作系统","children":[],"count":1,"path":"八股文/操作系统"},{"name":"Go语言","children":[],"count":1,"path":"八股文/Go语言"},{"name":"计算机网络","children":[],"count":1,"path":"八股文/计算机网络"},{"name":"REDIS","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/REDIS/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/REDIS/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/REDIS/高可用"},{"name":"基础知识","children":[{"name":"内存管理","children":[],"count":1,"path":"八股文/REDIS/基础知识/内存管理"},{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":19,"path":"八股文/REDIS/基础知识"}],"count":25,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":50,"path":"八股文"},{"name":"面试经验","children":[],"count":7,"path":"面试经验"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>
