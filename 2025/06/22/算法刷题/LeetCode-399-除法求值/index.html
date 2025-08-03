@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end -->
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"adrianwangs.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="深入探讨除法求值问题的多种解法：从直观的图论DFS到优雅的Floyd算法改进，揭示经典算法在新问题中的巧妙应用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LeetCode 399 - 除法求值：从图论到Floyd算法的优雅转换">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/06/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-399-%E9%99%A4%E6%B3%95%E6%B1%82%E5%80%BC/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="深入探讨除法求值问题的多种解法：从直观的图论DFS到优雅的Floyd算法改进，揭示经典算法在新问题中的巧妙应用">
+<meta property="og:locale">
+<meta property="article:published_time" content="2025-06-22T17:15:21.000Z">
+<meta property="article:modified_time" content="2025-08-03T08:26:58.889Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="面试经典150">
+<meta property="article:tag" content="LeetCode">
+<meta property="article:tag" content="深度优先搜索">
+<meta property="article:tag" content="Medium">
+<meta property="article:tag" content="图论">
+<meta property="article:tag" content="Floyd-Warshall">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://adrianwangs.github.io/2025/06/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-399-%E9%99%A4%E6%B3%95%E6%B1%82%E5%80%BC/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title>LeetCode 399 - 除法求值：从图论到Floyd算法的优雅转换 | Adrian Wang's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Adrian Wang's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">一个完全由AI生成，但是内容高质量的Blog</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-全部文章">
+
+    <a href="/archives" rel="section"><i class="fa fa-th-list fa-fw"></i>全部文章</a>
+
+  </li>
+        <li class="menu-item menu-item-面试经验">
+
+    <a href="/interview" rel="section"><i class="fa fa-briefcase fa-fw"></i>面试经验</a>
+
+  </li>
+        <li class="menu-item menu-item-golang">
+
+    <a href="/golang" rel="section"><i class="fa fa-brands fa-golang fa-fw"></i>Golang</a>
+
+  </li>
+        <li class="menu-item menu-item-mysql">
+
+    <a href="/mysql" rel="section"><i class="fa fa-database fa-fw"></i>MySQL</a>
+
+  </li>
+        <li class="menu-item menu-item-redis">
+
+    <a href="/redis" rel="section"><i class="fa fa-fire fa-fw"></i>Redis</a>
+
+  </li>
+        <li class="menu-item menu-item-计算机网络">
+
+    <a href="/network" rel="section"><i class="fa fa-globe fa-fw"></i>计算机网络</a>
+
+  </li>
+        <li class="menu-item menu-item-leetcode题解">
+
+    <a href="/algorithms" rel="section"><i class="fa fa-book fa-fw"></i>Leetcode题解</a>
+
+  </li>
+        <li class="menu-item menu-item-关于我">
+
+    <a href="/about" rel="section"><i class="fa fa-user fa-fw"></i>关于我</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/AdrianWangs" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="https://adrianwangs.github.io/2025/06/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-399-%E9%99%A4%E6%B3%95%E6%B1%82%E5%80%BC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars.githubusercontent.com/u/72337244">
+      <meta itemprop="name" content="Adrian Wang">
+      <meta itemprop="description" content="一个完全由AI生成，但是内容高质量的Blog">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Adrian Wang's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          LeetCode 399 - 除法求值：从图论到Floyd算法的优雅转换
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-06-22 17:15:21" itemprop="dateCreated datePublished" datetime="2025-06-22T17:15:21+00:00">2025-06-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-08-03 08:26:58" itemprop="dateModified" datetime="2025-08-03T08:26:58+00:00">2025-08-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">算法刷题</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/%E9%9D%A2%E8%AF%95%E7%BB%8F%E5%85%B8150/" itemprop="url" rel="index"><span itemprop="name">面试经典150</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7.6k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>7 mins.</span>
+            </span>
+            <div class="post-description">深入探讨除法求值问题的多种解法：从直观的图论DFS到优雅的Floyd算法改进，揭示经典算法在新问题中的巧妙应用</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="引言：一个看似简单的数学问题">引言：一个看似简单的数学问题</h2>
+<p>当我第一次看到LeetCode 399这道题时，心想：&quot;不就是计算一些除法吗？&quot;但仔细一看，发现事情远没有那么简单。</p>
+<p>题目给出了一些变量之间的除法关系，比如 <code>a/b = 2.0, b/c = 3.0</code>，然后要求我们计算其他变量对的除法结果，如 <code>a/c = ?</code>。如果变量不存在或者无法通过已知关系推导出结果，就返回 <code>-1.0</code>。</p>
+<p>这个问题的有趣之处在于，它表面上是数学计算，实际上是一个<strong>关系传递</strong>的问题。就像现实生活中的汇率换算：如果你知道 <code>1美元 = 7人民币</code> 和 <code>1人民币 = 0.14欧元</code>，那么你自然能推算出 <code>1美元 = 0.98欧元</code>。</p>
+<h2 id="第一直觉：这不就是图论问题吗？">第一直觉：这不就是图论问题吗？</h2>
+<p>面对这样的关系传递问题，我的第一直觉是：<strong>这可以用图来建模</strong>！</p>
+<h3 id="思路的形成过程">思路的形成过程</h3>
+<p>让我们一步步分析：</p>
+<ol>
+<li><strong>变量可以看作节点</strong>：每个变量（如 <code>a</code>, <code>b</code>, <code>c</code>）都是图中的一个节点</li>
+<li><strong>除法关系可以看作边</strong>：如果 <code>a/b = 2.0</code>，那么可以建立一条从 <code>a</code> 到 <code>b</code> 的有向边，权重为 <code>2.0</code></li>
+<li><strong>查询就是路径搜索</strong>：要计算 <code>a/c</code>，就是要找从节点 <code>a</code> 到节点 <code>c</code> 的路径</li>
+</ol>
+<p>但这里有个关键问题：<strong>路径上的权重如何计算？</strong></p>
+<p>在传统的图论问题中，我们通常计算路径长度（权重相加）。但在除法问题中，关系是<strong>乘性的</strong>：</p>
+<ul>
+<li>如果 <code>a/b = 2.0</code> 且 <code>b/c = 3.0</code></li>
+<li>那么 <code>a/c = (a/b) × (b/c) = 2.0 × 3.0 = 6.0</code></li>
+</ul>
+<p>这个洞察很重要：<strong>路径权重需要相乘，而不是相加</strong>！</p>
+<h3 id="图的构建策略">图的构建策略</h3>
+<p>明确了基本思路后，我们需要考虑如何构建图：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">给定：a/b = 2.0, b/c = 3.0</span><br><span class="line"></span><br><span class="line">构建的图：</span><br><span class="line">   a ----2.0---→ b ----3.0---→ c</span><br><span class="line">   ↑             ↑             ↑</span><br><span class="line">   |             |             |</span><br><span class="line"> 0.5            0.33          0.33</span><br><span class="line">   |             |             |</span><br><span class="line">   ↓             ↓             ↓</span><br><span class="line">   a ←---0.5---- b ←---0.33--- c</span><br></pre></td></tr></table></figure>
+<p>注意几个要点：</p>
+<ol>
+<li><strong>双向边</strong>：如果 <code>a/b = 2.0</code>，那么 <code>b/a = 0.5</code></li>
+<li><strong>自环</strong>：每个变量除以自己等于 <code>1.0</code></li>
+<li><strong>权重传递</strong>：通过中间节点可以计算间接关系</li>
+</ol>
+<h2 id="解法一：DFS图搜索-直观而有效">解法一：DFS图搜索 - 直观而有效</h2>
+<p>基于图论的思路，最直观的解法就是深度优先搜索：</p>
+<h3 id="核心算法设计">核心算法设计</h3>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">calcEquation</span><span class="params">(equations [][]<span class="type">string</span>, values []<span class="type">float64</span>, queries [][]<span class="type">string</span>)</span></span> []<span class="type">float64</span> &#123;</span><br><span class="line">    <span class="comment">// 1. 构建图的邻接表</span></span><br><span class="line">    graph := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]<span class="keyword">map</span>[<span class="type">string</span>]<span class="type">float64</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 2. 初始化图 - 添加双向边和自环</span></span><br><span class="line">    <span class="keyword">for</span> i, equation := <span class="keyword">range</span> equations &#123;</span><br><span class="line">        a, b := equation[<span class="number">0</span>], equation[<span class="number">1</span>]</span><br><span class="line">        value := values[i]</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> graph[a] == <span class="literal">nil</span> &#123;</span><br><span class="line">            graph[a] = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]<span class="type">float64</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> graph[b] == <span class="literal">nil</span> &#123;</span><br><span class="line">            graph[b] = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]<span class="type">float64</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 关键：双向边的建立</span></span><br><span class="line">        graph[a][b] = value      <span class="comment">// a/b = value</span></span><br><span class="line">        graph[b][a] = <span class="number">1.0</span> / value <span class="comment">// b/a = 1/value</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 自环处理</span></span><br><span class="line">        graph[a][a] = <span class="number">1.0</span></span><br><span class="line">        graph[b][b] = <span class="number">1.0</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 3. DFS搜索函数 - 寻找路径并计算乘积</span></span><br><span class="line">    <span class="keyword">var</span> dfs <span class="function"><span class="keyword">func</span><span class="params">(start, end <span class="type">string</span>, visited <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">bool</span>)</span></span> <span class="type">float64</span></span><br><span class="line">    dfs = <span class="function"><span class="keyword">func</span><span class="params">(start, end <span class="type">string</span>, visited <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">bool</span>)</span></span> <span class="type">float64</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> graph[start] == <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="number">-1.0</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 直接可达</span></span><br><span class="line">        <span class="keyword">if</span> val, exists := graph[start][end]; exists &#123;</span><br><span class="line">            <span class="keyword">return</span> val</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 标记访问，避免环路</span></span><br><span class="line">        visited[start] = <span class="literal">true</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 递归搜索所有邻居</span></span><br><span class="line">        <span class="keyword">for</span> neighbor, weight := <span class="keyword">range</span> graph[start] &#123;</span><br><span class="line">            <span class="keyword">if</span> !visited[neighbor] &#123;</span><br><span class="line">                result := dfs(neighbor, end, visited)</span><br><span class="line">                <span class="keyword">if</span> result != <span class="number">-1.0</span> &#123;</span><br><span class="line">                    <span class="keyword">return</span> weight * result  <span class="comment">// 关键：权重相乘</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 回溯</span></span><br><span class="line">        visited[start] = <span class="literal">false</span></span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1.0</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 4. 处理所有查询</span></span><br><span class="line">    results := <span class="built_in">make</span>([]<span class="type">float64</span>, <span class="built_in">len</span>(queries))</span><br><span class="line">    <span class="keyword">for</span> i, query := <span class="keyword">range</span> queries &#123;</span><br><span class="line">        start, end := query[<span class="number">0</span>], query[<span class="number">1</span>]</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> graph[start] == <span class="literal">nil</span> || graph[end] == <span class="literal">nil</span> &#123;</span><br><span class="line">            results[i] = <span class="number">-1.0</span></span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> start == end &#123;</span><br><span class="line">            results[i] = <span class="number">1.0</span></span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        visited := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]<span class="type">bool</span>)</span><br><span class="line">        results[i] = dfs(start, end, visited)</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> results</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="算法执行过程分析">算法执行过程分析</h3>
+<p>让我们通过一个具体例子来看DFS的执行过程：</p>
+<p><strong>输入</strong>：<code>equations = [[&quot;a&quot;,&quot;b&quot;],[&quot;b&quot;,&quot;c&quot;]], values = [2.0,3.0]</code><br>
+<strong>查询</strong>：<code>a/c</code></p>
+<ol>
+<li>
+<p><strong>图构建阶段</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">graph[&quot;a&quot;][&quot;b&quot;] = 2.0, graph[&quot;b&quot;][&quot;a&quot;] = 0.5</span><br><span class="line">graph[&quot;b&quot;][&quot;c&quot;] = 3.0, graph[&quot;c&quot;][&quot;b&quot;] = 0.33</span><br><span class="line">graph[&quot;a&quot;][&quot;a&quot;] = 1.0, graph[&quot;b&quot;][&quot;b&quot;] = 1.0, graph[&quot;c&quot;][&quot;c&quot;] = 1.0</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p><strong>DFS搜索过程</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">dfs(&quot;a&quot;, &quot;c&quot;, &#123;&#125;)</span><br><span class="line">→ 检查直接边：不存在 a→c</span><br><span class="line">→ 标记 a 为已访问</span><br><span class="line">→ 遍历邻居：找到 b，权重 2.0</span><br><span class="line">  → dfs(&quot;b&quot;, &quot;c&quot;, &#123;&quot;a&quot;: true&#125;)</span><br><span class="line">    → 检查直接边：存在 b→c，权重 3.0</span><br><span class="line">    → 返回 3.0</span><br><span class="line">  → 返回 2.0 × 3.0 = 6.0</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="DFS解法的优缺点">DFS解法的优缺点</h3>
+<p><strong>优点</strong>：</p>
+<ul>
+<li>思路直观，容易理解</li>
+<li>实现相对简单</li>
+<li>适合中小规模数据</li>
+</ul>
+<p><strong>缺点</strong>：</p>
+<ul>
+<li>每次查询都需要重新搜索</li>
+<li>时间复杂度较高：$O(M \times (N + E))$</li>
+<li>大量查询时效率不高</li>
+</ul>
+<h2 id="解法二：Floyd-Warshall算法的优雅转换">解法二：Floyd-Warshall算法的优雅转换</h2>
+<p>就在我对DFS解法基本满意的时候，突然意识到一个问题：如果查询量很大怎么办？每次都DFS搜索显然不够高效。</p>
+<p>这时我想到了经典的<strong>Floyd-Warshall算法</strong>。传统的Floyd算法用于计算所有点对之间的最短路径，核心是这样的：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> k := <span class="number">0</span>; k &lt; n; k++ &#123;</span><br><span class="line">    <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; n; i++ &#123;</span><br><span class="line">        <span class="keyword">for</span> j := <span class="number">0</span>; j &lt; n; j++ &#123;</span><br><span class="line">            dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但是等等！<strong>我们的除法问题中，路径权重是相乘的，不是相加的</strong>。那么，能不能把加法改成乘法呢？</p>
+<h3 id="算法改进的关键洞察">算法改进的关键洞察</h3>
+<p>答案是肯定的！关键在于理解除法的传递性：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">如果 a/k = x 且 k/b = y</span><br><span class="line">那么 a/b = (a/k) × (k/b) = x × y</span><br></pre></td></tr></table></figure>
+<p>这正好对应Floyd算法中通过中间点k的路径计算！</p>
+<h3 id="Floyd算法的除法版本">Floyd算法的除法版本</h3>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">calcEquationFloyd</span><span class="params">(equations [][]<span class="type">string</span>, values []<span class="type">float64</span>, queries [][]<span class="type">string</span>)</span></span> []<span class="type">float64</span> &#123;</span><br><span class="line">    <span class="comment">// 1. 建立变量到索引的映射</span></span><br><span class="line">    variables := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]<span class="type">int</span>)</span><br><span class="line">    idx := <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> _, equation := <span class="keyword">range</span> equations &#123;</span><br><span class="line">        <span class="keyword">for</span> _, variable := <span class="keyword">range</span> equation &#123;</span><br><span class="line">            <span class="keyword">if</span> _, exists := variables[variable]; !exists &#123;</span><br><span class="line">                variables[variable] = idx</span><br><span class="line">                idx++</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    n := <span class="built_in">len</span>(variables)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 2. 初始化距离矩阵</span></span><br><span class="line">    dist := <span class="built_in">make</span>([][]<span class="type">float64</span>, n)</span><br><span class="line">    <span class="keyword">for</span> i := <span class="keyword">range</span> dist &#123;</span><br><span class="line">        dist[i] = <span class="built_in">make</span>([]<span class="type">float64</span>, n)</span><br><span class="line">        <span class="keyword">for</span> j := <span class="keyword">range</span> dist[i] &#123;</span><br><span class="line">            <span class="keyword">if</span> i == j &#123;</span><br><span class="line">                dist[i][j] = <span class="number">1.0</span>    <span class="comment">// 自己/自己 = 1</span></span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                dist[i][j] = <span class="number">-1.0</span>   <span class="comment">// 初始不可达</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 3. 填充已知的除法关系</span></span><br><span class="line">    <span class="keyword">for</span> i, equation := <span class="keyword">range</span> equations &#123;</span><br><span class="line">        a, b := variables[equation[<span class="number">0</span>]], variables[equation[<span class="number">1</span>]]</span><br><span class="line">        value := values[i]</span><br><span class="line">        </span><br><span class="line">        dist[a][b] = value</span><br><span class="line">        dist[b][a] = <span class="number">1.0</span> / value</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 4. Floyd核心算法 - 关键在于乘法！</span></span><br><span class="line">    <span class="keyword">for</span> k := <span class="number">0</span>; k &lt; n; k++ &#123;</span><br><span class="line">        <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; n; i++ &#123;</span><br><span class="line">            <span class="keyword">for</span> j := <span class="number">0</span>; j &lt; n; j++ &#123;</span><br><span class="line">                <span class="comment">// 传统Floyd: dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])</span></span><br><span class="line">                <span class="comment">// 除法版本: 如果通过k的路径存在，则计算乘积</span></span><br><span class="line">                <span class="keyword">if</span> dist[i][k] != <span class="number">-1.0</span> &amp;&amp; dist[k][j] != <span class="number">-1.0</span> &#123;</span><br><span class="line">                    <span class="keyword">if</span> dist[i][j] == <span class="number">-1.0</span> &#123;</span><br><span class="line">                        dist[i][j] = dist[i][k] * dist[k][j]</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 5. 处理查询 - O(1)时间复杂度</span></span><br><span class="line">    results := <span class="built_in">make</span>([]<span class="type">float64</span>, <span class="built_in">len</span>(queries))</span><br><span class="line">    <span class="keyword">for</span> i, query := <span class="keyword">range</span> queries &#123;</span><br><span class="line">        start, end := query[<span class="number">0</span>], query[<span class="number">1</span>]</span><br><span class="line">        startIdx, startExists := variables[start]</span><br><span class="line">        endIdx, endExists := variables[end]</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> !startExists || !endExists &#123;</span><br><span class="line">            results[i] = <span class="number">-1.0</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            results[i] = dist[startIdx][endIdx]</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> results</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Floyd算法的执行过程">Floyd算法的执行过程</h3>
+<p>让我们看看Floyd算法是如何工作的：</p>
+<p><strong>初始状态</strong>（以 <code>a/b=2.0, b/c=3.0</code> 为例）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">    a    b    c</span><br><span class="line">a [ 1.0  2.0  -1 ]</span><br><span class="line">b [ 0.5  1.0  3.0]</span><br><span class="line">c [ -1   0.33 1.0]</span><br></pre></td></tr></table></figure>
+<p><strong>k=0时</strong>（通过a作为中间点）：</p>
+<ul>
+<li>检查所有i,j对，看是否能通过a连接</li>
+<li>发现没有新的连接</li>
+</ul>
+<p><strong>k=1时</strong>（通过b作为中间点）：</p>
+<ul>
+<li>检查 <code>dist[a][c]</code>：<code>dist[a][b] * dist[b][c] = 2.0 * 3.0 = 6.0</code></li>
+<li>检查 <code>dist[c][a]</code>：<code>dist[c][b] * dist[b][a] = 0.33 * 0.5 = 0.167</code></li>
+</ul>
+<p><strong>最终状态</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">    a    b    c</span><br><span class="line">a [ 1.0  2.0  6.0 ]</span><br><span class="line">b [ 0.5  1.0  3.0 ]</span><br><span class="line">c [0.167 0.33 1.0 ]</span><br></pre></td></tr></table></figure>
+<p>现在，任何查询都可以在O(1)时间内完成！</p>
+<h3 id="❌-常见错误分析：条件判断的陷阱">❌ 常见错误分析：条件判断的陷阱</h3>
+<p>在实现Floyd-Warshall算法时，有一个常见的错误会导致精度问题和错误结果。让我们看看这个错误的实现：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ❌ 错误的Floyd实现</span></span><br><span class="line"><span class="keyword">for</span> k := <span class="number">0</span>; k &lt; cnt; k++ &#123;</span><br><span class="line">    <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; cnt; i++ &#123;</span><br><span class="line">        <span class="keyword">for</span> j := <span class="number">0</span>; j &lt; cnt; j++ &#123;</span><br><span class="line">            <span class="comment">// 问题出现在这里！</span></span><br><span class="line">            <span class="keyword">if</span> matrix[i][k] != <span class="number">0</span> &amp;&amp; matrix[k][j] != <span class="number">0</span> &amp;&amp; matrix[i][j] != <span class="number">0</span> &#123;</span><br><span class="line">                matrix[i][j] = matrix[i][k] * matrix[k][j]</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>错误的根本原因：不必要的 <code>matrix[i][j] != 0</code> 条件</strong></p>
+<p>这个多余的条件导致算法只在已存在路径的情况下才更新，错过了许多建立新路径的机会。</p>
+<p><strong>具体的错误场景</strong></p>
+<p>以下测试用例暴露了这个问题：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">输入：</span><br><span class="line">equations = [[&quot;b&quot;,&quot;a&quot;],[&quot;c&quot;,&quot;b&quot;],[&quot;d&quot;,&quot;c&quot;],...,[&quot;t&quot;,&quot;u&quot;]]  // 20个连续关系</span><br><span class="line">values = [1e-05,1e-05,1e-05,...,1e-05]  // 20个相同的小数值</span><br><span class="line">queries = [[&quot;a&quot;,&quot;u&quot;]]</span><br><span class="line"></span><br><span class="line">预期输出：[1.0]</span><br><span class="line">实际输出：[0.99994]  // 精度丢失</span><br></pre></td></tr></table></figure>
+<p><strong>错误分析</strong>：</p>
+<ol>
+<li>
+<p><strong>路径建立失败</strong>：由于 <code>matrix[i][j] != 0</code> 条件，算法错过了通过中间节点建立新路径的机会</p>
+</li>
+<li>
+<p><strong>精度累积误差</strong>：算法可能在不同中间节点间重复计算，导致浮点运算累积误差</p>
+</li>
+<li>
+<p><strong>理论vs实际</strong>：理论上 <code>a/u</code> 应该等于：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">(1×10^5)^20 × (1×10^-5)^20 = 1.0</span><br></pre></td></tr></table></figure>
+<p>但错误的条件判断破坏了这个数学关系</p>
+</li>
+</ol>
+<p><strong>正确的实现方式</strong>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ✅ 正确的Floyd实现</span></span><br><span class="line"><span class="keyword">for</span> k := <span class="number">0</span>; k &lt; n; k++ &#123;</span><br><span class="line">    <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; n; i++ &#123;</span><br><span class="line">        <span class="keyword">for</span> j := <span class="number">0</span>; j &lt; n; j++ &#123;</span><br><span class="line">            <span class="comment">// 关键修改：移除多余的条件</span></span><br><span class="line">            <span class="keyword">if</span> dist[i][k] != <span class="number">-1.0</span> &amp;&amp; dist[k][j] != <span class="number">-1.0</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> dist[i][j] == <span class="number">-1.0</span> &#123;  <span class="comment">// 只在没有路径时建立新路径</span></span><br><span class="line">                    dist[i][j] = dist[i][k] * dist[k][j]</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>为什么正确的实现可以工作</strong>：</p>
+<ol>
+<li><strong>积极路径发现</strong>：只要通过k有路径就尝试建立i到j的连接</li>
+<li><strong>避免重复更新</strong>：只在没有直接路径时才建立新路径</li>
+<li><strong>数值稳定性</strong>：减少了不必要的重复计算，提高了精度</li>
+</ol>
+<p><strong>学习要点</strong>：</p>
+<ul>
+<li>Floyd-Warshall算法的本质是<strong>尝试通过中间节点改进路径</strong></li>
+<li>不要随意添加&quot;看似合理&quot;的条件判断</li>
+<li>在浮点运算中要格外注意累积误差的影响</li>
+<li>算法的正确性不仅在于核心思想，更在于实现细节的准确性</li>
+</ul>
+<h2 id="两种解法的深度对比">两种解法的深度对比</h2>
+<h3 id="复杂度分析">复杂度分析</h3>
+<table>
+<thead>
+<tr>
+<th>方面</th>
+<th>DFS解法</th>
+<th>Floyd解法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>预处理时间</td>
+<td>$O(N + E)$</td>
+<td>$O(N^3)$</td>
+</tr>
+<tr>
+<td>单次查询</td>
+<td>$O(N + E)$</td>
+<td>$O(1)$</td>
+</tr>
+<tr>
+<td>总时间复杂度</td>
+<td>$O(M \times (N + E))$</td>
+<td>$O(N^3 + M)$</td>
+</tr>
+<tr>
+<td>空间复杂度</td>
+<td>$O(N + E)$</td>
+<td>$O(N^2)$</td>
+</tr>
+</tbody>
+</table>
+<h3 id="适用场景分析">适用场景分析</h3>
+<p><strong>DFS解法适合</strong>：</p>
+<ul>
+<li>变量数量较多，但查询较少的情况</li>
+<li>图比较稀疏的情况</li>
+<li>内存受限的情况</li>
+</ul>
+<p><strong>Floyd解法适合</strong>：</p>
+<ul>
+<li>变量数量不多（N ≤ 100），但查询频繁</li>
+<li>需要预计算所有可能结果的情况</li>
+<li>代码简洁性要求高的场合</li>
+</ul>
+<h3 id="代码可读性对比">代码可读性对比</h3>
+<p>从代码可读性来说，Floyd算法明显更胜一筹：</p>
+<ol>
+<li><strong>逻辑清晰</strong>：核心就是三重循环，经典算法模板</li>
+<li><strong>易于调试</strong>：可以直接观察距离矩阵的变化</li>
+<li><strong>数学美感</strong>：加法→乘法的转换体现了算法的适应性</li>
+</ol>
+<h2 id="深入思考：算法设计的艺术">深入思考：算法设计的艺术</h2>
+<p>这道题给我最大的收获不是具体的解法，而是对<strong>算法适应性</strong>的深入理解。</p>
+<h3 id="经典算法的新应用">经典算法的新应用</h3>
+<p>Floyd-Warshall算法最初是为了解决最短路径问题，核心操作是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">distance = min(current_distance, path1 + path2)</span><br></pre></td></tr></table></figure>
+<p>但在除法求值问题中，我们巧妙地将其转换为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ratio = path1 × path2  (如果路径存在)</span><br></pre></td></tr></table></figure>
+<p>这种转换不是简单的替换，而是对算法本质的深刻理解：</p>
+<ul>
+<li><strong>Floyd算法的本质</strong>：通过中间节点建立连接</li>
+<li><strong>关键适应</strong>：将&quot;距离相加&quot;改为&quot;比率相乘&quot;</li>
+<li><strong>数学基础</strong>：除法的传递性</li>
+</ul>
+<h3 id="问题抽象的重要性">问题抽象的重要性</h3>
+<p>这道题还展示了<strong>问题抽象</strong>的重要性：</p>
+<ol>
+<li><strong>表面问题</strong>：计算除法表达式</li>
+<li><strong>抽象后的问题</strong>：在有向加权图中计算路径权重乘积</li>
+<li><strong>进一步抽象</strong>：传递闭包的计算问题</li>
+</ol>
+<p>正确的抽象让我们能够运用已有的算法知识，而不是从零开始设计解法。</p>
+<h2 id="实际应用场景">实际应用场景</h2>
+<p>除了算法题，这种思路在实际开发中也很有用：</p>
+<h3 id="货币汇率转换">货币汇率转换</h3>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 如果知道 USD/CNY = 7.0, CNY/EUR = 0.14</span></span><br><span class="line"><span class="comment">// 就能计算出 USD/EUR = 7.0 × 0.14 = 0.98</span></span><br></pre></td></tr></table></figure>
+<h3 id="单位换算系统">单位换算系统</h3>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 长度单位：米→厘米→毫米</span></span><br><span class="line"><span class="comment">// 1米 = 100厘米, 1厘米 = 10毫米</span></span><br><span class="line"><span class="comment">// 因此 1米 = 1000毫米</span></span><br></pre></td></tr></table></figure>
+<h3 id="网络拓扑分析">网络拓扑分析</h3>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 网络节点间的传输延迟比例</span></span><br><span class="line"><span class="comment">// 可以用类似方法计算端到端的性能指标</span></span><br></pre></td></tr></table></figure>
+<h2 id="总结：算法思维的提升">总结：算法思维的提升</h2>
+<p>通过这道题，我深刻体会到了算法学习的几个层次：</p>
+<ol>
+<li><strong>基础层</strong>：知道某个算法怎么写</li>
+<li><strong>应用层</strong>：知道在什么场景下使用某个算法</li>
+<li><strong>创新层</strong>：能够改造经典算法解决新问题</li>
+<li><strong>设计层</strong>：能够抽象问题本质，选择最优解法</li>
+</ol>
+<p>Floyd算法的除法应用完美体现了第三层的能力。它不是简单的算法套用，而是在理解算法本质的基础上，进行创造性的改进。</p>
+<p>更重要的是，这种思维方式可以推广到其他问题：</p>
+<ul>
+<li>当遇到新问题时，首先思考它的本质是什么</li>
+<li>是否可以抽象为已知的经典问题</li>
+<li>如果不完全匹配，能否通过巧妙的转换来适应</li>
+</ul>
+<p>这就是算法学习的真正价值：不是记住多少个算法模板，而是培养解决问题的思维方式。而LeetCode 399这道除法求值问题，正是这种思维训练的绝佳案例。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%9D%A2%E8%AF%95%E7%BB%8F%E5%85%B8150/" rel="tag"># 面试经典150</a>
+              <a href="/tags/LeetCode/" rel="tag"># LeetCode</a>
+              <a href="/tags/%E6%B7%B1%E5%BA%A6%E4%BC%98%E5%85%88%E6%90%9C%E7%B4%A2/" rel="tag"># 深度优先搜索</a>
+              <a href="/tags/Medium/" rel="tag"># Medium</a>
+              <a href="/tags/%E5%9B%BE%E8%AE%BA/" rel="tag"># 图论</a>
+              <a href="/tags/Floyd-Warshall/" rel="tag"># Floyd-Warshall</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/06/22/%E9%9D%A2%E8%AF%95%E9%A2%98/%E4%BA%92%E8%81%94%E7%BD%91%E5%A4%A7%E5%8E%82/%E9%A1%BD%E5%B2%A9%E8%B5%84%E4%BA%A7/2025-02-17-%E9%A1%BD%E5%B2%A9%E8%B5%84%E4%BA%A7-Golang%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91%E5%AE%9E%E4%B9%A0%E7%94%9F-%E4%B8%80%E9%9D%A2/" rel="prev" title="顽岩资产 Golang后端开发实习生 一面">
+      <i class="fa fa-chevron-left"></i> 顽岩资产 Golang后端开发实习生 一面
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/06/23/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-909-%E8%9B%87%E6%A2%AF%E6%A3%8B-%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90/" rel="next" title="LeetCode 909 - 蛇梯棋（Snakes and Ladders）❌错题集">
+      LeetCode 909 - 蛇梯棋（Snakes and Ladders）❌错题集 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E8%A8%80%EF%BC%9A%E4%B8%80%E4%B8%AA%E7%9C%8B%E4%BC%BC%E7%AE%80%E5%8D%95%E7%9A%84%E6%95%B0%E5%AD%A6%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">引言：一个看似简单的数学问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E7%9B%B4%E8%A7%89%EF%BC%9A%E8%BF%99%E4%B8%8D%E5%B0%B1%E6%98%AF%E5%9B%BE%E8%AE%BA%E9%97%AE%E9%A2%98%E5%90%97%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">第一直觉：这不就是图论问题吗？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%9D%E8%B7%AF%E7%9A%84%E5%BD%A2%E6%88%90%E8%BF%87%E7%A8%8B"><span class="nav-number">2.1.</span> <span class="nav-text">思路的形成过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE%E7%9A%84%E6%9E%84%E5%BB%BA%E7%AD%96%E7%95%A5"><span class="nav-number">2.2.</span> <span class="nav-text">图的构建策略</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E6%B3%95%E4%B8%80%EF%BC%9ADFS%E5%9B%BE%E6%90%9C%E7%B4%A2-%E7%9B%B4%E8%A7%82%E8%80%8C%E6%9C%89%E6%95%88"><span class="nav-number">3.</span> <span class="nav-text">解法一：DFS图搜索 - 直观而有效</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E7%AE%97%E6%B3%95%E8%AE%BE%E8%AE%A1"><span class="nav-number">3.1.</span> <span class="nav-text">核心算法设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%E5%88%86%E6%9E%90"><span class="nav-number">3.2.</span> <span class="nav-text">算法执行过程分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DFS%E8%A7%A3%E6%B3%95%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="nav-number">3.3.</span> <span class="nav-text">DFS解法的优缺点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E6%B3%95%E4%BA%8C%EF%BC%9AFloyd-Warshall%E7%AE%97%E6%B3%95%E7%9A%84%E4%BC%98%E9%9B%85%E8%BD%AC%E6%8D%A2"><span class="nav-number">4.</span> <span class="nav-text">解法二：Floyd-Warshall算法的优雅转换</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E6%94%B9%E8%BF%9B%E7%9A%84%E5%85%B3%E9%94%AE%E6%B4%9E%E5%AF%9F"><span class="nav-number">4.1.</span> <span class="nav-text">算法改进的关键洞察</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Floyd%E7%AE%97%E6%B3%95%E7%9A%84%E9%99%A4%E6%B3%95%E7%89%88%E6%9C%AC"><span class="nav-number">4.2.</span> <span class="nav-text">Floyd算法的除法版本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Floyd%E7%AE%97%E6%B3%95%E7%9A%84%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B"><span class="nav-number">4.3.</span> <span class="nav-text">Floyd算法的执行过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E2%9D%8C-%E5%B8%B8%E8%A7%81%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90%EF%BC%9A%E6%9D%A1%E4%BB%B6%E5%88%A4%E6%96%AD%E7%9A%84%E9%99%B7%E9%98%B1"><span class="nav-number">4.4.</span> <span class="nav-text">❌ 常见错误分析：条件判断的陷阱</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%A4%E7%A7%8D%E8%A7%A3%E6%B3%95%E7%9A%84%E6%B7%B1%E5%BA%A6%E5%AF%B9%E6%AF%94"><span class="nav-number">5.</span> <span class="nav-text">两种解法的深度对比</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E6%9D%82%E5%BA%A6%E5%88%86%E6%9E%90"><span class="nav-number">5.1.</span> <span class="nav-text">复杂度分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90"><span class="nav-number">5.2.</span> <span class="nav-text">适用场景分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E5%8F%AF%E8%AF%BB%E6%80%A7%E5%AF%B9%E6%AF%94"><span class="nav-number">5.3.</span> <span class="nav-text">代码可读性对比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B7%B1%E5%85%A5%E6%80%9D%E8%80%83%EF%BC%9A%E7%AE%97%E6%B3%95%E8%AE%BE%E8%AE%A1%E7%9A%84%E8%89%BA%E6%9C%AF"><span class="nav-number">6.</span> <span class="nav-text">深入思考：算法设计的艺术</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%8F%E5%85%B8%E7%AE%97%E6%B3%95%E7%9A%84%E6%96%B0%E5%BA%94%E7%94%A8"><span class="nav-number">6.1.</span> <span class="nav-text">经典算法的新应用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8A%BD%E8%B1%A1%E7%9A%84%E9%87%8D%E8%A6%81%E6%80%A7"><span class="nav-number">6.2.</span> <span class="nav-text">问题抽象的重要性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%99%85%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">7.</span> <span class="nav-text">实际应用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B4%A7%E5%B8%81%E6%B1%87%E7%8E%87%E8%BD%AC%E6%8D%A2"><span class="nav-number">7.1.</span> <span class="nav-text">货币汇率转换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E4%BD%8D%E6%8D%A2%E7%AE%97%E7%B3%BB%E7%BB%9F"><span class="nav-number">7.2.</span> <span class="nav-text">单位换算系统</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C%E6%8B%93%E6%89%91%E5%88%86%E6%9E%90"><span class="nav-number">7.3.</span> <span class="nav-text">网络拓扑分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9A%E7%AE%97%E6%B3%95%E6%80%9D%E7%BB%B4%E7%9A%84%E6%8F%90%E5%8D%87"><span class="nav-number">8.</span> <span class="nav-text">总结：算法思维的提升</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Adrian Wang"
+      src="https://avatars.githubusercontent.com/u/72337244">
+  <p class="site-author-name" itemprop="name">Adrian Wang</p>
+  <div class="site-description" itemprop="description">一个完全由AI生成，但是内容高质量的Blog</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">171</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">231</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/AdrianWangs" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;AdrianWangs" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wyz17601402786@gmail.com" title="E-Mail → mailto:wyz17601402786@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Adrian Wang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">760k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">11:31</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+const mermaidBlocks = document.querySelectorAll('pre.mermaid'); // Get all mermaid blocks
+if (mermaidBlocks.length) {
+  console.log('Found Mermaid blocks:', mermaidBlocks.length); // Log how many blocks were found
+
+  // Log the content of each block before initialization
+  mermaidBlocks.forEach((block, index) => {
+    console.log(`--- Mermaid Block ${index + 1} Content ---`);
+    console.log(block.textContent || block.innerText); // Log the raw text content
+    console.log(`--------------------------------------`);
+  });
+
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.js', () => {
+    console.log('Mermaid script loaded. Initializing...'); // Log initialization start
+    try { // Add try...catch around initialization and rendering
+      mermaid.initialize({
+        theme    : 'forest',
+        logLevel : 3, // Keep logLevel 3 for potential Mermaid internal logs
+        flowchart: { curve     : 'linear' },
+        gantt    : { axisFormat: '%m/%d/%Y' },
+        sequence : { actorMargin: 50 }
+        // Consider adding startOnLoad: false if you manually call mermaid.run() later
+        // startOnLoad: false
+      });
+      console.log('Mermaid initialized.');
+
+      // Explicitly render after initialization (if startOnLoad is false or for clarity)
+      // mermaid.run({ nodes: mermaidBlocks }); // Or mermaid.init(undefined, mermaidBlocks); depending on version
+      // console.log('Mermaid rendering attempted.');
+
+    } catch (e) {
+      console.error('Error during Mermaid initialization or rendering:', e);
+    }
+  }, window.mermaid);
+} else {
+  console.log('No Mermaid blocks found on this page.');
+}
+</script>
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo        : 'blog-comments',
+      owner       : 'AdrianWangs',
+      admin       : ['AdrianWangs'],
+      id          : 'de75448347c6331a5b4fc0b25e3402b5',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",2],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1],["2025-07-06",1],["2025-07-09",1],["2025-07-20",3],["2025-07-26",2],["2025-08-03",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07","2025-08"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,47,10,1],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"❌错题集","value":25},{"name":"深度优先搜索","value":22}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"❌错题集","value":25},{"name":"深度优先搜索","value":22}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"Hot100","value":63},{"name":"八股文","value":50},{"name":"面试经典150","value":35}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"Hot100","value":63},{"name":"八股文","value":50},{"name":"面试经典150","value":35}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"面试经验","children":[],"count":8,"path":"面试经验"},{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"面试经典150","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/面试经典150/错题集"}],"count":35,"path":"算法刷题/LeetCode/面试经典150"},{"name":"Hot100","children":[],"count":63,"path":"算法刷题/LeetCode/Hot100"}],"count":99,"path":"算法刷题/LeetCode"}],"count":101,"path":"算法刷题"},{"name":"技术八股","children":[{"name":"操作系统","children":[],"count":1,"path":"技术八股/操作系统"},{"name":"Go语言","children":[],"count":8,"path":"技术八股/Go语言"}],"count":10,"path":"技术八股"},{"name":"八股文","children":[{"name":"操作系统","children":[],"count":1,"path":"八股文/操作系统"},{"name":"Go语言","children":[],"count":1,"path":"八股文/Go语言"},{"name":"计算机网络","children":[],"count":1,"path":"八股文/计算机网络"},{"name":"REDIS","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/REDIS/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/REDIS/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/REDIS/高可用"},{"name":"基础知识","children":[{"name":"内存管理","children":[],"count":1,"path":"八股文/REDIS/基础知识/内存管理"},{"name":"数据结构","children":[],"count":8,"path":"八股文/REDIS/基础知识/数据结构"},{"name":"数据类型","children":[],"count":5,"path":"八股文/REDIS/基础知识/数据类型"}],"count":19,"path":"八股文/REDIS/基础知识"}],"count":25,"path":"八股文/REDIS"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"基础知识","children":[],"count":5,"path":"八股文/MySQL/基础知识"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":50,"path":"八股文"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"},{"name":"前沿技术","children":[{"name":"AI工程","children":[],"count":1,"path":"前沿技术/AI工程"}],"count":1,"path":"前沿技术"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body>
+</html>
