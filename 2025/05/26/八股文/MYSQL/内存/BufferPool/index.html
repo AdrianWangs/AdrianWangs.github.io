@@ -1,0 +1,1367 @@
+<!DOCTYPE html><html lang="zh" data-theme="light"><head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end --><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>MySQL Buffer Pool 详解：数据库性能优化的核心 | Adrian Wang's blog</title><meta name="author" content="Adrian Wang"><meta name="copyright" content="Adrian Wang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="深入解析 MySQL Buffer Pool 的工作原理、缓存管理机制、LRU 算法优化和性能调优，帮助理解数据库内存管理的核心概念">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL Buffer Pool 详解：数据库性能优化的核心">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="深入解析 MySQL Buffer Pool 的工作原理、缓存管理机制、LRU 算法优化和性能调优，帮助理解数据库内存管理的核心概念">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229548952.png">
+<meta property="article:published_time" content="2025-05-26T11:23:28.000Z">
+<meta property="article:modified_time" content="2026-02-13T07:20:17.563Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="八股文">
+<meta property="article:tag" content="面试题">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="Buffer Pool">
+<meta property="article:tag" content="数据库优化">
+<meta property="article:tag" content="内存管理">
+<meta property="article:tag" content="InnoDB">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229548952.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "MySQL Buffer Pool 详解：数据库性能优化的核心",
+  "url": "https://adrianwangs.github.io/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/",
+  "image": "https://adrianwangs.github.io/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229548952.png",
+  "datePublished": "2025-05-26T11:23:28.000Z",
+  "dateModified": "2026-02-13T07:20:17.563Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Adrian Wang",
+      "url": "https://adrianwangs.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/images/favicon-32x32-next.png"><link rel="canonical" href="https://adrianwangs.github.io/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0f172a')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"No results found for: ${query}","hits_stats":"${hits} articles found"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MySQL Buffer Pool 详解：数据库性能优化的核心',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/category-tree.css"><link rel="stylesheet" href="/css/reading-progress.css"><link rel="stylesheet" href="/css/wide-mode.css"><link rel="stylesheet" href="/css/font-size-toggle.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">Loading...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      if ($loadingBox.classList.contains('loaded')) return
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+
+  if (document.readyState === 'complete') {
+    preloader.endLoading()
+  } else {
+    window.addEventListener('load', preloader.endLoading)
+    document.addEventListener('DOMContentLoaded', preloader.endLoading)
+    // Add timeout protection: force end after 7 seconds
+    setTimeout(preloader.endLoading, 7000)
+  }
+
+  if (false) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #f8fafc;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229548952.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Adrian Wang's blog</span></a><a class="nav-page-title" href="/"><span class="site-name">MySQL Buffer Pool 详解：数据库性能优化的核心</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">MySQL Buffer Pool 详解：数据库性能优化的核心</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2025-05-26T11:23:28.000Z" title="Created 2025-05-26 11:23:28">2025-05-26</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-02-13T07:20:17.563Z" title="Updated 2026-02-13 07:20:17">2026-02-13</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/">八股文</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/">MySQL</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/%E5%86%85%E5%AD%98/">内存</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>15mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1>MySQL Buffer Pool 详解：数据库性能优化的核心</h1>
+<h2 id="为什么要有-Buffer-Pool？">为什么要有 Buffer Pool？</h2>
+<p>想象一下，如果每次查询数据都要从硬盘读取，就像每次想看书都要去图书馆借一样，效率会非常低。MySQL 的数据虽然存储在磁盘里，但如果每次都从磁盘读取，性能会非常差。</p>
+<p>怎么解决呢？很简单——<strong>加个缓存</strong>！</p>
+<p>就像我们会把常用的书放在家里书架上一样，MySQL 会把经常使用的数据放在内存中。当数据从磁盘取出后，先缓存在内存中，下次查询相同数据时，直接从内存读取，速度飞快！</p>
+<p>为此，InnoDB 存储引擎设计了一个专门的<strong>缓冲池（Buffer Pool）</strong>，这就是数据库性能优化的核心组件。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229548952.png" alt="1748229548952"></p>
+<p>有了缓冲池后，数据库的工作方式就像这样：</p>
+<ul>
+<li><strong>读取数据时</strong>：先看看 Buffer Pool 里有没有，有的话直接拿来用；没有的话再去磁盘读取，然后放到 Buffer Pool 里备用</li>
+<li><strong>修改数据时</strong>：不急着写磁盘，先在 Buffer Pool 里改，把这个页标记为&quot;脏页&quot;（表示已修改），然后让后台线程慢慢写到磁盘</li>
+</ul>
+<p>这样既提高了读取速度，又避免了频繁的磁盘写入操作。</p>
+<h3 id="Buffer-Pool-有多大？">Buffer Pool 有多大？</h3>
+<p>Buffer Pool 就像是 MySQL 的&quot;内存仓库&quot;，在 MySQL 启动时向操作系统申请一块连续的内存空间。</p>
+<p><strong>默认大小</strong>：只有 128MB（太小了，生产环境肯定不够用）</p>
+<p><strong>如何调整</strong>：通过 <code>innodb_buffer_pool_size</code> 参数设置</p>
+<ul>
+<li><strong>推荐大小</strong>：物理内存的 60%~80%</li>
+<li><strong>举例</strong>：如果服务器有 8GB 内存，可以设置为 5-6GB</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 查看当前 Buffer Pool 大小</span></span><br><span class="line"><span class="keyword">SHOW</span> VARIABLES <span class="keyword">LIKE</span> <span class="string">&#x27;innodb_buffer_pool_size&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 设置 Buffer Pool 大小为 4GB</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> innodb_buffer_pool_size <span class="operator">=</span> <span class="number">4294967296</span>;</span><br></pre></td></tr></table></figure>
+<h3 id="Buffer-Pool-缓存什么？">Buffer Pool 缓存什么？</h3>
+<p>你可能会问：Buffer Pool 到底缓存什么数据呢？</p>
+<p>首先要了解一个概念：<strong>数据页</strong>。InnoDB 把数据分成一个个&quot;页&quot;，就像把书分成一页页纸一样。每页的大小是 16KB，这是磁盘和内存交换数据的基本单位。</p>
+<p><strong>Buffer Pool 的工作原理</strong>：</p>
+<ol>
+<li>MySQL 启动时，申请一大块内存空间</li>
+<li>把这块内存按 16KB 切分成很多&quot;缓存页&quot;</li>
+<li>刚开始这些缓存页都是空的</li>
+<li>随着查询的进行，磁盘上的数据页会被载入这些缓存页</li>
+</ol>
+<p><strong>有趣的现象</strong>：MySQL 刚启动时，你会发现虚拟内存很大，但实际物理内存使用很小。这是因为操作系统采用了&quot;懒加载&quot;机制——只有真正访问内存时，才会分配物理内存。</p>
+<p><strong>Buffer Pool 缓存的内容</strong>：</p>
+<ul>
+<li><strong>数据页</strong>：表中的实际数据</li>
+<li><strong>索引页</strong>：B+树索引结构</li>
+<li><strong>undo 页</strong>：用于事务回滚的数据</li>
+<li><strong>插入缓存</strong>：优化插入操作的缓存</li>
+<li><strong>自适应哈希索引</strong>：InnoDB 自动创建的哈希索引</li>
+<li><strong>锁信息</strong>：并发控制相关信息</li>
+</ul>
+<p>简单来说，就是把经常用到的各种数据都放在内存里，提高访问速度。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229578943.png" alt="1748229578943"></p>
+<h3 id="控制块：缓存页的-身份证">控制块：缓存页的&quot;身份证&quot;</h3>
+<p>光有缓存页还不够，还需要管理这些页面。想象一下，如果你有很多书，但没有目录和标签，怎么快速找到想要的那本书呢？</p>
+<p>InnoDB 为每个缓存页都创建了一个<strong>控制块</strong>，就像给每个缓存页发了一张&quot;身份证&quot;，记录着：</p>
+<ul>
+<li><strong>表空间 ID</strong>：这个页属于哪个数据库表</li>
+<li><strong>页号</strong>：在表中的第几页</li>
+<li><strong>缓存页地址</strong>：在内存中的具体位置</li>
+<li><strong>链表节点信息</strong>：用于各种链表管理</li>
+</ul>
+<p><strong>内存布局</strong>：控制块放在 Buffer Pool 的最前面，后面才是缓存页：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229586453.png" alt="1748229586453"></p>
+<p>你可能注意到了图中的灰色部分——这是<strong>碎片空间</strong>。</p>
+<p><strong>为什么会有碎片空间？</strong></p>
+<p>这很好理解：每个控制块都要对应一个缓存页，当分配完所有的控制块和缓存页后，可能剩余的内存空间不够再分配一对控制块和缓存页，这部分&quot;剩余&quot;的内存就是碎片空间。</p>
+<blockquote>
+<p><strong>小贴士</strong>：如果你精确计算 Buffer Pool 的大小，也可以避免产生碎片空间。</p>
+</blockquote>
+<h3 id="常见疑问：查询一条记录，只缓存这条记录吗？">常见疑问：查询一条记录，只缓存这条记录吗？</h3>
+<p><strong>答案是：不是的！</strong></p>
+<p>这是一个很有意思的问题。当你查询一条记录时，MySQL 实际上会把<strong>整个页</strong>（16KB）都加载到 Buffer Pool 中。</p>
+<p><strong>为什么要这样做？</strong></p>
+<p>想象一下在图书馆找书的场景：</p>
+<ol>
+<li>你想看某本书的第 100 页第 5 行</li>
+<li>但图书管理员只能告诉你这本书在哪个书架上</li>
+<li>你拿到整本书后，再翻到第 100 页第 5 行</li>
+</ol>
+<p>MySQL 的工作原理类似：</p>
+<ol>
+<li><strong>索引定位</strong>：通过索引只能定位到数据在哪个&quot;页&quot;上</li>
+<li><strong>加载整页</strong>：把整个 16KB 的页加载到 Buffer Pool</li>
+<li><strong>页内查找</strong>：通过页目录定位到具体的记录</li>
+</ol>
+<p><strong>这样做的好处</strong>：</p>
+<ul>
+<li><strong>空间局部性</strong>：同一页的其他数据很可能也会被访问</li>
+<li><strong>减少 I/O</strong>：一次性读取 16KB 比多次读取小块数据更高效</li>
+<li><strong>页是原子单位</strong>：数据库以页为单位管理数据更加高效</li>
+</ul>
+<blockquote>
+<p><strong>延伸阅读</strong>：想了解页结构和索引查询的详细原理，可以参考：<a href="/2025/04/28/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/InnoDB%E7%9A%84%E6%95%B0%E6%8D%AE%E9%A1%B5/">换一个角度看 B+ 树</a></p>
+</blockquote>
+<h2 id="如何管理-Buffer-Pool？">如何管理 Buffer Pool？</h2>
+<p>Buffer Pool 有很多缓存页，就像一个大仓库有很多货架。要高效管理这些页面，MySQL 设计了几种不同的&quot;链表&quot;来分类管理。</p>
+<h3 id="空闲页管理：Free-链表">空闲页管理：Free 链表</h3>
+<p><strong>问题</strong>：MySQL 需要加载新数据时，怎么快速找到空闲的缓存页？</p>
+<p>如果每次都遍历整个 Buffer Pool 来找空闲页，效率太低了。就像在一个大仓库里挨个检查每个货架是否空着一样。</p>
+<p><strong>解决方案</strong>：使用 <strong>Free 链表</strong>（空闲链表）</p>
+<p>把所有空闲缓存页的控制块串成一个链表，需要空闲页时，直接从链表头取一个就行了。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229596157.png" alt="1748229596157"></p>
+<p><strong>Free 链表的组成</strong>：</p>
+<ul>
+<li><strong>链表头节点</strong>：记录链表的基本信息
+<ul>
+<li>头节点地址和尾节点地址</li>
+<li>当前空闲页的数量</li>
+</ul>
+</li>
+<li><strong>控制块节点</strong>：每个节点对应一个空闲的缓存页</li>
+</ul>
+<p><strong>工作流程</strong>：</p>
+<ol>
+<li><strong>需要加载新数据时</strong>：从 Free 链表头部取一个空闲缓存页</li>
+<li><strong>填充控制块信息</strong>：记录表空间、页号等信息</li>
+<li><strong>从链表中移除</strong>：该控制块不再是&quot;空闲&quot;状态</li>
+</ol>
+<p>这样的设计让查找空闲页的时间复杂度从 O(n) 降到了 O(1)，大大提高了效率。</p>
+<h3 id="脏页管理：Flush-链表">脏页管理：Flush 链表</h3>
+<p>Buffer Pool 不仅能提高读性能，还能提高写性能。当你修改数据时，MySQL 并不急着写磁盘，而是先在内存中修改，然后把这个页标记为<strong>脏页</strong>。</p>
+<p><strong>什么是脏页？</strong></p>
+<ul>
+<li><strong>脏页</strong>：内存中的数据已经被修改，但还没同步到磁盘</li>
+<li><strong>干净页</strong>：内存和磁盘的数据是一致的</li>
+</ul>
+<p><strong>问题</strong>：后台线程怎么知道哪些页是脏页，需要写入磁盘呢？</p>
+<p><strong>解决方案</strong>：使用 <strong>Flush 链表</strong></p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229649895.png" alt="1748229649895"></p>
+<p><strong>Flush 链表的特点</strong>：</p>
+<ul>
+<li>链表结构和 Free 链表类似</li>
+<li>区别是：Flush 链表中的都是脏页的控制块</li>
+<li>后台线程定期遍历 Flush 链表，将脏页写入磁盘</li>
+</ul>
+<p><strong>工作流程</strong>：</p>
+<ol>
+<li><strong>数据修改时</strong>：页面标记为脏页，控制块加入 Flush 链表</li>
+<li><strong>后台刷盘</strong>：后台线程遍历 Flush 链表，写入磁盘</li>
+<li><strong>写入完成</strong>：从 Flush 链表中移除，页面变为干净页</li>
+</ol>
+<p>这种设计实现了<strong>延迟写入</strong>，大大提高了写操作的性能。</p>
+<h3 id="缓存淘汰策略：改进版-LRU-算法">缓存淘汰策略：改进版 LRU 算法</h3>
+<p>Buffer Pool 的空间是有限的，就像你的书桌空间有限一样。我们希望：</p>
+<ul>
+<li><strong>常用数据</strong>：一直留在 Buffer Pool 中</li>
+<li><strong>不常用数据</strong>：及时淘汰掉，腾出空间</li>
+</ul>
+<p>这是典型的缓存淘汰问题。最直观的解决方案是使用 <strong>LRU（Least Recently Used）算法</strong>。</p>
+<p><strong>经典 LRU 算法原理</strong>：</p>
+<ul>
+<li><strong>链表头部</strong>：最近使用的数据（热数据）</li>
+<li><strong>链表尾部</strong>：最久未使用的数据（冷数据）</li>
+<li><strong>淘汰策略</strong>：空间不足时，淘汰链表尾部的数据</li>
+</ul>
+<p><strong>经典 LRU 算法的操作</strong>：</p>
+<ol>
+<li><strong>页面命中</strong>（在 Buffer Pool 中）：将该页移动到链表头部</li>
+<li><strong>页面未命中</strong>（不在 Buffer Pool 中）：淘汰尾部页面，新页面加入头部</li>
+</ol>
+<p>让我们通过例子来理解：</p>
+<p>假设 LRU 链表长度为 5，当前有页面 1、2、3、4、5：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229660469.png" alt="1748229660469"></p>
+<p><strong>场景一：访问已存在的页面</strong><br>
+访问 3 号页时，由于它已经在 Buffer Pool 中，直接移动到头部：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229667608.png" alt="1748229667608"></p>
+<p><strong>场景二：访问不存在的页面</strong><br>
+访问 8 号页时，由于它不在 Buffer Pool 中：</p>
+<ol>
+<li>淘汰尾部的 5 号页</li>
+<li>将 8 号页加入到头部</li>
+</ol>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229675238.png" alt="1748229675238"></p>
+<h3 id="Buffer-Pool-中的三种页面状态">Buffer Pool 中的三种页面状态</h3>
+<p>通过前面的学习，我们知道 Buffer Pool 使用三种链表来管理不同状态的页面：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229683283.png" alt="1748229683283"></p>
+<p><strong>三种页面状态</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>页面类型</th>
+<th>状态描述</th>
+<th>所在链表</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Free Page（空闲页）</strong></td>
+<td>未被使用的页面</td>
+<td>Free 链表</td>
+</tr>
+<tr>
+<td><strong>Clean Page（干净页）</strong></td>
+<td>已使用但未修改的页面<br>内存和磁盘数据一致</td>
+<td>LRU 链表</td>
+</tr>
+<tr>
+<td><strong>Dirty Page（脏页）</strong></td>
+<td>已使用且已修改的页面<br>内存和磁盘数据不一致</td>
+<td>LRU 链表 + Flush 链表</td>
+</tr>
+</tbody>
+</table>
+<p><strong>页面状态转换</strong>：</p>
+<ul>
+<li><strong>空闲页 → 干净页</strong>：加载磁盘数据后</li>
+<li><strong>干净页 → 脏页</strong>：修改数据后</li>
+<li><strong>脏页 → 干净页</strong>：写入磁盘后</li>
+<li><strong>任何页 → 空闲页</strong>：从 Buffer Pool 中淘汰后</li>
+</ul>
+<h3 id="经典-LRU-算法的两大问题">经典 LRU 算法的两大问题</h3>
+<p>虽然 LRU 算法思路很好，但 MySQL 并没有直接使用经典的 LRU 算法，因为它无法解决两个关键问题：</p>
+<h4 id="问题一：预读失效">问题一：预读失效</h4>
+<p><strong>什么是预读机制？</strong></p>
+<p>MySQL 有一个很聪明的设计叫&quot;预读&quot;。基于程序的<strong>空间局部性原理</strong>，当你访问某个数据页时，MySQL 会猜测你接下来可能访问相邻的数据页，于是提前加载它们。</p>
+<p>就像你在看连续剧，看完第 5 集，很可能接下来会看第 6、7 集，所以视频网站会提前缓存这些集数。</p>
+<p><strong>预读失效的问题</strong>：</p>
+<p>但是，如果这些预读的页面实际上没有被访问，就会出现问题：</p>
+<ol>
+<li><strong>预读页占据热点位置</strong>：这些无用的预读页被放在 LRU 链表头部</li>
+<li><strong>真正的热数据被淘汰</strong>：Buffer Pool 空间不足时，链表尾部的热数据反而被淘汰</li>
+<li><strong>缓存命中率下降</strong>：导致更多的磁盘 I/O</li>
+</ol>
+<p><strong>具体例子</strong>：</p>
+<ul>
+<li>你查询用户表的第 100 页数据</li>
+<li>MySQL 预读了第 101、102、103 页</li>
+<li>但你实际只需要第 100 页的数据</li>
+<li>结果：无用的 101、102、103 页占据了宝贵的缓存空间</li>
+</ul>
+<h4 id="解决方案：LRU-链表分区">解决方案：LRU 链表分区</h4>
+<p>我们不能因为害怕预读失效就取消预读机制，因为大部分情况下空间局部性原理是成立的。</p>
+<p><strong>核心思想</strong>：让预读的页停留时间尽可能短，真正被访问的页才能进入热点区域。</p>
+<p><strong>MySQL 的解决方案</strong>：将 LRU 链表分为两个区域</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229697824.png" alt="1748229697824"></p>
+<p><strong>两个区域的设计</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>区域</th>
+<th>位置</th>
+<th>作用</th>
+<th>默认比例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Young 区域</strong></td>
+<td>链表前半部分</td>
+<td>存放热点数据</td>
+<td>63%</td>
+</tr>
+<tr>
+<td><strong>Old 区域</strong></td>
+<td>链表后半部分</td>
+<td>存放新加载/预读数据</td>
+<td>37%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>配置参数</strong>：<code>innodb_old_blocks_pct = 37</code>（表示 old 区域占 37%）</p>
+<p><strong>新的工作流程</strong>：</p>
+<ol>
+<li><strong>预读页面</strong>：直接放入 old 区域头部（不是整个 LRU 的头部）</li>
+<li><strong>页面被访问</strong>：从 old 区域移动到 young 区域头部</li>
+<li><strong>预读页面未被访问</strong>：在 old 区域自然老化，最终被淘汰</li>
+</ol>
+<p><strong>好处</strong>：</p>
+<ul>
+<li>✅ 预读页面不会立即占据热点位置</li>
+<li>✅ 真正使用的数据才能进入 young 区域</li>
+<li>✅ 未使用的预读页面会较快被淘汰</li>
+<li>✅ 热点数据得到更好的保护</li>
+</ul>
+<p>接下来，给大家举个例子。</p>
+<p>假设有一个长度为 10 的 LRU 链表，其中 young 区域占比 70 %，old 区域占比 30 %。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229706232.png" alt="1748229706232"></p>
+<p>现在有个编号为 20 的页被预读了，这个页只会被插入到  old 区域头部，而 old 区域末尾的页（10 号）会被淘汰掉。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229713256.png" alt="1748229713256"></p>
+<p>如果 20 号页一直不会被访问，它也没有占用到 young 区域的位置，而且还会比 young 区域的数据更早被淘汰出去。</p>
+<p>如果 20 号页被预读后，立刻被访问了，那么就会将它插入到 young 区域的头部，young 区域末尾的页（7 号），会被挤到 old 区域，作为 old 区域的头部，这个过程并不会有页被淘汰。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229721586.png" alt="1748229721586"></p>
+<p>虽然通过划分 old 区域 和 young 区域避免了预读失效带来的影响，但是还有个问题无法解决，那就是  Buffer Pool  污染的问题。</p>
+<blockquote>
+<p>什么是  Buffer Pool  污染？</p>
+</blockquote>
+<p>当某一个 SQL 语句<strong>扫描了大量的数据</strong>时，在  Buffer Pool 空间比较有限的情况下，可能会将 <strong>Buffer Pool 里的所有页都替换出去，导致大量热数据被淘汰了</strong>，等这些热数据又被再次访问的时候，由于缓存未命中，就会产生大量的磁盘 IO，MySQL 性能就会急剧下降，这个过程被称为 <strong>Buffer Pool  污染</strong>。</p>
+<p>注意，Buffer Pool  污染并不只是查询语句查询出了大量的数据才出现的问题，即使查询出来的结果集很小，也会造成 Buffer Pool  污染。</p>
+<p>比如，在一个数据量非常大的表，执行了这条语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t_user <span class="keyword">where</span> name <span class="keyword">like</span> &quot;%xiaolin%&quot;;</span><br></pre></td></tr></table></figure>
+<p>可能这个查询出来的结果就几条记录，但是由于这条语句会发生索引失效，所以这个查询过程是全表扫描的，接着会发生如下的过程：</p>
+<ul>
+<li>从磁盘读到的页加入到 LRU 链表的 old 区域头部；</li>
+<li>当从页里读取行记录时，也就是页被访问的时候，就要将该页放到 young 区域头部；</li>
+<li>接下来拿行记录的 name 字段和字符串 xiaolin 进行模糊匹配，如果符合条件，就加入到结果集里；</li>
+<li>如此往复，直到扫描完表中的所有记录。</li>
+</ul>
+<p>经过这一番折腾，原本 young 区域的热点数据都会被替换掉。</p>
+<p>举个例子，假设需要批量扫描：21，22，23，24，25 这五个页，这些页都会被逐一访问（读取页里的记录）。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229731726.png" alt="1748229731726"></p>
+<p>在批量访问这些数据的时候，会被逐一插入到 young 区域头部。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/1748229738373.png" alt="1748229738373"></p>
+<p>可以看到，原本在 young 区域的热点数据 6 和 7 号页都被淘汰了，这就是  Buffer Pool  污染的问题。</p>
+<blockquote>
+<p>怎么解决出现   Buffer Pool  污染而导致缓存命中率下降的问题？</p>
+</blockquote>
+<p>像前面这种全表扫描的查询，很多缓冲页其实只会被访问一次，但是它却只因为被访问了一次而进入到 young 区域，从而导致热点数据被替换了。</p>
+<p>LRU 链表中 young 区域就是热点数据，只要我们提高进入到 young 区域的门槛，就能有效地保证 young 区域里的热点数据不会被替换掉。</p>
+<p>MySQL 是这样做的，进入到 young 区域条件增加了一个<strong>停留在 old 区域的时间判断</strong>。</p>
+<p>具体是这样做的，在对某个处在 old 区域的缓存页进行第一次访问时，就在它对应的控制块中记录下来这个访问时间：</p>
+<ul>
+<li>如果后续的访问时间与第一次访问的时间<strong>在某个时间间隔内</strong>，那么<strong>该缓存页就不会被从 old 区域移动到 young 区域的头部</strong>；</li>
+<li>如果后续的访问时间与第一次访问的时间<strong>不在某个时间间隔内</strong>，那么<strong>该缓存页移动到 young 区域的头部</strong>；</li>
+</ul>
+<p>这个间隔时间是由 <code>innodb_old_blocks_time</code> 控制的，默认是 1000 ms。</p>
+<p>也就说，<strong>只有同时满足「被访问」与「在 old 区域停留时间超过 1 秒」两个条件，才会被插入到 young 区域头部</strong>，这样就解决了 Buffer Pool  污染的问题。</p>
+<p>另外，MySQL 针对 young 区域其实做了一个优化，为了防止 young 区域节点频繁移动到头部。young 区域前面 1/4 被访问不会移动到链表头部，只有后面的 3/4 被访问了才会。</p>
+<h3 id="脏页什么时候会被刷入磁盘？">脏页什么时候会被刷入磁盘？</h3>
+<p>引入了 Buffer Pool  后，当修改数据时，首先是修改  Buffer Pool  中数据所在的页，然后将其页设置为脏页，但是磁盘中还是原数据。</p>
+<p>因此，脏页需要被刷入磁盘，保证缓存和磁盘数据一致，但是若每次修改数据都刷入磁盘，则性能会很差，因此一般都会在一定时机进行批量刷盘。</p>
+<p>可能大家担心，如果在脏页还没有来得及刷入到磁盘时，MySQL 宕机了，不就丢失数据了吗？</p>
+<p>这个不用担心，InnoDB 的更新操作采用的是 Write Ahead Log 策略，即先写日志，再写入磁盘，通过 redo log 日志让 MySQL 拥有了崩溃恢复能力。</p>
+<p>下面几种情况会触发脏页的刷新：</p>
+<ul>
+<li>当 redo log 日志满了的情况下，会主动触发脏页刷新到磁盘；</li>
+<li>Buffer Pool 空间不足时，需要将一部分数据页淘汰掉，如果淘汰的是脏页，需要先将脏页同步到磁盘；</li>
+<li>MySQL 认为空闲时，后台线程回定期将适量的脏页刷入到磁盘；</li>
+<li>MySQL 正常关闭之前，会把所有的脏页刷入到磁盘；</li>
+</ul>
+<p>在我们开启了慢 SQL 监控后，如果你发现**「偶尔」会出现一些用时稍长的 SQL**，这可能是因为脏页在刷新到磁盘时可能会给数据库带来性能开销，导致数据库操作抖动。</p>
+<p>如果间断出现这种现象，就需要调大 Buffer Pool 空间或 redo log 日志的大小。</p>
+<h2 id="总结">总结</h2>
+<p>Buffer Pool 是 MySQL InnoDB 存储引擎的核心组件，通过内存缓存大大提升了数据库的读写性能。</p>
+<h3 id="核心概念回顾">核心概念回顾</h3>
+<p><strong>基本概念</strong>：</p>
+<ul>
+<li><strong>作用</strong>：缓存热点数据，减少磁盘 I/O</li>
+<li><strong>单位</strong>：以 16KB 的页为基本单位</li>
+<li><strong>大小</strong>：默认 128MB，建议设置为物理内存的 60%~80%</li>
+</ul>
+<p><strong>三种链表管理</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>链表类型</th>
+<th>管理对象</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Free 链表</strong></td>
+<td>空闲页</td>
+<td>快速分配空闲缓存页</td>
+</tr>
+<tr>
+<td><strong>Flush 链表</strong></td>
+<td>脏页</td>
+<td>管理需要写入磁盘的页面</td>
+</tr>
+<tr>
+<td><strong>LRU 链表</strong></td>
+<td>所有使用中的页</td>
+<td>缓存淘汰策略</td>
+</tr>
+</tbody>
+</table>
+<h3 id="MySQL-的-LRU-优化">MySQL 的 LRU 优化</h3>
+<p>为了解决经典 LRU 算法的问题，MySQL 做了两个关键优化：</p>
+<p><strong>1. 链表分区</strong>：</p>
+<ul>
+<li><strong>Young 区域</strong>（63%）：存放热点数据</li>
+<li><strong>Old 区域</strong>（37%）：存放新加载的数据</li>
+<li><strong>解决问题</strong>：预读失效</li>
+</ul>
+<p><strong>2. 时间门槛</strong>：</p>
+<ul>
+<li><strong>条件</strong>：页面在 old 区域停留时间 &gt; 1 秒才能进入 young 区域</li>
+<li><strong>解决问题</strong>：Buffer Pool 污染（全表扫描等）</li>
+</ul>
+<h3 id="重要参数">重要参数</h3>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Buffer Pool 大小</span></span><br><span class="line">innodb_buffer_pool_size <span class="operator">=</span> <span class="number">4</span>G</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Old 区域比例</span></span><br><span class="line">innodb_old_blocks_pct <span class="operator">=</span> <span class="number">37</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 进入 Young 区域的时间门槛</span></span><br><span class="line">innodb_old_blocks_time <span class="operator">=</span> <span class="number">1000</span></span><br></pre></td></tr></table></figure>
+<h3 id="性能监控要点">性能监控要点</h3>
+<p>如果发现偶尔出现的慢 SQL，可能是脏页刷盘导致的性能抖动，可以考虑：</p>
+<ul>
+<li>调大 Buffer Pool 大小</li>
+<li>调大 redo log 大小</li>
+<li>监控脏页比例和刷盘频率</li>
+</ul>
+<p>Buffer Pool 的设计体现了 MySQL 在性能优化方面的精妙之处，理解其原理对于数据库调优和故障排查都非常重要。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io">Adrian Wang</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/">https://adrianwangs.github.io/2025/05/26/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%86%85%E5%AD%98/BufferPool/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%85%AB%E8%82%A1%E6%96%87/">八股文</a><a class="post-meta__tags" href="/tags/%E9%9D%A2%E8%AF%95%E9%A2%98/">面试题</a><a class="post-meta__tags" href="/tags/MySQL/">MySQL</a><a class="post-meta__tags" href="/tags/Buffer-Pool/">Buffer Pool</a><a class="post-meta__tags" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BC%98%E5%8C%96/">数据库优化</a><a class="post-meta__tags" href="/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">内存管理</a><a class="post-meta__tags" href="/tags/InnoDB/">InnoDB</a></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/05/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-134-%E5%8A%A0%E6%B2%B9%E7%AB%99/" title="LeetCode 134 - 加油站（Gas Station）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">LeetCode 134 - 加油站（Gas Station）</div></div><div class="info-2"><div class="info-item-1">从超时的暴力解法到高效的贪心算法，深入分析加油站问题的解题思路和时间复杂度优化</div></div></div></a><a class="pagination-related" href="/2025/05/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-238-%E9%99%A4%E8%87%AA%E8%BA%AB%E4%BB%A5%E5%A4%96%E6%95%B0%E7%BB%84%E7%9A%84%E4%B9%98%E7%A7%AF/" title="LeetCode 238 - 除自身以外数组的乘积（Product of Array Except Self）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">LeetCode 238 - 除自身以外数组的乘积（Product of Array Except Self）</div></div><div class="info-2"><div class="info-item-1">无需使用除法运算计算数组中除自身以外所有元素的乘积，介绍暴力解法、前缀后缀乘积、空间优化等多种方法，详细分析时空复杂度差异。</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/05/24/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E6%97%A5%E5%BF%97/%E6%97%A5%E5%BF%97/" title="八股文: MySQL 日志系统详解 - undo log、redo log、binlog"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/24/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E6%97%A5%E5%BF%97/%E6%97%A5%E5%BF%97/1747967912006.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-24</div><div class="info-item-2">八股文: MySQL 日志系统详解 - undo log、redo log、binlog</div></div><div class="info-2"><div class="info-item-1">深入解析MySQL三大日志系统：undo log回滚日志、redo log重做日志、binlog归档日志的作用原理和实现机制，理解事务ACID特性的底层实现</div></div></div></a><a class="pagination-related no-desc" href="/2025/04/28/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/InnoDB%E7%9A%84%E6%95%B0%E6%8D%AE%E9%A1%B5/" title="InnoDB的数据页"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/28/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/InnoDB%E7%9A%84%E6%95%B0%E6%8D%AE%E9%A1%B5/1745856192760.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-04-28</div><div class="info-item-2">InnoDB的数据页</div></div></div></a><a class="pagination-related" href="/2025/05/07/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E4%BA%8B%E5%8A%A1/2025-05-07-MySQL-%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E4%B8%8E%E5%B9%BB%E8%AF%BB/" title="MySQL: 可重复读隔离级别完全解决幻读了吗？"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/07/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E4%BA%8B%E5%8A%A1/2025-05-07-MySQL-%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E4%B8%8E%E5%B9%BB%E8%AF%BB/1746620825818.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-07</div><div class="info-item-2">MySQL: 可重复读隔离级别完全解决幻读了吗？</div></div><div class="info-2"><div class="info-item-1">深入探讨MySQL在可重复读（RR）隔离级别下是否完全解决了幻读问题，分析InnoDB的MVCC机制与间隙锁的作用，以及在实际应用中可能遇到的边界情况。</div></div></div></a><a class="pagination-related" href="/2025/05/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%89%A7%E8%A1%8C%E8%AF%AD%E5%8F%A5%E7%9A%84%E8%BF%87%E7%A8%8B/" title="MySQL 执行一条 SELECT 语句的完整过程详解"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%89%A7%E8%A1%8C%E8%AF%AD%E5%8F%A5%E7%9A%84%E8%BF%87%E7%A8%8B/1748166843430.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-25</div><div class="info-item-2">MySQL 执行一条 SELECT 语句的完整过程详解</div></div><div class="info-2"><div class="info-item-1">深入浅出地解析 MySQL 执行一条 SELECT 查询语句的完整流程，从连接建立到结果返回，帮助理解 MySQL 内部架构和工作原理</div></div></div></a><a class="pagination-related" href="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/Mysql%E4%B8%AD%E4%BD%BF%E7%94%A8Like%E4%B8%80%E5%AE%9A%E4%BC%9A%E5%AF%BC%E8%87%B4%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88%E5%90%97/" title="MySQL中使用&#39;Like&#39;一定会导致索引失效吗？"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/Mysql%E4%B8%AD%E4%BD%BF%E7%94%A8Like%E4%B8%80%E5%AE%9A%E4%BC%9A%E5%AF%BC%E8%87%B4%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88%E5%90%97/1746413509580.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-04</div><div class="info-item-2">MySQL中使用&#39;Like&#39;一定会导致索引失效吗？</div></div><div class="info-2"><div class="info-item-1">深入探讨MySQL中Like操作对索引的影响，分析什么情况下会导致索引失效，以及如何优化Like查询以充分利用索引，提高查询性能。</div></div></div></a><a class="pagination-related" href="/2025/05/05/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/2025-05-05-count-vs-count1/" title="MySQL八股: COUNT(*)与COUNT(1)的区别与性能对比"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/05/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/2025-05-05-count-vs-count1/1746455045381.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-05</div><div class="info-item-2">MySQL八股: COUNT(*)与COUNT(1)的区别与性能对比</div></div><div class="info-2"><div class="info-item-1">深入解析MySQL中COUNT(*)与COUNT(1)的区别，从执行原理到性能对比，分析各种场景下的最佳选择及优化建议，帮助你回答这道经典面试题。</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="gitalk-container"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Adrian Wang</div><div class="author-info-description">一个完全由AI生成，但是内容高质量的Blog</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/AdrianWangs"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/AdrianWangs" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:wyz17601402786@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到 Adrian Wang 的博客！</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">MySQL Buffer Pool 详解：数据库性能优化的核心</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E6%9C%89-Buffer-Pool%EF%BC%9F"><span class="toc-number">1.1.</span> <span class="toc-text">为什么要有 Buffer Pool？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Buffer-Pool-%E6%9C%89%E5%A4%9A%E5%A4%A7%EF%BC%9F"><span class="toc-number">1.1.1.</span> <span class="toc-text">Buffer Pool 有多大？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Buffer-Pool-%E7%BC%93%E5%AD%98%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-number">1.1.2.</span> <span class="toc-text">Buffer Pool 缓存什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A7%E5%88%B6%E5%9D%97%EF%BC%9A%E7%BC%93%E5%AD%98%E9%A1%B5%E7%9A%84-%E8%BA%AB%E4%BB%BD%E8%AF%81"><span class="toc-number">1.1.3.</span> <span class="toc-text">控制块：缓存页的&quot;身份证&quot;</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E7%96%91%E9%97%AE%EF%BC%9A%E6%9F%A5%E8%AF%A2%E4%B8%80%E6%9D%A1%E8%AE%B0%E5%BD%95%EF%BC%8C%E5%8F%AA%E7%BC%93%E5%AD%98%E8%BF%99%E6%9D%A1%E8%AE%B0%E5%BD%95%E5%90%97%EF%BC%9F"><span class="toc-number">1.1.4.</span> <span class="toc-text">常见疑问：查询一条记录，只缓存这条记录吗？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E7%AE%A1%E7%90%86-Buffer-Pool%EF%BC%9F"><span class="toc-number">1.2.</span> <span class="toc-text">如何管理 Buffer Pool？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A9%BA%E9%97%B2%E9%A1%B5%E7%AE%A1%E7%90%86%EF%BC%9AFree-%E9%93%BE%E8%A1%A8"><span class="toc-number">1.2.1.</span> <span class="toc-text">空闲页管理：Free 链表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%84%8F%E9%A1%B5%E7%AE%A1%E7%90%86%EF%BC%9AFlush-%E9%93%BE%E8%A1%A8"><span class="toc-number">1.2.2.</span> <span class="toc-text">脏页管理：Flush 链表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5%EF%BC%9A%E6%94%B9%E8%BF%9B%E7%89%88-LRU-%E7%AE%97%E6%B3%95"><span class="toc-number">1.2.3.</span> <span class="toc-text">缓存淘汰策略：改进版 LRU 算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Buffer-Pool-%E4%B8%AD%E7%9A%84%E4%B8%89%E7%A7%8D%E9%A1%B5%E9%9D%A2%E7%8A%B6%E6%80%81"><span class="toc-number">1.2.4.</span> <span class="toc-text">Buffer Pool 中的三种页面状态</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%8F%E5%85%B8-LRU-%E7%AE%97%E6%B3%95%E7%9A%84%E4%B8%A4%E5%A4%A7%E9%97%AE%E9%A2%98"><span class="toc-number">1.2.5.</span> <span class="toc-text">经典 LRU 算法的两大问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E4%B8%80%EF%BC%9A%E9%A2%84%E8%AF%BB%E5%A4%B1%E6%95%88"><span class="toc-number">1.2.5.1.</span> <span class="toc-text">问题一：预读失效</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%EF%BC%9ALRU-%E9%93%BE%E8%A1%A8%E5%88%86%E5%8C%BA"><span class="toc-number">1.2.5.2.</span> <span class="toc-text">解决方案：LRU 链表分区</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%84%8F%E9%A1%B5%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BC%9A%E8%A2%AB%E5%88%B7%E5%85%A5%E7%A3%81%E7%9B%98%EF%BC%9F"><span class="toc-number">1.2.6.</span> <span class="toc-text">脏页什么时候会被刷入磁盘？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">1.3.</span> <span class="toc-text">总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E5%9B%9E%E9%A1%BE"><span class="toc-number">1.3.1.</span> <span class="toc-text">核心概念回顾</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MySQL-%E7%9A%84-LRU-%E4%BC%98%E5%8C%96"><span class="toc-number">1.3.2.</span> <span class="toc-text">MySQL 的 LRU 优化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%8D%E8%A6%81%E5%8F%82%E6%95%B0"><span class="toc-number">1.3.3.</span> <span class="toc-text">重要参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E7%9B%91%E6%8E%A7%E8%A6%81%E7%82%B9"><span class="toc-number">1.3.4.</span> <span class="toc-text">性能监控要点</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/1770966681983.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"/></a><div class="content"><a class="title" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透">拒绝 AI 名词焦虑：LLM 核心概念，一次讲透</a><time datetime="2026-02-13T10:00:00.000Z" title="Created 2026-02-13 10:00:00">2026-02-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/image_1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="温故知新——Golang GMP 万字洗髓经"/></a><div class="content"><a class="title" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经">温故知新——Golang GMP 万字洗髓经</a><time datetime="2026-01-18T00:00:00.000Z" title="Created 2026-01-18 00:00:00">2026-01-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/08/03/%E9%9D%A2%E8%AF%95%E9%A2%98/%E4%BA%92%E8%81%94%E7%BD%91%E5%A4%A7%E5%8E%82/%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8/2025-08-03-%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8-%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91-%E4%B8%80%E9%9D%A2/" title="字节跳动 后端开发工程师 一面">字节跳动 后端开发工程师 一面</a><time datetime="2025-08-03T14:52:52.000Z" title="Created 2025-08-03 14:52:52">2025-08-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-239-%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E6%9C%80%E5%A4%A7%E5%80%BC/" title="LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）">LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）</a><time datetime="2025-07-26T18:51:43.000Z" title="Created 2025-07-26 18:51:43">2025-07-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-560-%E5%92%8C%E4%B8%BAK%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/" title="LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）">LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）</a><time datetime="2025-07-26T15:59:27.000Z" title="Created 2025-07-26 15:59:27">2025-07-26</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2024 - 2026 By Adrian Wang</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', vb[0] + ' ' + vb[1] + ' ' + vb[2] + ' ' + vb[3])
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = '<!doctype html><html><head><meta charset="utf-8" />\n' +
+      '  <style>\n' +
+      '    html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ' + bg + '; }\n' +
+      '    svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }\n' +
+      '  </style>\n' +
+      '  </' + 'head><' + 'body>' + svgSource + '</' + 'body></' + 'html>'
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'forest'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = '%%{init: ' + JSON.stringify(config) + '}%%\n'
+      const mermaidID = 'mermaid-' + index
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const preToMermaid = () => {
+    const preMermaidEle = document.querySelectorAll('pre.mermaid')
+    if (preMermaidEle.length === 0) return
+
+    preMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    preToMermaid()
+    if (true) codeToMermaid()
+    const mermaidNodes = document.querySelectorAll('#article-container .mermaid-wrap')
+    if (mermaidNodes.length === 0) return
+
+    const runMermaidFn = () => runMermaid(mermaidNodes)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"language":"zh-CN","distractionFreeMode":true}
+
+  const commentCount = n => {
+    const isCommentCount = document.querySelector('#post-meta .gitalk-comment-count')
+    if (isCommentCount) {
+      isCommentCount.textContent= n
+    }
+  }
+
+  const initGitalk = (el, path) => {
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGitalk = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    const gitalk = new Gitalk({
+      clientID: 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo: 'blog-comments',
+      owner: 'AdrianWangs',
+      admin: ['AdrianWangs'],
+      updateCountCallback: commentCount,
+      ...option,
+      id: isShuoshuo ? path : (option && option.id) || '4d775fc49f5f0cf12eebb786f2df90cd'
+    })
+
+    gitalk.render('gitalk-container')
+  }
+
+  const loadGitalk = async(el, path) => {
+    if (typeof Gitalk === 'function') initGitalk(el, path)
+    else {
+      await btf.getCSS('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.css')
+      await btf.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.js')
+      initGitalk(el, path)
+    }
+  }
+
+  if (isShuoshuo) {
+    'Gitalk' === 'Gitalk'
+      ? window.shuoshuoComment = { loadComment: loadGitalk }
+      : window.loadOtherComment = loadGitalk
+    return
+  }
+
+  if ('Gitalk' === 'Gitalk' || !false) {
+    if (false) btf.loadComment(document.getElementById('gitalk-container'), loadGitalk)
+    else loadGitalk()
+  } else {
+    window.loadOtherComment = loadGitalk
+  }
+})()</script></div><script defer src="/js/echarts-theme-adapter.js"></script><script defer src="/js/category-tree.js"></script><script defer src="/js/reading-progress.js"></script><script defer src="/js/wide-mode.js"></script><script defer src="/js/font-size-toggle.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">Search</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  Loading Database</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div><script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",2],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-20",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1],["2025-07-06",1],["2025-07-09",1],["2025-07-20",3],["2025-07-26",2],["2025-08-03",1],["2026-01-18",1],["2026-02-13",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07","2025-08","2026-01","2026-02"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,48,10,1,1,1],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"AI","children":[{"name":"LLM","children":[],"count":1,"path":"AI/LLM"}],"count":1,"path":"AI"},{"name":"八股文","children":[{"name":"Go语言","children":[{"name":"GMP","children":[],"count":2,"path":"八股文/Go语言/GMP"},{"name":"垃圾回收","children":[],"count":1,"path":"八股文/Go语言/垃圾回收"},{"name":"Map","children":[],"count":7,"path":"八股文/Go语言/Map"}],"count":10,"path":"八股文/Go语言"},{"name":"操作系统","children":[],"count":2,"path":"八股文/操作系统"},{"name":"计算机网络","children":[],"count":2,"path":"八股文/计算机网络"},{"name":"Redis","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/Redis/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/Redis/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/Redis/高可用"},{"name":"内存管理","children":[],"count":1,"path":"八股文/Redis/内存管理"},{"name":"持久化","children":[],"count":3,"path":"八股文/Redis/持久化"},{"name":"数据结构","children":[],"count":8,"path":"八股文/Redis/数据结构"},{"name":"基础知识","children":[],"count":2,"path":"八股文/Redis/基础知识"},{"name":"数据类型","children":[],"count":5,"path":"八股文/Redis/数据类型"}],"count":25,"path":"八股文/Redis"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"存储原理","children":[],"count":5,"path":"八股文/MySQL/存储原理"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":61,"path":"八股文"},{"name":"面试经验","children":[],"count":8,"path":"面试经验"},{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"数组与哈希","children":[],"count":20,"path":"算法刷题/LeetCode/数组与哈希"},{"name":"数学","children":[],"count":3,"path":"算法刷题/LeetCode/数学"},{"name":"位运算","children":[],"count":2,"path":"算法刷题/LeetCode/位运算"},{"name":"链表","children":[],"count":9,"path":"算法刷题/LeetCode/链表"},{"name":"回溯","children":[],"count":5,"path":"算法刷题/LeetCode/回溯"},{"name":"模拟","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/模拟/错题集"}],"count":7,"path":"算法刷题/LeetCode/模拟"},{"name":"图论","children":[],"count":4,"path":"算法刷题/LeetCode/图论"},{"name":"树","children":[],"count":13,"path":"算法刷题/LeetCode/树"},{"name":"二分查找","children":[],"count":5,"path":"算法刷题/LeetCode/二分查找"},{"name":"栈","children":[],"count":5,"path":"算法刷题/LeetCode/栈"},{"name":"贪心","children":[],"count":4,"path":"算法刷题/LeetCode/贪心"},{"name":"字符串","children":[],"count":5,"path":"算法刷题/LeetCode/字符串"},{"name":"双指针","children":[],"count":1,"path":"算法刷题/LeetCode/双指针"},{"name":"动态规划","children":[],"count":14,"path":"算法刷题/LeetCode/动态规划"},{"name":"堆","children":[],"count":2,"path":"算法刷题/LeetCode/堆"}],"count":99,"path":"算法刷题/LeetCode"}],"count":101,"path":"算法刷题"},{"name":"AI工程","children":[{"name":"AI Coding","children":[],"count":1,"path":"AI工程/AI Coding"},{"name":"MCP","children":[],"count":1,"path":"AI工程/MCP"}],"count":2,"path":"AI工程"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body></html>

@@ -1,0 +1,1276 @@
+<!DOCTYPE html><html lang="zh" data-theme="light"><head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end --><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>LeetCode 287 - 寻找重复数 | Adrian Wang's blog</title><meta name="author" content="Adrian Wang"><meta name="copyright" content="Adrian Wang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="详细解析 LeetCode 287 题“寻找重复数”。本文将通过通俗易懂的方式，解释如何利用快慢指针（Floyd 判圈算法）在 O(n) 时间复杂度和 O(1) 空间复杂度下找到数组中的重复数字，并深入探讨其背后的数学原理。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LeetCode 287 - 寻找重复数">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-287-%E5%AF%BB%E6%89%BE%E9%87%8D%E5%A4%8D%E6%95%B0/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="详细解析 LeetCode 287 题“寻找重复数”。本文将通过通俗易懂的方式，解释如何利用快慢指针（Floyd 判圈算法）在 O(n) 时间复杂度和 O(1) 空间复杂度下找到数组中的重复数字，并深入探讨其背后的数学原理。">
+<meta property="og:locale">
+<meta property="og:image" content="https://avatars.githubusercontent.com/u/72337244">
+<meta property="article:published_time" content="2025-05-22T19:54:36.000Z">
+<meta property="article:modified_time" content="2026-02-13T07:20:17.938Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="LeetCode">
+<meta property="article:tag" content="数组">
+<meta property="article:tag" content="双指针">
+<meta property="article:tag" content="链表判环">
+<meta property="article:tag" content="Floyd算法">
+<meta property="article:tag" content="中等">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://avatars.githubusercontent.com/u/72337244"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "LeetCode 287 - 寻找重复数",
+  "url": "https://adrianwangs.github.io/2025/05/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-287-%E5%AF%BB%E6%89%BE%E9%87%8D%E5%A4%8D%E6%95%B0/",
+  "image": "https://avatars.githubusercontent.com/u/72337244",
+  "datePublished": "2025-05-22T19:54:36.000Z",
+  "dateModified": "2026-02-13T07:20:17.938Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Adrian Wang",
+      "url": "https://adrianwangs.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/images/favicon-32x32-next.png"><link rel="canonical" href="https://adrianwangs.github.io/2025/05/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-287-%E5%AF%BB%E6%89%BE%E9%87%8D%E5%A4%8D%E6%95%B0/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0f172a')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"No results found for: ${query}","hits_stats":"${hits} articles found"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'LeetCode 287 - 寻找重复数',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/category-tree.css"><link rel="stylesheet" href="/css/reading-progress.css"><link rel="stylesheet" href="/css/wide-mode.css"><link rel="stylesheet" href="/css/font-size-toggle.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">Loading...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      if ($loadingBox.classList.contains('loaded')) return
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+
+  if (document.readyState === 'complete') {
+    preloader.endLoading()
+  } else {
+    window.addEventListener('load', preloader.endLoading)
+    document.addEventListener('DOMContentLoaded', preloader.endLoading)
+    // Add timeout protection: force end after 7 seconds
+    setTimeout(preloader.endLoading, 7000)
+  }
+
+  if (false) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #f8fafc;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&amp;q=80);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Adrian Wang's blog</span></a><a class="nav-page-title" href="/"><span class="site-name">LeetCode 287 - 寻找重复数</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">LeetCode 287 - 寻找重复数</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2025-05-22T19:54:36.000Z" title="Created 2025-05-22 19:54:36">2025-05-22</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-02-13T07:20:17.938Z" title="Updated 2026-02-13 07:20:17">2026-02-13</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/">算法刷题</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/">LeetCode</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/%E6%95%B0%E7%BB%84%E4%B8%8E%E5%93%88%E5%B8%8C/">数组与哈希</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">4.1k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>14mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h3 id="问题描述">问题描述</h3>
+<p>给定一个包含 <code>n + 1</code> 个整数的数组 <code>nums</code>，其数字都在 <code>[1, n]</code> 范围内（包括 <code>1</code> 和 <code>n</code>），可知至少存在一个重复的整数。</p>
+<p>假设 <code>nums</code> 中只存在一个重复的整数，但这个重复的整数可能会重复多次，请找出这个重复的整数。</p>
+<p><strong>要求：</strong></p>
+<ul>
+<li>不能修改原数组（假设数组是只读的）。</li>
+<li>只能使用额外的 O(1) 的空间。</li>
+<li>时间复杂度小于 O(n^2) 。</li>
+</ul>
+<p><strong>示例 1:</strong></p>
+<p>输入: <code>nums = [1,3,4,2,2]</code><br>
+输出: <code>2</code></p>
+<p><strong>示例 2:</strong></p>
+<p>输入: <code>nums = [3,1,3,4,2]</code><br>
+输出: <code>3</code></p>
+<p><strong>示例 3:</strong></p>
+<p>输入: <code>nums = [1,1]</code><br>
+输出: <code>1</code></p>
+<p><strong>示例 4:</strong></p>
+<p>输入: <code>nums = [1,1,2]</code><br>
+输出: <code>1</code></p>
+<p><strong>约束条件:</strong></p>
+<ul>
+<li><code>1 &lt;= n &lt;= 10^5</code></li>
+<li><code>nums.length == n + 1</code></li>
+<li><code>1 &lt;= nums[i] &lt;= n</code></li>
+<li><code>nums</code> 中只有一个整数出现两次或多次，其余整数均只出现一次。</li>
+</ul>
+<h3 id="解题思路">解题思路</h3>
+<p>这道题的核心难点在于对空间复杂度和时间复杂度的限制，以及不能修改原数组的要求。初看之下，可能会想到用哈希表来记录数字出现的次数，但这样空间复杂度会达到 O(n)。对数组进行排序也不可行，因为题目规定不能修改原数组。</p>
+<p>那么，如何在 O(1) 空间复杂度下解决这个问题呢？答案是将此问题巧妙地转化为<strong>寻找链表中的环</strong>。</p>
+<h4 id="核心思想：快慢指针-Floyd-判圈算法">核心思想：快慢指针 (Floyd 判圈算法)</h4>
+<p>我们可以将数组 <code>nums</code> 视为一个链表。数组的<strong>下标</strong>可以看作是链表节点的“隐式”地址，而数组中<strong>存储的值</strong> <code>nums[i]</code> 则可以看作是指向下一个节点的指针（即下一个节点的下标）。</p>
+<p>例如，对于数组 <code>nums = [1,3,4,2,2]</code>：</p>
+<ul>
+<li>我们从下标 <code>0</code> 开始，<code>nums[0] = 1</code>，这意味着从节点 <code>0</code> 跳转到节点 <code>1</code>。</li>
+<li>当前在下标 <code>1</code>，<code>nums[1] = 3</code>，所以从节点 <code>1</code> 跳转到节点 <code>3</code>。</li>
+<li>当前在下标 <code>3</code>，<code>nums[3] = 2</code>，所以从节点 <code>3</code> 跳转到节点 <code>2</code>。</li>
+<li>当前在下标 <code>2</code>，<code>nums[2] = 4</code>，所以从节点 <code>2</code> 跳转到节点 <code>4</code>。</li>
+<li>当前在下标 <code>4</code>，<code>nums[4] = 2</code>，所以又从节点 <code>4</code> 跳转回了节点 <code>2</code>。</li>
+</ul>
+<p>这样，我们就构建了一个以数组下标为节点的序列：<code>0 -&gt; 1 -&gt; 3 -&gt; 2 -&gt; 4 -&gt; 2 -&gt; ...</code>。在这个序列中，节点 <code>2</code> 被重复访问，形成了一个环。</p>
+<p><strong>环是如何形成的？</strong><br>
+我们将数组的每个<strong>索引 <code>i</code></strong> 视为一个节点，而 <code>nums[i]</code> 的值视为从节点 <code>i</code> 出发，指向下一个节点的<strong>索引</strong>。<br>
+由于数组 <code>nums</code> 包含 <code>n + 1</code> 个整数，这些整数的范围是 <code>[1, n]</code>。这意味着数组中的值都可以作为有效的数组下标（题目数值范围 <code>[1,n]</code> 保证了 <code>nums[i]</code> 作为下标不会越界访问 <code>0</code> 到 <code>n</code> 之外的区域，除非 <code>n</code> 非常小，但即使如此，其值也在 <code>[1,n]</code> 内，可作为有效下标）。<br>
+我们从索引 <code>0</code> 开始（这可以看作是链表的“头部”或起始探测点），然后根据 <code>nums[当前索引]</code> 不断跳转到下一个索引。<br>
+序列可以表示为：<code>x_0 = 0</code>, <code>x_1 = nums[x_0]</code>, <code>x_2 = nums[x_1]</code>, …, <code>x_&#123;i+1&#125; = nums[x_i]</code>。<br>
+由于数组中只有 <code>n+1</code> 个不同的索引（从 <code>0</code> 到 <code>n</code>），而我们通过 <code>nums[x_i]</code> 进行跳转，这个序列最终必然会访问到一个已经访问过的<strong>索引</strong>，从而形成一个环。这个环的入口点（即第一个被重复访问的索引）就是我们要找的重复数字。</p>
+<p>Floyd 判圈算法（也称为龟兔赛跑算法）包含两个主要阶段：</p>
+<ol>
+<li>
+<p><strong>找到相遇点</strong>：设置两个指针，一个慢指针 <code>slow</code>，一个快指针 <code>fast</code>。它们都从我们定义的“链表头”（即数组索引 <code>0</code>）开始。</p>
+<ul>
+<li><code>slow</code> 每次移动一步：<code>slow = nums[slow]</code> (即 <code>slow</code> 指针更新为其当前指向的数组元素的值，这个值作为下一个索引)。</li>
+<li><code>fast</code> 每次移动两步：<code>fast = nums[nums[fast]]</code> (类似地，<code>fast</code> 指针进行两次跳转)。<br>
+如果链表中存在环，<code>fast</code> 指针最终会在环内追上 <code>slow</code> 指针。</li>
+</ul>
+</li>
+<li>
+<p><strong>找到环的入口</strong>：当 <code>slow</code> 和 <code>fast</code> 相遇后，我们将 <code>slow</code> 指针重置回“链表头”（即索引 <code>0</code>）。然后，<code>slow</code> 和 <code>fast</code> 都以每次一步的速度前进 (<code>slow = nums[slow]</code>, <code>fast = nums[fast]</code>)。它们再次相遇的那个点（索引），就是环的入口，这个索引值也就是我们寻找的重复数字。</p>
+</li>
+</ol>
+<h4 id="算法正确性图解与推导">算法正确性图解与推导</h4>
+<p>以 <code>nums = [1,3,4,2,2]</code> 为例：<br>
+数组索引作为节点：<code>0, 1, 2, 3, 4</code><br>
+数组值作为指向下一个节点的指针：<code>nums[0]=1, nums[1]=3, nums[2]=4, nums[3]=2, nums[4]=2</code></p>
+<p>形成的路径（索引序列）：<br>
+<code>0 --(nums[0]=1)--&gt; 1 --(nums[1]=3)--&gt; 3 --(nums[3]=2)--&gt; 2 --(nums[2]=4)--&gt; 4 --(nums[4]=2)--&gt; 2 ...</code><br>
+这条路径从索引 <code>0</code> 开始，经过 <code>1</code> 和 <code>3</code> 到达 <code>2</code>，然后形成一个环 <code>2 -&gt; 4 -&gt; 2</code>。环的入口点是索引 <code>2</code>。</p>
+<p><strong>阶段 1：寻找相遇点</strong><br>
+初始时，<code>slow = 0</code>, <code>fast = 0</code>。<br>
+根据代码逻辑 (<code>for slow, fast = nums[slow], nums[nums[fast]]; slow != fast; ...</code>)：</p>
+<ol>
+<li>
+<p><strong>首次赋值 (循环初始化部分)</strong>:<br>
+<code>slow = nums[0] = 1</code><br>
+<code>fast = nums[nums[0]] = nums[1] = 3</code><br>
+此时 <code>slow = 1</code>, <code>fast = 3</code>。由于 <code>1 != 3</code>，循环继续。</p>
+</li>
+<li>
+<p><strong>第二次迭代 (循环迭代后部分)</strong>:<br>
+<code>slow = nums[slow] = nums[1] = 3</code><br>
+<code>fast = nums[nums[fast]] = nums[nums[3]] = nums[2] = 4</code><br>
+此时 <code>slow = 3</code>, <code>fast = 4</code>。由于 <code>3 != 4</code>，循环继续。</p>
+</li>
+<li>
+<p><strong>第三次迭代</strong>:<br>
+<code>slow = nums[slow] = nums[3] = 2</code><br>
+<code>fast = nums[nums[fast]] = nums[nums[4]] = nums[2] = 4</code><br>
+此时 <code>slow = 2</code>, <code>fast = 4</code>。由于 <code>2 != 4</code>，循环继续。</p>
+</li>
+<li>
+<p><strong>第四次迭代</strong>:<br>
+<code>slow = nums[slow] = nums[2] = 4</code><br>
+<code>fast = nums[nums[fast]] = nums[nums[4]] = nums[2] = 4</code><br>
+此时 <code>slow = 4</code>, <code>fast = 4</code>。由于 <code>4 == 4</code>，循环终止。<br>
+快慢指针在索引 <code>4</code> 处相遇。设相遇点为 <code>M</code>，则 <code>M=4</code>。</p>
+</li>
+</ol>
+<p><strong>阶段 2：寻找环的入口</strong><br>
+相遇后，<code>slow</code> 被重置为 <code>0</code>，而 <code>fast</code> 保持在相遇点 <code>M=4</code>。<br>
+然后两者同步前进，每次一步：</p>
+<ol>
+<li>
+<p><code>slow = nums[slow] = nums[0] = 1</code><br>
+<code>fast = nums[fast] = nums[4] = 2</code><br>
+此时 <code>slow = 1</code>, <code>fast = 2</code>。由于 <code>1 != 2</code>，循环继续。</p>
+</li>
+<li>
+<p><code>slow = nums[slow] = nums[1] = 3</code><br>
+<code>fast = nums[fast] = nums[2] = 4</code><br>
+此时 <code>slow = 3</code>, <code>fast = 4</code>。由于 <code>3 != 4</code>，循环继续。</p>
+</li>
+<li>
+<p><code>slow = nums[slow] = nums[3] = 2</code><br>
+<code>fast = nums[fast] = nums[4] = 2</code><br>
+此时 <code>slow = 2</code>, <code>fast = 2</code>。由于 <code>2 == 2</code>，循环终止。<br>
+两者在索引 <code>2</code> 处相遇。这个点就是环的入口 <code>E</code>，所以 <code>E=2</code>。<br>
+函数返回 <code>slow</code> 的值，即 <code>2</code>。这正是 <code>nums = [1,3,4,2,2]</code> 中的重复数字。</p>
+</li>
+</ol>
+<p><strong>为什么此方法能找到重复数字？</strong></p>
+<p>设从起点（索引 <code>0</code>）到环的入口点（索引 <code>E</code>）的路径长度为 <code>L</code>。<br>
+设环的长度为 <code>C</code>。<br>
+当慢指针 <code>slow</code> 和快指针 <code>fast</code> 在环中某点（索引 <code>M</code>）相遇时：<br>
+慢指针走过的距离：<code>Dist_slow = L + x</code> (其中 <code>x</code> 是从 <code>E</code> 到 <code>M</code> 沿环方向的距离)<br>
+快指针走过的距离：<code>Dist_fast = L + x + k*C</code> (其中 <code>k &gt;= 1</code> 是快指针比慢指针多绕环的圈数)<br>
+由于快指针速度是慢指针的两倍，所以 <code>Dist_fast = 2 * Dist_slow</code>。<br>
+<code>L + x + k*C = 2 * (L + x)</code><br>
+<code>L + x + k*C = 2L + 2x</code><br>
+<code>k*C = L + x</code><br>
+这意味着 <code>L + x</code> 是环长的整数倍。<br>
+我们想找到 <code>L</code>。由上式可得 <code>L = k*C - x</code>。<br>
+这个等式告诉我们：从起点 <code>0</code> 走 <code>L</code> 步可以到达环入口 <code>E</code>。同时，从相遇点 <code>M</code>（它距离环入口 <code>E</code> 为 <code>x</code> 步）向前走 <code>L</code> 步，也会到达环入口 <code>E</code>。<br>
+这是因为从 <code>M</code> 走 <code>L</code> 步，相当于走了 <code>k*C - x</code> 步。在环上，走 <code>k*C</code> 步等于回到原地，再走 <code>-x</code> 步（即后退 <code>x</code> 步，或者等效于前进 <code>C-x</code> 步，如果 <code>x &gt; 0</code>），都会到达环的入口 <code>E</code>（如果 <code>x=0</code>，则 <code>M</code> 就是 <code>E</code>，走 <code>kC</code> 步也回到 <code>E</code>）。<br>
+因此，当一个指针从起点 <code>0</code> 出发，另一个指针从相遇点 <code>M</code> 出发，两者都以相同速度（每次一步）前进时，它们必然会在环的入口点 <code>E</code> 相遇。<br>
+这个相遇点 <code>E</code> 是一个索引值。由于题目设定 <code>nums[i]</code> 的值在 <code>[1, n]</code> 范围内，并且这个值被用作下一个索引，那么环的入口索引 <code>E</code> 本身也必须是 <code>[1, n]</code> 范围内的一个值。<br>
+如果索引 <code>E</code> 是环的入口，意味着至少有两条不同的“路径”指向了索引 <code>E</code>：一条是首次进入环的路径 (<code>... -&gt; x_&#123;L-1&#125; --(nums[x_&#123;L-1&#125;]=E)--&gt; E</code>)，另一条是环内的路径 (<code>... -&gt; x_&#123;L+C-1&#125; --(nums[x_&#123;L+C-1&#125;]=E)--&gt; E</code>)。由于 <code>x_&#123;L-1&#125;</code> 和 <code>x_&#123;L+C-1&#125;</code> 是不同的索引（除非 L=0，即起点就在环上），但它们指向的下一个索引都是 <code>E</code> (<code>nums[x_&#123;L-1&#125;] = E</code> 且 <code>nums[x_&#123;L+C-1&#125;] = E</code>)，这表明值 <code>E</code> 就是那个被重复指向的数字，即重复数。</p>
+<p>再看一个例子：<code>nums = [3,1,3,4,2]</code>。重复数是 <code>3</code>。<br>
+路径（索引序列）：<code>0 --(3)--&gt; 3 --(4)--&gt; 4 --(2)--&gt; 2 --(3)--&gt; 3 ...</code><br>
+环是 <code>3 -&gt; 4 -&gt; 2 -&gt; 3</code>。环的入口索引 <code>E = 3</code>。</p>
+<p>阶段 1：<code>slow=0, fast=0</code></p>
+<ol>
+<li><code>slow = nums[0]=3</code>, <code>fast = nums[nums[0]]=nums[3]=4</code>. (<code>slow=3, fast=4</code>)</li>
+<li><code>slow = nums[3]=4</code>, <code>fast = nums[nums[4]]=nums[2]=3</code>. (<code>slow=4, fast=3</code>)</li>
+<li><code>slow = nums[4]=2</code>, <code>fast = nums[nums[3]]=nums[4]=2</code>. (<code>slow=2, fast=2</code>)<br>
+相遇于索引 <code>M=2</code>。</li>
+</ol>
+<p>阶段 2：<code>slow=0, fast=2</code> (相遇点)</p>
+<ol>
+<li><code>slow = nums[0]=3</code>, <code>fast = nums[2]=3</code>. (<code>slow=3, fast=3</code>)<br>
+相遇于索引 <code>3</code>。返回 <code>slow</code>，即 <code>3</code>。这正是重复的数字。</li>
+</ol>
+<h3 id="实现细节">实现细节</h3>
+<p>Go 语言代码直接实现了上述 Floyd 判圈算法。</p>
+<ol>
+<li>
+<p><strong>初始化</strong>:<br>
+<code>slow, fast := 0, 0</code><br>
+两个指针都从索引 <code>0</code> 开始。</p>
+</li>
+<li>
+<p><strong>阶段 1: 找到相遇点</strong>:<br>
+<code>for slow, fast = nums[slow], nums[nums[fast]]; slow != fast; slow, fast = nums[slow], nums[nums[fast]] &#123; &#125;</code></p>
+<ul>
+<li>这个 <code>for</code> 循环的结构比较紧凑：
+<ul>
+<li><strong>初始化部分</strong> (仅执行一次): <code>slow</code> 被赋值为 <code>nums[0]</code>，<code>fast</code> 被赋值为 <code>nums[nums[0]]</code>。</li>
+<li><strong>条件判断部分</strong>: 检查 <code>slow != fast</code>。</li>
+<li><strong>循环体</strong>: 为空。</li>
+<li><strong>迭代后部分</strong>: <code>slow</code> 更新为 <code>nums[当前slow]</code>，<code>fast</code> 更新为 <code>nums[nums[当前fast]]</code>。然后回到条件判断。</li>
+</ul>
+</li>
+<li>循环会一直执行，直到 <code>slow</code> 和 <code>fast</code> 指向相同的索引。</li>
+</ul>
+</li>
+<li>
+<p><strong>阶段 2: 找到环的入口 (即重复数字)</strong>:<br>
+<code>slow = 0</code></p>
+<ul>
+<li><code>slow</code> 指针被重置回起始索引 <code>0</code>。<code>fast</code> 指针保持在阶段 1 的相遇点。<br>
+<code>for slow != fast &#123;</code><br>
+<code>  slow = nums[slow]</code><br>
+<code>  fast = nums[fast]</code><br>
+<code>&#125;</code></li>
+<li>此时，<code>slow</code> 和 <code>fast</code> 都以每次一步的速度前进。</li>
+<li>当它们再次相遇时，相遇点（一个索引值）就是环的入口，这个索引值也等于重复的数字。</li>
+</ul>
+</li>
+<li>
+<p><strong>返回值</strong>:<br>
+<code>return slow</code></p>
+<ul>
+<li>返回它们在阶段 2 相遇时的索引 <code>slow</code>。</li>
+</ul>
+</li>
+</ol>
+<h3 id="代码实现">代码实现</h3>
+<p>这里是题目中提供的 Go 语言解决方案：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * @lc app=leetcode.cn id=287 lang=golang</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * [287] 寻找重复数</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// @lc code=start</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">findDuplicate</span><span class="params">(nums []<span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">	<span class="comment">// 阶段 1: 找到快慢指针的相遇点。</span></span><br><span class="line">	<span class="comment">// &#x27;slow&#x27; 和 &#x27;fast&#x27; 变量代表数组中的索引。</span></span><br><span class="line">	<span class="comment">// 初始时，它们都指向索引 0。</span></span><br><span class="line">	slow, fast := <span class="number">0</span>, <span class="number">0</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 这个 for 循环的结构：</span></span><br><span class="line">	<span class="comment">// 1. 初始化子句 (只执行一次): slow 指向 nums[0], fast 指向 nums[nums[0]]。</span></span><br><span class="line">	<span class="comment">// 2. 条件子句: slow != fast。如果为真，执行循环体（在此为空），然后执行迭代后子句。</span></span><br><span class="line">	<span class="comment">// 3. 迭代后子句: slow 更新为 nums[当前slow], fast 更新为 nums[nums[当前fast]]。</span></span><br><span class="line">	<span class="comment">// 这个循环会持续直到 slow 和 fast 相遇。</span></span><br><span class="line">	<span class="keyword">for</span> slow, fast = nums[slow], nums[nums[fast]]; slow != fast; slow, fast = nums[slow], nums[nums[fast]] &#123;</span><br><span class="line">		<span class="comment">// 循环体为空，所有移动逻辑都在 for 语句的头部完成。</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 阶段 2: 找到环的入口。</span></span><br><span class="line">	<span class="comment">// 将 slow 指针重置回数组的起始位置 (索引 0)。</span></span><br><span class="line">	<span class="comment">// fast 指针保持在阶段 1 中相遇的位置。</span></span><br><span class="line">	slow = <span class="number">0</span></span><br><span class="line">	<span class="keyword">for</span> slow != fast &#123;</span><br><span class="line">		slow = nums[slow] <span class="comment">// slow 从起点开始，每次前进一步。</span></span><br><span class="line">		fast = nums[fast] <span class="comment">// fast 从相遇点开始，每次前进一步。</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 当 slow 和 fast 再次相遇时，它们所在的索引就是环的入口，</span></span><br><span class="line">	<span class="comment">// 这个索引值也正是题目所求的重复数字。</span></span><br><span class="line">	<span class="keyword">return</span> slow</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// @lc code=end</span></span><br></pre></td></tr></table></figure>
+<h3 id="方法比较">方法比较</h3>
+<p>本题主要考察的就是这种 O(1) 空间复杂度的解法。其他可能想到的方法包括：</p>
+<ul>
+<li><strong>哈希表/集合</strong>：遍历数组，将数字存入哈希表。如果数字已存在于哈希表中，则说明找到了重复数。
+<ul>
+<li>时间复杂度: O(n)</li>
+<li>空间复杂度: O(n) (不符合题目对空间复杂度的要求)</li>
+</ul>
+</li>
+<li><strong>排序</strong>：对数组进行排序，然后遍历查找相邻且相等的元素。
+<ul>
+<li>时间复杂度: O(n log n) (取决于所用排序算法)</li>
+<li>空间复杂度: O(1) 或 O(n) (取决于排序算法是否为原地排序，且题目要求不能修改原数组)</li>
+</ul>
+</li>
+<li><strong>暴力法</strong>：使用双重循环，比较数组中每一对数字是否相等。
+<ul>
+<li>时间复杂度: O(n^2) (可能因效率过低而超时，不符合题目对时间复杂度的要求)</li>
+</ul>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>方面</th>
+<th>快慢指针 (Floyd 算法)</th>
+<th>哈希表</th>
+<th>排序 + 遍历</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>时间复杂度</td>
+<td>O(n)</td>
+<td>O(n)</td>
+<td>O(n log n)</td>
+</tr>
+<tr>
+<td>空间复杂度</td>
+<td>O(1)</td>
+<td>O(n)</td>
+<td>O(1) 若原地排序*</td>
+</tr>
+<tr>
+<td>修改原数组</td>
+<td>否</td>
+<td>否</td>
+<td>是* / 否 (若复制数组)</td>
+</tr>
+<tr>
+<td>推荐度</td>
+<td>★★★★★ (符合所有要求)</td>
+<td>★★☆☆☆ (空间不符)</td>
+<td>★★☆☆☆ (修改或时间不优)</td>
+</tr>
+</tbody>
+</table>
+<p><em>注：若要达到 O(1) 空间复杂度，排序通常需要原地进行，这会修改原数组。如果不修改原数组（例如先复制再排序），则空间复杂度为 O(n)。</em></p>
+<h3 id="复杂度分析">复杂度分析</h3>
+<ul>
+<li>
+<p><strong>时间复杂度</strong>: O(n)</p>
+<ul>
+<li>阶段 1 (找到相遇点): 慢指针 <code>slow</code> 最多走 <code>n</code> 步就会进入环。一旦进入环，快指针 <code>fast</code> 最多在环内比慢指针多走一圈的距离就能追上它。整个过程中，数组中的每个元素（作为索引）最多被访问常数次。因此，此阶段的时间复杂度是 O(n)。</li>
+<li>阶段 2 (找到环的入口): <code>slow</code> 从数组头部开始，<code>fast</code> 从相遇点开始，它们都走 <code>L</code> 步（其中 <code>L</code> 是从数组头部到环入口的路径长度）。由于 <code>L &lt;= n</code>，此阶段的时间复杂度也是 O(n)。</li>
+<li>总时间复杂度为 O(n) + O(n) = O(n)。</li>
+</ul>
+</li>
+<li>
+<p><strong>空间复杂度</strong>: O(1)</p>
+<ul>
+<li>算法仅使用了 <code>slow</code> 和 <code>fast</code> 两个额外的整型变量来存储索引。因此，空间复杂度是 O(1)，完全符合题目的要求。</li>
+</ul>
+</li>
+</ul>
+<h3 id="关键收获">关键收获</h3>
+<ul>
+<li><strong>问题转化能力</strong>: 将看似不相关的数组查找问题转化为链表判环问题，是解决本题的核心技巧。这种抽象和建模能力在解决复杂算法问题时至关重要。</li>
+<li><strong>Floyd 判圈算法 (龟兔赛跑算法)</strong>:
+<ul>
+<li>该算法不仅能有效地检测链表中是否存在环，还能精确地定位环的入口点。</li>
+<li>它是一种应用广泛的算法，例如在检测单向链表中的循环、某些密码学应用中的序列分析等场景都有应用。</li>
+</ul>
+</li>
+<li><strong>数学原理的理解</strong>: 深刻理解为什么在第二阶段，一个指针从起点出发，另一个指针从相遇点出发，两者同步前进最终会在环的入口相遇，这需要一定的数学推导（如前文“解题思路”部分所述）。
+<ul>
+<li>核心等式：<code>L = k*C - x</code> (其中 <code>L</code> 是从起点到环入口的距离，<code>C</code> 是环的长度，<code>x</code> 是从环入口到快慢指针首次相遇点的距离)。这个关系确保了第二阶段两个指针会在环入口处相遇。</li>
+</ul>
+</li>
+<li><strong>关注题目约束</strong>: 题目中的限制条件，如“不能修改原数组”、“只能使用 O(1) 的额外空间”，是引导我们找到正确解法方向的关键线索。</li>
+</ul>
+<p>这道题目是一道非常经典的面试题，深入理解其解法、背后的数学原理以及如何将问题进行抽象转换，对于提升算法思维和解决问题的能力大有裨益。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io">Adrian Wang</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io/2025/05/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-287-%E5%AF%BB%E6%89%BE%E9%87%8D%E5%A4%8D%E6%95%B0/">https://adrianwangs.github.io/2025/05/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-287-%E5%AF%BB%E6%89%BE%E9%87%8D%E5%A4%8D%E6%95%B0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/LeetCode/">LeetCode</a><a class="post-meta__tags" href="/tags/%E6%95%B0%E7%BB%84/">数组</a><a class="post-meta__tags" href="/tags/%E5%8F%8C%E6%8C%87%E9%92%88/">双指针</a><a class="post-meta__tags" href="/tags/%E9%93%BE%E8%A1%A8%E5%88%A4%E7%8E%AF/">链表判环</a><a class="post-meta__tags" href="/tags/Floyd%E7%AE%97%E6%B3%95/">Floyd算法</a><a class="post-meta__tags" href="/tags/%E4%B8%AD%E7%AD%89/">中等</a></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/05/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-80-%E5%88%A0%E9%99%A4%E6%9C%89%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9-II/" title="LeetCode 80 - 删除有序数组中的重复项 II（Remove Duplicates from Sorted Array II）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">LeetCode 80 - 删除有序数组中的重复项 II（Remove Duplicates from Sorted Array II）</div></div><div class="info-2"><div class="info-item-1">使用双指针技术解决有序数组去重问题，允许每个元素最多出现两次。核心思路是通过比较当前元素与目标位置前两个元素的关系来判断是否可以保留。</div></div></div></a><a class="pagination-related" href="/2025/05/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/leetcode-31-next-permutation/" title="LeetCode 31 - 下一个排列 (Next Permutation)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">LeetCode 31 - 下一个排列 (Next Permutation)</div></div><div class="info-2"><div class="info-item-1">详解 LeetCode 31 题`下一个排列`的解题思路与 Go 语言实现。通过从右向左查找特殊位置并进行交换和反转，找到给定序列的下一个字典序排列。</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/05/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-80-%E5%88%A0%E9%99%A4%E6%9C%89%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9-II/" title="LeetCode 80 - 删除有序数组中的重复项 II（Remove Duplicates from Sorted Array II）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-24</div><div class="info-item-2">LeetCode 80 - 删除有序数组中的重复项 II（Remove Duplicates from Sorted Array II）</div></div><div class="info-2"><div class="info-item-1">使用双指针技术解决有序数组去重问题，允许每个元素最多出现两次。核心思路是通过比较当前元素与目标位置前两个元素的关系来判断是否可以保留。</div></div></div></a><a class="pagination-related" href="/2025/05/31/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-15-%E4%B8%89%E6%95%B0%E4%B9%8B%E5%92%8C/" title="LeetCode 15 - 三数之和（3Sum）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-31</div><div class="info-item-2">LeetCode 15 - 三数之和（3Sum）</div></div><div class="info-2"><div class="info-item-1">使用排序+双指针解决三数之和问题，通过固定一个数并用双指针寻找另外两个数的经典解法，详细演示算法执行过程</div></div></div></a><a class="pagination-related no-desc" href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-2563-%E7%BB%9F%E8%AE%A1%E5%85%AC%E5%B9%B3%E6%95%B0%E5%AF%B9%E7%9A%84%E6%95%B0%E7%9B%AE/" title="LeetCode 2563 - 统计公平数对的数目（Count the Number of Fair Pairs）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-04-20</div><div class="info-item-2">LeetCode 2563 - 统计公平数对的数目（Count the Number of Fair Pairs）</div></div></div></a><a class="pagination-related" href="/2025/05/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-75-%E9%A2%9C%E8%89%B2%E5%88%86%E7%B1%BB/" title="LeetCode 75 - 颜色分类 (Sort Colors)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-21</div><div class="info-item-2">LeetCode 75 - 颜色分类 (Sort Colors)</div></div><div class="info-2"><div class="info-item-1">LeetCode 75 颜色分类题解，使用双指针原地排序包含0、1、2的数组。</div></div></div></a><a class="pagination-related" href="/2025/05/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/leetcode-31-next-permutation/" title="LeetCode 31 - 下一个排列 (Next Permutation)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-22</div><div class="info-item-2">LeetCode 31 - 下一个排列 (Next Permutation)</div></div><div class="info-2"><div class="info-item-1">详解 LeetCode 31 题`下一个排列`的解题思路与 Go 语言实现。通过从右向左查找特殊位置并进行交换和反转，找到给定序列的下一个字典序排列。</div></div></div></a><a class="pagination-related" href="/2025/06/01/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-209-%E9%95%BF%E5%BA%A6%E6%9C%80%E5%B0%8F%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/" title="LeetCode 209 - 长度最小的子数组（Minimum Size Subarray Sum）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-01</div><div class="info-item-2">LeetCode 209 - 长度最小的子数组（Minimum Size Subarray Sum）</div></div><div class="info-2"><div class="info-item-1">深入分析前缀和双指针与滑动窗口两种解法，比较时空复杂度差异，提供优雅的代码实现与详细的算法思路分析</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="gitalk-container"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Adrian Wang</div><div class="author-info-description">一个完全由AI生成，但是内容高质量的Blog</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/AdrianWangs"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/AdrianWangs" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:wyz17601402786@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到 Adrian Wang 的博客！</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">问题描述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%A3%E9%A2%98%E6%80%9D%E8%B7%AF"><span class="toc-number">2.</span> <span class="toc-text">解题思路</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88-Floyd-%E5%88%A4%E5%9C%88%E7%AE%97%E6%B3%95"><span class="toc-number">2.1.</span> <span class="toc-text">核心思想：快慢指针 (Floyd 判圈算法)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AE%97%E6%B3%95%E6%AD%A3%E7%A1%AE%E6%80%A7%E5%9B%BE%E8%A7%A3%E4%B8%8E%E6%8E%A8%E5%AF%BC"><span class="toc-number">2.2.</span> <span class="toc-text">算法正确性图解与推导</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82"><span class="toc-number">3.</span> <span class="toc-text">实现细节</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">代码实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E6%AF%94%E8%BE%83"><span class="toc-number">5.</span> <span class="toc-text">方法比较</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%8D%E6%9D%82%E5%BA%A6%E5%88%86%E6%9E%90"><span class="toc-number">6.</span> <span class="toc-text">复杂度分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E6%94%B6%E8%8E%B7"><span class="toc-number">7.</span> <span class="toc-text">关键收获</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/1770966681983.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"/></a><div class="content"><a class="title" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透">拒绝 AI 名词焦虑：LLM 核心概念，一次讲透</a><time datetime="2026-02-13T10:00:00.000Z" title="Created 2026-02-13 10:00:00">2026-02-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/image_1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="温故知新——Golang GMP 万字洗髓经"/></a><div class="content"><a class="title" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经">温故知新——Golang GMP 万字洗髓经</a><time datetime="2026-01-18T00:00:00.000Z" title="Created 2026-01-18 00:00:00">2026-01-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/08/03/%E9%9D%A2%E8%AF%95%E9%A2%98/%E4%BA%92%E8%81%94%E7%BD%91%E5%A4%A7%E5%8E%82/%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8/2025-08-03-%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8-%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91-%E4%B8%80%E9%9D%A2/" title="字节跳动 后端开发工程师 一面">字节跳动 后端开发工程师 一面</a><time datetime="2025-08-03T14:52:52.000Z" title="Created 2025-08-03 14:52:52">2025-08-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-239-%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E6%9C%80%E5%A4%A7%E5%80%BC/" title="LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）">LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）</a><time datetime="2025-07-26T18:51:43.000Z" title="Created 2025-07-26 18:51:43">2025-07-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-560-%E5%92%8C%E4%B8%BAK%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/" title="LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）">LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）</a><time datetime="2025-07-26T15:59:27.000Z" title="Created 2025-07-26 15:59:27">2025-07-26</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2024 - 2026 By Adrian Wang</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', vb[0] + ' ' + vb[1] + ' ' + vb[2] + ' ' + vb[3])
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = '<!doctype html><html><head><meta charset="utf-8" />\n' +
+      '  <style>\n' +
+      '    html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ' + bg + '; }\n' +
+      '    svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }\n' +
+      '  </style>\n' +
+      '  </' + 'head><' + 'body>' + svgSource + '</' + 'body></' + 'html>'
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'forest'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = '%%{init: ' + JSON.stringify(config) + '}%%\n'
+      const mermaidID = 'mermaid-' + index
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const preToMermaid = () => {
+    const preMermaidEle = document.querySelectorAll('pre.mermaid')
+    if (preMermaidEle.length === 0) return
+
+    preMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    preToMermaid()
+    if (true) codeToMermaid()
+    const mermaidNodes = document.querySelectorAll('#article-container .mermaid-wrap')
+    if (mermaidNodes.length === 0) return
+
+    const runMermaidFn = () => runMermaid(mermaidNodes)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"language":"zh-CN","distractionFreeMode":true}
+
+  const commentCount = n => {
+    const isCommentCount = document.querySelector('#post-meta .gitalk-comment-count')
+    if (isCommentCount) {
+      isCommentCount.textContent= n
+    }
+  }
+
+  const initGitalk = (el, path) => {
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGitalk = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    const gitalk = new Gitalk({
+      clientID: 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo: 'blog-comments',
+      owner: 'AdrianWangs',
+      admin: ['AdrianWangs'],
+      updateCountCallback: commentCount,
+      ...option,
+      id: isShuoshuo ? path : (option && option.id) || '36e03109e85ae1162aa9d42c8f1c38a2'
+    })
+
+    gitalk.render('gitalk-container')
+  }
+
+  const loadGitalk = async(el, path) => {
+    if (typeof Gitalk === 'function') initGitalk(el, path)
+    else {
+      await btf.getCSS('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.css')
+      await btf.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.js')
+      initGitalk(el, path)
+    }
+  }
+
+  if (isShuoshuo) {
+    'Gitalk' === 'Gitalk'
+      ? window.shuoshuoComment = { loadComment: loadGitalk }
+      : window.loadOtherComment = loadGitalk
+    return
+  }
+
+  if ('Gitalk' === 'Gitalk' || !false) {
+    if (false) btf.loadComment(document.getElementById('gitalk-container'), loadGitalk)
+    else loadGitalk()
+  } else {
+    window.loadOtherComment = loadGitalk
+  }
+})()</script></div><script defer src="/js/echarts-theme-adapter.js"></script><script defer src="/js/category-tree.js"></script><script defer src="/js/reading-progress.js"></script><script defer src="/js/wide-mode.js"></script><script defer src="/js/font-size-toggle.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">Search</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  Loading Database</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div><script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",2],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-20",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1],["2025-07-06",1],["2025-07-09",1],["2025-07-20",3],["2025-07-26",2],["2025-08-03",1],["2026-01-18",1],["2026-02-13",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07","2025-08","2026-01","2026-02"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,48,10,1,1,1],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"AI","children":[{"name":"LLM","children":[],"count":1,"path":"AI/LLM"}],"count":1,"path":"AI"},{"name":"八股文","children":[{"name":"Go语言","children":[{"name":"GMP","children":[],"count":2,"path":"八股文/Go语言/GMP"},{"name":"垃圾回收","children":[],"count":1,"path":"八股文/Go语言/垃圾回收"},{"name":"Map","children":[],"count":7,"path":"八股文/Go语言/Map"}],"count":10,"path":"八股文/Go语言"},{"name":"操作系统","children":[],"count":2,"path":"八股文/操作系统"},{"name":"计算机网络","children":[],"count":2,"path":"八股文/计算机网络"},{"name":"Redis","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/Redis/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/Redis/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/Redis/高可用"},{"name":"内存管理","children":[],"count":1,"path":"八股文/Redis/内存管理"},{"name":"持久化","children":[],"count":3,"path":"八股文/Redis/持久化"},{"name":"数据结构","children":[],"count":8,"path":"八股文/Redis/数据结构"},{"name":"基础知识","children":[],"count":2,"path":"八股文/Redis/基础知识"},{"name":"数据类型","children":[],"count":5,"path":"八股文/Redis/数据类型"}],"count":25,"path":"八股文/Redis"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"存储原理","children":[],"count":5,"path":"八股文/MySQL/存储原理"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":61,"path":"八股文"},{"name":"面试经验","children":[],"count":8,"path":"面试经验"},{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"数组与哈希","children":[],"count":20,"path":"算法刷题/LeetCode/数组与哈希"},{"name":"数学","children":[],"count":3,"path":"算法刷题/LeetCode/数学"},{"name":"位运算","children":[],"count":2,"path":"算法刷题/LeetCode/位运算"},{"name":"链表","children":[],"count":9,"path":"算法刷题/LeetCode/链表"},{"name":"回溯","children":[],"count":5,"path":"算法刷题/LeetCode/回溯"},{"name":"模拟","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/模拟/错题集"}],"count":7,"path":"算法刷题/LeetCode/模拟"},{"name":"图论","children":[],"count":4,"path":"算法刷题/LeetCode/图论"},{"name":"树","children":[],"count":13,"path":"算法刷题/LeetCode/树"},{"name":"二分查找","children":[],"count":5,"path":"算法刷题/LeetCode/二分查找"},{"name":"栈","children":[],"count":5,"path":"算法刷题/LeetCode/栈"},{"name":"贪心","children":[],"count":4,"path":"算法刷题/LeetCode/贪心"},{"name":"字符串","children":[],"count":5,"path":"算法刷题/LeetCode/字符串"},{"name":"双指针","children":[],"count":1,"path":"算法刷题/LeetCode/双指针"},{"name":"动态规划","children":[],"count":14,"path":"算法刷题/LeetCode/动态规划"},{"name":"堆","children":[],"count":2,"path":"算法刷题/LeetCode/堆"}],"count":99,"path":"算法刷题/LeetCode"}],"count":101,"path":"算法刷题"},{"name":"AI工程","children":[{"name":"AI Coding","children":[],"count":1,"path":"AI工程/AI Coding"},{"name":"MCP","children":[],"count":1,"path":"AI工程/MCP"}],"count":2,"path":"AI工程"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body></html>

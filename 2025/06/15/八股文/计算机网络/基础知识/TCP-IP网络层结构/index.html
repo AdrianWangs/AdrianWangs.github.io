@@ -1,0 +1,1552 @@
+<!DOCTYPE html><html lang="zh" data-theme="light"><head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end --><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>八股文: TCP/IP网络层结构详解 | Adrian Wang's blog</title><meta name="author" content="Adrian Wang"><meta name="copyright" content="Adrian Wang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="深入解析TCP&#x2F;IP网络模型四层结构：应用层、传输层、网络层和网络接口层。涵盖各层核心协议（HTTP、TCP、IP、以太网）、工作原理、关键特性及数据封装传输过程，助力理解复杂网络通信。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="八股文: TCP&#x2F;IP网络层结构详解">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="深入解析TCP&#x2F;IP网络模型四层结构：应用层、传输层、网络层和网络接口层。涵盖各层核心协议（HTTP、TCP、IP、以太网）、工作原理、关键特性及数据封装传输过程，助力理解复杂网络通信。">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000198486.png">
+<meta property="article:published_time" content="2025-06-15T23:57:05.000Z">
+<meta property="article:modified_time" content="2026-02-13T07:20:17.857Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="八股文">
+<meta property="article:tag" content="面试题">
+<meta property="article:tag" content="后端">
+<meta property="article:tag" content="计算机网络">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000198486.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "八股文: TCP/IP网络层结构详解",
+  "url": "https://adrianwangs.github.io/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/",
+  "image": "https://adrianwangs.github.io/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000198486.png",
+  "datePublished": "2025-06-15T23:57:05.000Z",
+  "dateModified": "2026-02-13T07:20:17.857Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Adrian Wang",
+      "url": "https://adrianwangs.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/images/favicon-32x32-next.png"><link rel="canonical" href="https://adrianwangs.github.io/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0f172a')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"No results found for: ${query}","hits_stats":"${hits} articles found"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '八股文: TCP/IP网络层结构详解',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/category-tree.css"><link rel="stylesheet" href="/css/reading-progress.css"><link rel="stylesheet" href="/css/wide-mode.css"><link rel="stylesheet" href="/css/font-size-toggle.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">Loading...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      if ($loadingBox.classList.contains('loaded')) return
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+
+  if (document.readyState === 'complete') {
+    preloader.endLoading()
+  } else {
+    window.addEventListener('load', preloader.endLoading)
+    document.addEventListener('DOMContentLoaded', preloader.endLoading)
+    // Add timeout protection: force end after 7 seconds
+    setTimeout(preloader.endLoading, 7000)
+  }
+
+  if (false) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #f8fafc;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000198486.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Adrian Wang's blog</span></a><a class="nav-page-title" href="/"><span class="site-name">八股文: TCP/IP网络层结构详解</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">八股文: TCP/IP网络层结构详解</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2025-06-15T23:57:05.000Z" title="Created 2025-06-15 23:57:05">2025-06-15</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-02-13T07:20:17.857Z" title="Updated 2026-02-13 07:20:17">2026-02-13</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/">八股文</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">计算机网络</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">4.2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>13mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1>TCP/IP 网络模型的四层结构详解</h1>
+<h2 id="概述">概述</h2>
+<p>为什么要有 TCP/IP 网络模型？</p>
+<p>对于同一台设备上的进程间通信，有很多种方式，比如有管道、消息队列、共享内存、信号等方式，而对于不同设备上的进程间通信，就需要网络通信。由于设备的多样性（不同厂商、不同操作系统、不同硬件架构），为了实现设备间的互联互通，就协商出了一套<strong>通用的网络协议标准</strong>。</p>
+<p>这个网络协议采用<strong>分层设计</strong>的理念，每一层都有明确的职责和功能，层与层之间通过标准接口进行通信。这种设计方式的优势包括：</p>
+<ul>
+<li><strong>模块化</strong>：每层可以独立开发和维护</li>
+<li><strong>可扩展性</strong>：可以在不影响其他层的情况下升级某一层</li>
+<li><strong>标准化</strong>：不同厂商的设备可以互操作</li>
+<li><strong>复杂性管理</strong>：将复杂的网络通信问题分解为多个简单的子问题</li>
+</ul>
+<p>接下来根据「TCP/IP 网络模型」分别对每一层进行详细介绍。</p>
+<h2 id="应用层（Application-Layer）">应用层（Application Layer）</h2>
+<h3 id="基本概念">基本概念</h3>
+<p>最上层的，也是我们能直接接触到的就是<strong>应用层</strong>。应用层是网络协议栈的最顶层，<strong>直接为用户提供网络服务</strong>。我们电脑或手机上使用的所有网络应用软件都是在应用层实现的。</p>
+<h3 id="主要协议和功能">主要协议和功能</h3>
+<p>应用层包含了众多的协议，每个协议都为特定的应用场景服务：</p>
+<table>
+<thead>
+<tr>
+<th>协议</th>
+<th>端口</th>
+<th>功能</th>
+<th>应用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HTTP/HTTPS</strong></td>
+<td>80/443</td>
+<td>超文本传输协议</td>
+<td>网页浏览、API调用</td>
+</tr>
+<tr>
+<td><strong>FTP</strong></td>
+<td>20/21</td>
+<td>文件传输协议</td>
+<td>文件上传下载</td>
+</tr>
+<tr>
+<td><strong>SMTP</strong></td>
+<td>25</td>
+<td>简单邮件传输协议</td>
+<td>邮件发送</td>
+</tr>
+<tr>
+<td><strong>POP3/IMAP</strong></td>
+<td>110/143</td>
+<td>邮件接收协议</td>
+<td>邮件接收</td>
+</tr>
+<tr>
+<td><strong>DNS</strong></td>
+<td>53</td>
+<td>域名解析协议</td>
+<td>域名到IP地址转换</td>
+</tr>
+<tr>
+<td><strong>Telnet</strong></td>
+<td>23</td>
+<td>远程登录协议</td>
+<td>远程终端访问</td>
+</tr>
+<tr>
+<td><strong>SSH</strong></td>
+<td>22</td>
+<td>安全外壳协议</td>
+<td>安全的远程登录</td>
+</tr>
+</tbody>
+</table>
+<h3 id="工作原理">工作原理</h3>
+<p>当两个不同设备的应用需要通信时，应用层会：</p>
+<ol>
+<li><strong>封装应用数据</strong>：将用户数据按照特定协议格式进行封装</li>
+<li><strong>调用传输层服务</strong>：通过系统调用（如socket API）将数据传递给传输层</li>
+<li><strong>处理应用逻辑</strong>：专注于业务逻辑，无需关心底层传输细节</li>
+</ol>
+<p><strong>实际例子</strong>：当你在浏览器中访问 <code>https://www.example.com</code> 时：</p>
+<ol>
+<li>应用层的HTTP协议构造请求报文</li>
+<li>通过socket接口调用传输层的TCP服务</li>
+<li>TCP负责可靠传输，应用层无需关心数据如何到达服务器</li>
+</ol>
+<h3 id="运行环境">运行环境</h3>
+<p>应用层工作在操作系统的<strong>用户态</strong>（User Space），而传输层及以下各层工作在<strong>内核态</strong>（Kernel Space）。这种设计的好处是：</p>
+<ul>
+<li><strong>安全性</strong>：用户程序无法直接访问内核，提高系统安全性</li>
+<li><strong>稳定性</strong>：应用程序崩溃不会影响系统内核</li>
+<li><strong>灵活性</strong>：用户可以自由开发应用程序</li>
+</ul>
+<h2 id="传输层（Transport-Layer）">传输层（Transport Layer）</h2>
+<h3 id="基本概念-2">基本概念</h3>
+<p><strong>传输层</strong>是应用层和网络层之间的桥梁，为应用层提供<strong>端到端的数据传输服务</strong>。传输层的核心作用是实现<strong>进程到进程</strong>的通信。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000198486.png" alt="1750000198486"></p>
+<h3 id="TCP协议详解">TCP协议详解</h3>
+<p><strong>TCP</strong>（<strong>Transmission Control Protocol，传输控制协议</strong>）是一个面向连接的、可靠的传输协议。</p>
+<h4 id="TCP的关键特性：">TCP的关键特性：</h4>
+<ol>
+<li><strong>面向连接</strong>：通信前必须建立连接（三次握手）</li>
+<li><strong>可靠传输</strong>：保证数据按序、无重复、无丢失地到达</li>
+<li><strong>流量控制</strong>：防止发送方发送速度过快导致接收方缓冲区溢出</li>
+<li><strong>拥塞控制</strong>：根据网络状况调整发送速率，避免网络拥塞</li>
+<li><strong>全双工通信</strong>：双方可以同时发送和接收数据</li>
+</ol>
+<h4 id="TCP的工作机制：">TCP的工作机制：</h4>
+<p><strong>数据分段</strong>：当应用层数据超过 <strong>MSS（Maximum Segment Size，最大报文段长度）</strong> 时，TCP会将数据分割成多个段：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000205916.png" alt="1750000205916"></p>
+<ul>
+<li><strong>MSS通常为1460字节</strong>（以太网MTU 1500字节 - IP头部20字节 - TCP头部20字节）</li>
+<li>每个TCP段都有独立的序列号，便于接收方重新组装</li>
+<li>如果某个段丢失，只需重传该段，而不是整个数据</li>
+</ul>
+<p><strong>可靠性保障机制</strong>：</p>
+<ul>
+<li><strong>序列号和确认号</strong>：每个字节都有唯一的序列号</li>
+<li><strong>超时重传</strong>：发送方设置重传定时器，超时未收到ACK则重传</li>
+<li><strong>快速重传</strong>：收到3个重复ACK时立即重传</li>
+<li><strong>滑动窗口</strong>：提高传输效率，允许发送多个未确认的段</li>
+</ul>
+<h3 id="UDP协议详解">UDP协议详解</h3>
+<p>（<strong>UDPUser Datagram Protocol，用户数据报协议</strong>）是一个无连接的、不可靠的传输协议。</p>
+<h4 id="UDP的特点：">UDP的特点：</h4>
+<ol>
+<li><strong>简单高效</strong>：头部只有8字节，开销小</li>
+<li><strong>无连接</strong>：发送数据前无需建立连接</li>
+<li><strong>不可靠</strong>：不保证数据到达、顺序和完整性</li>
+<li><strong>实时性好</strong>：无需等待确认，传输延迟低</li>
+</ol>
+<h4 id="UDP的应用场景：">UDP的应用场景：</h4>
+<ul>
+<li><strong>实时音视频</strong>：如直播、视频通话（对延迟敏感，可接受少量丢包）</li>
+<li><strong>DNS查询</strong>：请求数据小，重传成本低</li>
+<li><strong>DHCP</strong>：网络配置协议，简单请求-响应模式</li>
+<li><strong>在线游戏</strong>：对实时性要求高，可通过应用层补偿丢包</li>
+</ul>
+<h3 id="端口号机制">端口号机制</h3>
+<p>传输层使用<strong>端口号</strong>来区分不同的应用进程：</p>
+<h4 id="端口号分类：">端口号分类：</h4>
+<ul>
+<li><strong>知名端口（0-1023）</strong>：由IANA分配给标准服务</li>
+<li><strong>注册端口（1024-49151）</strong>：注册给特定应用</li>
+<li><strong>动态端口（49152-65535）</strong>：操作系统动态分配给客户端</li>
+</ul>
+<h4 id="端口号工作原理：">端口号工作原理：</h4>
+<p>当数据到达目标主机时，传输层根据目标端口号将数据递交给相应的应用进程。例如：</p>
+<ul>
+<li>Web服务器监听80端口</li>
+<li>客户端浏览器使用动态端口（如50123）</li>
+<li>数据包中同时包含源端口和目标端口，确保双向通信</li>
+</ul>
+<h2 id="网络层（Internet-Layer）">网络层（Internet Layer）</h2>
+<h3 id="基本概念-3">基本概念</h3>
+<p>传输层并不负责数据在网络中的实际传输路径选择。实际网络环境错综复杂，中间有各种各样的路由器、交换机和线路。<strong>网络层</strong>的职责就是在这个复杂的网络中为数据包寻找最佳路径，实现<strong>主机到主机</strong>的通信。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000215075.png" alt="1750000215075"></p>
+<h3 id="IP协议详解">IP协议详解</h3>
+<p><strong>IP协议</strong>（<strong>Internet Protocol</strong>）是网络层的核心协议，提供无连接的数据报服务。</p>
+<h4 id="IP报文结构：">IP报文结构：</h4>
+<p>IP协议将传输层的数据作为载荷，加上IP头部形成IP数据报：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000222363.png" alt="1750000222363"></p>
+<p><strong>IP头部关键字段</strong>：</p>
+<ul>
+<li><strong>版本</strong>：IP协议版本（IPv4为4，IPv6为6）</li>
+<li><strong>头部长度</strong>：IP头部长度（最小20字节）</li>
+<li><strong>总长度</strong>：整个IP数据报长度（最大65535字节）</li>
+<li><strong>标识、标志、片偏移</strong>：用于数据报分片和重组</li>
+<li><strong>生存时间（TTL）</strong>：防止数据报在网络中无限循环</li>
+<li><strong>协议</strong>：指示上层协议类型（TCP=6，UDP=17）</li>
+<li><strong>源IP地址和目标IP地址</strong>：标识发送方和接收方</li>
+</ul>
+<h4 id="IP分片机制：">IP分片机制：</h4>
+<p>当IP数据报大小超过链路的<strong>MTU</strong>（<strong>Maximum Transmission Unit</strong>）时，需要进行分片：</p>
+<ul>
+<li><strong>以太网MTU通常为1500字节</strong></li>
+<li>大的IP数据报被分割成多个小片段</li>
+<li>每个片段都有独立的IP头部</li>
+<li>目标主机负责重新组装所有片段</li>
+</ul>
+<h3 id="IP地址和子网">IP地址和子网</h3>
+<h4 id="IP地址结构：">IP地址结构：</h4>
+<p>以IPv4为例，IP地址是32位的二进制数，通常用点分十进制表示（如192.168.1.1）。</p>
+<p>IP地址分为两部分：</p>
+<ul>
+<li><strong>网络号</strong>：标识子网</li>
+<li><strong>主机号</strong>：标识子网内的具体主机</li>
+</ul>
+<h4 id="子网掩码计算：">子网掩码计算：</h4>
+<p>子网掩码用于区分网络号和主机号。例如：</p>
+<p><strong>示例</strong>：IP地址 10.100.122.2，子网掩码 255.255.255.0（/24）</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000230907.png" alt="1750000230907"></p>
+<p><strong>计算过程</strong>：</p>
+<ol>
+<li><strong>网络地址计算</strong>：IP地址 AND 子网掩码
+<ul>
+<li>10.100.122.2 AND 255.255.255.0 = 10.100.122.0</li>
+</ul>
+</li>
+<li><strong>主机地址计算</strong>：IP地址 AND (NOT 子网掩码)
+<ul>
+<li>10.100.122.2 AND 0.0.0.255 = 0.0.0.2</li>
+</ul>
+</li>
+</ol>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000237830.png" alt="1750000237830"></p>
+<h4 id="地址分类：">地址分类：</h4>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>地址范围</th>
+<th>默认子网掩码</th>
+<th>网络数量</th>
+<th>主机数量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A类</td>
+<td>1.0.0.0-126.255.255.255</td>
+<td>255.0.0.0 (/8)</td>
+<td>126</td>
+<td>16,777,214</td>
+</tr>
+<tr>
+<td>B类</td>
+<td>128.0.0.0-191.255.255.255</td>
+<td>255.255.0.0 (/16)</td>
+<td>16,384</td>
+<td>65,534</td>
+</tr>
+<tr>
+<td>C类</td>
+<td>192.0.0.0-223.255.255.255</td>
+<td>255.255.255.0 (/24)</td>
+<td>2,097,152</td>
+<td>254</td>
+</tr>
+</tbody>
+</table>
+<h3 id="路由机制">路由机制</h3>
+<h4 id="路由基本概念：">路由基本概念：</h4>
+<p>路由是指数据包在网络中从源主机到目标主机所经过的路径选择过程。</p>
+<p><strong>路由 vs 寻址</strong>：</p>
+<ul>
+<li><strong>寻址</strong>：确定目标在哪里（类似于导航确定目的地）</li>
+<li><strong>路由</strong>：选择到达目标的最佳路径（类似于选择行驶路线）</li>
+</ul>
+<h4 id="路由表：">路由表：</h4>
+<p>每个路由器维护一个路由表，包含以下信息：</p>
+<ul>
+<li><strong>目标网络</strong>：要到达的网络地址</li>
+<li><strong>下一跳</strong>：数据包应该发送给哪个路由器</li>
+<li><strong>接口</strong>：从哪个网络接口发送</li>
+<li><strong>度量值</strong>：路径的代价（跳数、带宽、延迟等）</li>
+</ul>
+<h4 id="路由算法：">路由算法：</h4>
+<p><strong>静态路由</strong>：</p>
+<ul>
+<li>管理员手动配置路由表</li>
+<li>适用于小型、拓扑稳定的网络</li>
+</ul>
+<p><strong>动态路由</strong>：</p>
+<ul>
+<li>路由器自动学习和更新路由信息</li>
+<li>常见协议：RIP、OSPF、BGP</li>
+</ul>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000244693.png" alt="1750000244693"></p>
+<p><strong>路由决策过程</strong>：</p>
+<ol>
+<li>查看目标IP地址</li>
+<li>在路由表中查找最匹配的网络条目（最长前缀匹配）</li>
+<li>将数据包转发给下一跳路由器</li>
+<li>重复此过程直到到达目标网络</li>
+</ol>
+<h2 id="网络接口层（Link-Layer）">网络接口层（Link Layer）</h2>
+<h3 id="基本概念-4">基本概念</h3>
+<p><strong>网络接口层</strong>（也称数据链路层）是TCP/IP模型的最底层，负责在物理网络上传输数据帧。这一层直接与硬件交互，处理比特流在物理介质上的传输。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000251901.png" alt="1750000251901"></p>
+<h3 id="以太网技术">以太网技术</h3>
+<h4 id="什么是以太网？">什么是以太网？</h4>
+<p>以太网是目前最广泛使用的局域网技术。以太网的组成部分包括：</p>
+<ul>
+<li><strong>网络接口卡（NIC）</strong>：电脑上的以太网接口、Wi-Fi接口</li>
+<li><strong>网络设备</strong>：交换机、路由器上的千兆、万兆以太网口</li>
+<li><strong>传输介质</strong>：网线（双绞线）、光纤等</li>
+<li><strong>协议标准</strong>：IEEE 802.3标准</li>
+</ul>
+<p>以太网是一种在「局域网」内连接附近设备的技术，使设备之间可以进行通讯。</p>
+<h4 id="以太网的发展：">以太网的发展：</h4>
+<table>
+<thead>
+<tr>
+<th>标准</th>
+<th>速率</th>
+<th>介质</th>
+<th>最大距离</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10Base-T</td>
+<td>10 Mbps</td>
+<td>双绞线</td>
+<td>100m</td>
+</tr>
+<tr>
+<td>100Base-TX</td>
+<td>100 Mbps</td>
+<td>双绞线</td>
+<td>100m</td>
+</tr>
+<tr>
+<td>1000Base-T</td>
+<td>1 Gbps</td>
+<td>双绞线</td>
+<td>100m</td>
+</tr>
+<tr>
+<td>10GBase-T</td>
+<td>10 Gbps</td>
+<td>双绞线</td>
+<td>100m</td>
+</tr>
+</tbody>
+</table>
+<h3 id="MAC地址机制">MAC地址机制</h3>
+<h4 id="MAC地址结构：">MAC地址结构：</h4>
+<p><strong>MAC（Media Access Control）地址</strong>是网络接口的硬件地址，长度为48位（6字节），通常用十六进制表示：</p>
+<ul>
+<li><strong>格式</strong>：XX:XX:XX:XX:XX:XX（如 00:1B:44:11:3A:B7）</li>
+<li><strong>全球唯一</strong>：由IEEE统一分配，理论上每个网卡都有唯一的MAC地址</li>
+<li><strong>厂商标识</strong>：前3字节是厂商标识（OUI，Organizationally Unique Identifier）</li>
+</ul>
+<h4 id="MAC地址-vs-IP地址：">MAC地址 vs IP地址：</h4>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>MAC地址</th>
+<th>IP地址</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>作用范围</strong></td>
+<td>本地链路（局域网）</td>
+<td>全球互联网</td>
+</tr>
+<tr>
+<td><strong>分配方式</strong></td>
+<td>硬件固化，全球唯一</td>
+<td>网络管理员分配，可变</td>
+</tr>
+<tr>
+<td><strong>地址结构</strong></td>
+<td>平面地址，无层次性</td>
+<td>层次地址，有网络号和主机号</td>
+</tr>
+<tr>
+<td><strong>路由支持</strong></td>
+<td>不支持路由</td>
+<td>支持路由</td>
+</tr>
+</tbody>
+</table>
+<h4 id="为什么需要MAC地址？">为什么需要MAC地址？</h4>
+<p>虽然IP地址可以标识网络中的主机，但在同一个局域网内，设备之间的直接通信必须使用MAC地址，原因包括：</p>
+<ol>
+<li><strong>局域网工作机制</strong>：以太网交换机工作在数据链路层，只能识别MAC地址</li>
+<li><strong>ARP协议</strong>：将IP地址解析为MAC地址，实现IP层到链路层的映射</li>
+<li><strong>帧转发</strong>：同一网络内的数据传输基于MAC地址进行帧转发</li>
+</ol>
+<h3 id="ARP协议">ARP协议</h3>
+<h4 id="ARP工作原理：">ARP工作原理：</h4>
+<p>**ARP（Address Resolution Protocol，地址解析协议）**用于将IP地址解析为MAC地址。</p>
+<p><strong>ARP工作过程</strong>：</p>
+<ol>
+<li><strong>发送ARP请求</strong>：主机A要与主机B通信，但只知道B的IP地址</li>
+<li><strong>广播查询</strong>：A在局域网内广播ARP请求&quot;谁有IP地址X？&quot;</li>
+<li><strong>目标响应</strong>：拥有该IP地址的主机B回复自己的MAC地址</li>
+<li><strong>缓存记录</strong>：A将IP-MAC映射关系存储在ARP缓存表中</li>
+<li><strong>发送数据</strong>：A使用获得的MAC地址构造以太网帧并发送</li>
+</ol>
+<h4 id="ARP缓存表：">ARP缓存表：</h4>
+<p>操作系统维护ARP缓存表，避免重复查询：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 查看ARP缓存表</span></span><br><span class="line">arp -a</span><br><span class="line"><span class="comment"># 输出示例：</span></span><br><span class="line">192.168.1.1 (192.168.1.1) at 00:1a:2b:3c:4d:5e [ether] on eth0</span><br><span class="line">192.168.1.100 (192.168.1.100) at 00:11:22:33:44:55 [ether] on eth0</span><br></pre></td></tr></table></figure>
+<h3 id="数据帧结构">数据帧结构</h3>
+<h4 id="以太网帧格式：">以太网帧格式：</h4>
+<p>以太网帧的基本结构如下：</p>
+<table>
+<thead>
+<tr>
+<th>前导符</th>
+<th>目标MAC</th>
+<th>源MAC</th>
+<th>类型/长度</th>
+<th>数据</th>
+<th>FCS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>8字节</td>
+<td>6字节</td>
+<td>6字节</td>
+<td>2字节</td>
+<td>46-1500字节</td>
+<td>4字节</td>
+</tr>
+</tbody>
+</table>
+<p><strong>字段说明</strong>：</p>
+<ul>
+<li><strong>前导符</strong>：用于同步，包含帧起始定界符</li>
+<li><strong>目标MAC地址</strong>：接收方的MAC地址</li>
+<li><strong>源MAC地址</strong>：发送方的MAC地址</li>
+<li><strong>类型/长度</strong>：指示上层协议类型（如0x0800表示IPv4）</li>
+<li><strong>数据</strong>：来自网络层的IP数据报</li>
+<li><strong>FCS</strong>：帧校验序列，用于错误检测</li>
+</ul>
+<h3 id="网络接口层的主要功能">网络接口层的主要功能</h3>
+<ol>
+<li><strong>成帧</strong>：将网络层的IP数据报封装成帧</li>
+<li><strong>物理寻址</strong>：使用MAC地址在局域网内定位设备</li>
+<li><strong>错误检测</strong>：通过校验和检测传输错误</li>
+<li><strong>流量控制</strong>：控制帧的发送速率</li>
+<li><strong>介质访问控制</strong>：管理多个设备对共享介质的访问</li>
+</ol>
+<h2 id="数据封装与传输过程">数据封装与传输过程</h2>
+<h3 id="发送过程（数据封装）">发送过程（数据封装）</h3>
+<p>当应用程序发送数据时，数据会经历以下封装过程：</p>
+<ol>
+<li><strong>应用层</strong>：产生应用数据（如HTTP请求）</li>
+<li><strong>传输层</strong>：添加TCP/UDP头部，形成段（Segment）</li>
+<li><strong>网络层</strong>：添加IP头部，形成数据报（Packet）</li>
+<li><strong>网络接口层</strong>：添加以太网头部和尾部，形成帧（Frame）</li>
+</ol>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000266759.png" alt="1750000266759"></p>
+<h3 id="接收过程（数据解封装）">接收过程（数据解封装）</h3>
+<p>当目标主机接收到数据时，会进行相反的解封装过程：</p>
+<ol>
+<li><strong>网络接口层</strong>：检查帧校验和，移除以太网头部和尾部</li>
+<li><strong>网络层</strong>：检查IP头部，确认是否为本机数据，移除IP头部</li>
+<li><strong>传输层</strong>：根据端口号找到目标进程，移除TCP/UDP头部</li>
+<li><strong>应用层</strong>：接收到纯净的应用数据</li>
+</ol>
+<h3 id="实际传输示例">实际传输示例</h3>
+<p><strong>场景</strong>：用户在浏览器中访问 <code>http://www.example.com</code></p>
+<p><strong>详细过程</strong>：</p>
+<ol>
+<li>
+<p><strong>DNS解析</strong>：</p>
+<ul>
+<li>浏览器发送DNS查询获取 <a target="_blank" rel="noopener" href="http://www.example.com">www.example.com</a> 的IP地址</li>
+<li>DNS服务器返回IP地址（如 93.184.216.34）</li>
+</ul>
+</li>
+<li>
+<p><strong>建立TCP连接</strong>：</p>
+<ul>
+<li>浏览器向目标IP的80端口发起TCP连接</li>
+<li>进行三次握手建立连接</li>
+</ul>
+</li>
+<li>
+<p><strong>发送HTTP请求</strong>：</p>
+<ul>
+<li>应用层：构造HTTP GET请求</li>
+<li>传输层：添加TCP头部（源端口：动态分配，目标端口：80）</li>
+<li>网络层：添加IP头部（源IP：本机IP，目标IP：93.184.216.34）</li>
+<li>网络接口层：添加以太网头部（目标MAC：网关MAC地址）</li>
+</ul>
+</li>
+<li>
+<p><strong>路由转发</strong>：</p>
+<ul>
+<li>数据帧首先发送到本地网关</li>
+<li>路由器根据路由表逐跳转发数据包</li>
+<li>每一跳都会重新封装链路层头部</li>
+</ul>
+</li>
+<li>
+<p><strong>服务器响应</strong>：</p>
+<ul>
+<li>Web服务器接收到请求，处理后返回HTML内容</li>
+<li>响应数据经过相同的封装和路由过程返回给客户端</li>
+</ul>
+</li>
+</ol>
+<h2 id="总结">总结</h2>
+<h3 id="TCP-IP四层模型概览">TCP/IP四层模型概览</h3>
+<p>TCP/IP网络模型从上到下分为四层，每层都有明确的职责：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/1750000261014.png" alt="1750000261014"></p>
+<h3 id="各层的核心职责">各层的核心职责</h3>
+<ol>
+<li>
+<p><strong>应用层</strong>：</p>
+<ul>
+<li>为用户提供网络应用服务</li>
+<li>处理应用协议（HTTP、FTP、SMTP等）</li>
+<li>工作在用户态</li>
+</ul>
+</li>
+<li>
+<p><strong>传输层</strong>：</p>
+<ul>
+<li>提供端到端的数据传输服务</li>
+<li>实现进程间通信（端口号机制）</li>
+<li>提供可靠性保障（TCP）或高效传输（UDP）</li>
+</ul>
+</li>
+<li>
+<p><strong>网络层</strong>：</p>
+<ul>
+<li>实现主机间的数据传输</li>
+<li>提供路由和寻址功能</li>
+<li>处理数据包的跨网络传输</li>
+</ul>
+</li>
+<li>
+<p><strong>网络接口层</strong>：</p>
+<ul>
+<li>处理物理网络上的数据传输</li>
+<li>实现帧的封装和解封装</li>
+<li>提供硬件寻址（MAC地址）</li>
+</ul>
+</li>
+</ol>
+<h3 id="数据传输单位">数据传输单位</h3>
+<table>
+<thead>
+<tr>
+<th>层次</th>
+<th>传输单位</th>
+<th>主要内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>应用层</td>
+<td>消息/报文（Message）</td>
+<td>应用数据</td>
+</tr>
+<tr>
+<td>传输层</td>
+<td>段（Segment）</td>
+<td>TCP/UDP头部 + 应用数据</td>
+</tr>
+<tr>
+<td>网络层</td>
+<td>数据报/包（Packet）</td>
+<td>IP头部 + 段</td>
+</tr>
+<tr>
+<td>网络接口层</td>
+<td>帧（Frame）</td>
+<td>以太网头部 + 数据报 + 校验</td>
+</tr>
+</tbody>
+</table>
+<h3 id="设计优势">设计优势</h3>
+<p>TCP/IP分层设计的核心优势：</p>
+<ol>
+<li><strong>模块化设计</strong>：各层功能独立，便于开发和维护</li>
+<li><strong>标准化接口</strong>：层间通过标准接口通信，保证互操作性</li>
+<li><strong>可扩展性</strong>：可以独立升级某一层而不影响其他层</li>
+<li><strong>复杂性管理</strong>：将复杂问题分解为简单的子问题</li>
+<li><strong>厂商中立</strong>：不同厂商的设备可以互联互通</li>
+</ol>
+<p>这种分层设计使得互联网能够成为一个开放、可扩展、可互操作的全球网络基础设施，为现代信息社会的发展奠定了坚实的技术基础。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io">Adrian Wang</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/">https://adrianwangs.github.io/2025/06/15/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/TCP-IP%E7%BD%91%E7%BB%9C%E5%B1%82%E7%BB%93%E6%9E%84/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%85%AB%E8%82%A1%E6%96%87/">八股文</a><a class="post-meta__tags" href="/tags/%E9%9D%A2%E8%AF%95%E9%A2%98/">面试题</a><a class="post-meta__tags" href="/tags/%E5%90%8E%E7%AB%AF/">后端</a><a class="post-meta__tags" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">计算机网络</a></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E7%82%B9%E5%87%BBURL%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88/" title="从键入网址到网页显示，期间发生了什么？"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E7%82%B9%E5%87%BBURL%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88/1750003257891.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">从键入网址到网页显示，期间发生了什么？</div></div><div class="info-2"><div class="info-item-1">本文详细解析了从用户键入URL到网页最终显示在浏览器中，期间所涉及的各个网络协议和组件的工作原理，包括DNS解析、HTTP请求、TCP连接、IP路由、MAC地址转发以及服务器和客户端的数据处理过程。</div></div></div></a><a class="pagination-related" href="/2025/06/15/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-112-%E8%B7%AF%E5%BE%84%E6%80%BB%E5%92%8C/" title="LeetCode 112 - 路径总和（Path Sum）"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/15/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-112-%E8%B7%AF%E5%BE%84%E6%80%BB%E5%92%8C/1749983022014.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">LeetCode 112 - 路径总和（Path Sum）</div></div><div class="info-2"><div class="info-item-1">深入解析 LeetCode 112 路径总和问题，使用递归和深度优先搜索解决二叉树路径求和，包含详细的思路分析和代码实现。</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/06/17/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6/%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B3%95/" title="八股文: Go语言垃圾回收 - 三色标记算法详解"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/17/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6/%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B3%95/1750089761940.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-17</div><div class="info-item-2">八股文: Go语言垃圾回收 - 三色标记算法详解</div></div><div class="info-2"><div class="info-item-1">深入解析Go语言垃圾回收机制中的三色标记算法，从标记清除法到混合写屏障机制的演进历程，包含详细图解和面试要点</div></div></div></a><a class="pagination-related" href="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5%E4%B8%8E%E7%94%A8%E6%B3%95/" title="八股文: Go Map 基础概念与用法"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-16</div><div class="info-item-2">八股文: Go Map 基础概念与用法</div></div><div class="info-2"><div class="info-item-1">深入解析Go语言map的基础概念和基本用法，包括初始化、读写删除、遍历等操作，以及map的特性和注意事项</div></div></div></a><a class="pagination-related" href="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E9%81%8D%E5%8E%86%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/" title="八股文: Go Map 遍历机制解析"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E9%81%8D%E5%8E%86%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/1750126758693.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-16</div><div class="info-item-2">八股文: Go Map 遍历机制解析</div></div><div class="info-2"><div class="info-item-1">深入分析Go语言map遍历机制的实现原理，包括迭代器设计、随机化策略、扩容期间遍历等核心技术细节</div></div></div></a><a class="pagination-related" href="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E9%9D%A2%E8%AF%95%E9%A2%98%E8%A7%A3%E6%9E%90/" title="八股文: Go Map 面试题解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-16</div><div class="info-item-2">八股文: Go Map 面试题解析</div></div><div class="info-2"><div class="info-item-1">汇总Go语言map相关的高频面试题及详细解答，涵盖底层原理、性能优化、并发安全等核心考点</div></div></div></a><a class="pagination-related" href="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E8%AF%BB%E5%86%99%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3/" title="八股文: Go Map 读写删除流程详解"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E8%AF%BB%E5%86%99%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B%E8%AF%A6%E8%A7%A3/1750126774765.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-16</div><div class="info-item-2">八股文: Go Map 读写删除流程详解</div></div><div class="info-2"><div class="info-item-1">深入解析Go语言map的读写删除操作流程，包括mapaccess、mapassign、mapdelete等核心函数的实现原理</div></div></div></a><a class="pagination-related" href="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E6%89%A9%E5%AE%B9%E6%9C%BA%E5%88%B6%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/" title="八股文: Go Map 扩容机制深度解析"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/06/16/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/Map/Go-Map-%E6%89%A9%E5%AE%B9%E6%9C%BA%E5%88%B6%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/1750126901506.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-16</div><div class="info-item-2">八股文: Go Map 扩容机制深度解析</div></div><div class="info-2"><div class="info-item-1">深入剖析Go语言map扩容机制的实现原理，包括增量扩容、等量扩容、渐进式迁移等核心技术细节</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="gitalk-container"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Adrian Wang</div><div class="author-info-description">一个完全由AI生成，但是内容高质量的Blog</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/AdrianWangs"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/AdrianWangs" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:wyz17601402786@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到 Adrian Wang 的博客！</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">TCP&#x2F;IP 网络模型的四层结构详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BA%94%E7%94%A8%E5%B1%82%EF%BC%88Application-Layer%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">应用层（Application Layer）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="toc-number">1.2.1.</span> <span class="toc-text">基本概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BB%E8%A6%81%E5%8D%8F%E8%AE%AE%E5%92%8C%E5%8A%9F%E8%83%BD"><span class="toc-number">1.2.2.</span> <span class="toc-text">主要协议和功能</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">1.2.3.</span> <span class="toc-text">工作原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83"><span class="toc-number">1.2.4.</span> <span class="toc-text">运行环境</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%A0%E8%BE%93%E5%B1%82%EF%BC%88Transport-Layer%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">传输层（Transport Layer）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5-2"><span class="toc-number">1.3.1.</span> <span class="toc-text">基本概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TCP%E5%8D%8F%E8%AE%AE%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.3.2.</span> <span class="toc-text">TCP协议详解</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#TCP%E7%9A%84%E5%85%B3%E9%94%AE%E7%89%B9%E6%80%A7%EF%BC%9A"><span class="toc-number">1.3.2.1.</span> <span class="toc-text">TCP的关键特性：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TCP%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%9C%BA%E5%88%B6%EF%BC%9A"><span class="toc-number">1.3.2.2.</span> <span class="toc-text">TCP的工作机制：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UDP%E5%8D%8F%E8%AE%AE%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.3.3.</span> <span class="toc-text">UDP协议详解</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#UDP%E7%9A%84%E7%89%B9%E7%82%B9%EF%BC%9A"><span class="toc-number">1.3.3.1.</span> <span class="toc-text">UDP的特点：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#UDP%E7%9A%84%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF%EF%BC%9A"><span class="toc-number">1.3.3.2.</span> <span class="toc-text">UDP的应用场景：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AB%AF%E5%8F%A3%E5%8F%B7%E6%9C%BA%E5%88%B6"><span class="toc-number">1.3.4.</span> <span class="toc-text">端口号机制</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AB%AF%E5%8F%A3%E5%8F%B7%E5%88%86%E7%B1%BB%EF%BC%9A"><span class="toc-number">1.3.4.1.</span> <span class="toc-text">端口号分类：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AB%AF%E5%8F%A3%E5%8F%B7%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%EF%BC%9A"><span class="toc-number">1.3.4.2.</span> <span class="toc-text">端口号工作原理：</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C%E5%B1%82%EF%BC%88Internet-Layer%EF%BC%89"><span class="toc-number">1.4.</span> <span class="toc-text">网络层（Internet Layer）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5-3"><span class="toc-number">1.4.1.</span> <span class="toc-text">基本概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IP%E5%8D%8F%E8%AE%AE%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.4.2.</span> <span class="toc-text">IP协议详解</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#IP%E6%8A%A5%E6%96%87%E7%BB%93%E6%9E%84%EF%BC%9A"><span class="toc-number">1.4.2.1.</span> <span class="toc-text">IP报文结构：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#IP%E5%88%86%E7%89%87%E6%9C%BA%E5%88%B6%EF%BC%9A"><span class="toc-number">1.4.2.2.</span> <span class="toc-text">IP分片机制：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IP%E5%9C%B0%E5%9D%80%E5%92%8C%E5%AD%90%E7%BD%91"><span class="toc-number">1.4.3.</span> <span class="toc-text">IP地址和子网</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#IP%E5%9C%B0%E5%9D%80%E7%BB%93%E6%9E%84%EF%BC%9A"><span class="toc-number">1.4.3.1.</span> <span class="toc-text">IP地址结构：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AD%90%E7%BD%91%E6%8E%A9%E7%A0%81%E8%AE%A1%E7%AE%97%EF%BC%9A"><span class="toc-number">1.4.3.2.</span> <span class="toc-text">子网掩码计算：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%9C%B0%E5%9D%80%E5%88%86%E7%B1%BB%EF%BC%9A"><span class="toc-number">1.4.3.3.</span> <span class="toc-text">地址分类：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B7%AF%E7%94%B1%E6%9C%BA%E5%88%B6"><span class="toc-number">1.4.4.</span> <span class="toc-text">路由机制</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%B7%AF%E7%94%B1%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%EF%BC%9A"><span class="toc-number">1.4.4.1.</span> <span class="toc-text">路由基本概念：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%B7%AF%E7%94%B1%E8%A1%A8%EF%BC%9A"><span class="toc-number">1.4.4.2.</span> <span class="toc-text">路由表：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%B7%AF%E7%94%B1%E7%AE%97%E6%B3%95%EF%BC%9A"><span class="toc-number">1.4.4.3.</span> <span class="toc-text">路由算法：</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C%E6%8E%A5%E5%8F%A3%E5%B1%82%EF%BC%88Link-Layer%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">网络接口层（Link Layer）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5-4"><span class="toc-number">1.5.1.</span> <span class="toc-text">基本概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E6%8A%80%E6%9C%AF"><span class="toc-number">1.5.2.</span> <span class="toc-text">以太网技术</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E4%BB%A5%E5%A4%AA%E7%BD%91%EF%BC%9F"><span class="toc-number">1.5.2.1.</span> <span class="toc-text">什么是以太网？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E7%9A%84%E5%8F%91%E5%B1%95%EF%BC%9A"><span class="toc-number">1.5.2.2.</span> <span class="toc-text">以太网的发展：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MAC%E5%9C%B0%E5%9D%80%E6%9C%BA%E5%88%B6"><span class="toc-number">1.5.3.</span> <span class="toc-text">MAC地址机制</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#MAC%E5%9C%B0%E5%9D%80%E7%BB%93%E6%9E%84%EF%BC%9A"><span class="toc-number">1.5.3.1.</span> <span class="toc-text">MAC地址结构：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#MAC%E5%9C%B0%E5%9D%80-vs-IP%E5%9C%B0%E5%9D%80%EF%BC%9A"><span class="toc-number">1.5.3.2.</span> <span class="toc-text">MAC地址 vs IP地址：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81MAC%E5%9C%B0%E5%9D%80%EF%BC%9F"><span class="toc-number">1.5.3.3.</span> <span class="toc-text">为什么需要MAC地址？</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ARP%E5%8D%8F%E8%AE%AE"><span class="toc-number">1.5.4.</span> <span class="toc-text">ARP协议</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#ARP%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%EF%BC%9A"><span class="toc-number">1.5.4.1.</span> <span class="toc-text">ARP工作原理：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ARP%E7%BC%93%E5%AD%98%E8%A1%A8%EF%BC%9A"><span class="toc-number">1.5.4.2.</span> <span class="toc-text">ARP缓存表：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E5%B8%A7%E7%BB%93%E6%9E%84"><span class="toc-number">1.5.5.</span> <span class="toc-text">数据帧结构</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E5%B8%A7%E6%A0%BC%E5%BC%8F%EF%BC%9A"><span class="toc-number">1.5.5.1.</span> <span class="toc-text">以太网帧格式：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C%E6%8E%A5%E5%8F%A3%E5%B1%82%E7%9A%84%E4%B8%BB%E8%A6%81%E5%8A%9F%E8%83%BD"><span class="toc-number">1.5.6.</span> <span class="toc-text">网络接口层的主要功能</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E5%B0%81%E8%A3%85%E4%B8%8E%E4%BC%A0%E8%BE%93%E8%BF%87%E7%A8%8B"><span class="toc-number">1.6.</span> <span class="toc-text">数据封装与传输过程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%91%E9%80%81%E8%BF%87%E7%A8%8B%EF%BC%88%E6%95%B0%E6%8D%AE%E5%B0%81%E8%A3%85%EF%BC%89"><span class="toc-number">1.6.1.</span> <span class="toc-text">发送过程（数据封装）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A5%E6%94%B6%E8%BF%87%E7%A8%8B%EF%BC%88%E6%95%B0%E6%8D%AE%E8%A7%A3%E5%B0%81%E8%A3%85%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">接收过程（数据解封装）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E9%99%85%E4%BC%A0%E8%BE%93%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.6.3.</span> <span class="toc-text">实际传输示例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">1.7.</span> <span class="toc-text">总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#TCP-IP%E5%9B%9B%E5%B1%82%E6%A8%A1%E5%9E%8B%E6%A6%82%E8%A7%88"><span class="toc-number">1.7.1.</span> <span class="toc-text">TCP&#x2F;IP四层模型概览</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%84%E5%B1%82%E7%9A%84%E6%A0%B8%E5%BF%83%E8%81%8C%E8%B4%A3"><span class="toc-number">1.7.2.</span> <span class="toc-text">各层的核心职责</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93%E5%8D%95%E4%BD%8D"><span class="toc-number">1.7.3.</span> <span class="toc-text">数据传输单位</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E4%BC%98%E5%8A%BF"><span class="toc-number">1.7.4.</span> <span class="toc-text">设计优势</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/1770966681983.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"/></a><div class="content"><a class="title" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透">拒绝 AI 名词焦虑：LLM 核心概念，一次讲透</a><time datetime="2026-02-13T10:00:00.000Z" title="Created 2026-02-13 10:00:00">2026-02-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/image_1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="温故知新——Golang GMP 万字洗髓经"/></a><div class="content"><a class="title" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经">温故知新——Golang GMP 万字洗髓经</a><time datetime="2026-01-18T00:00:00.000Z" title="Created 2026-01-18 00:00:00">2026-01-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/08/03/%E9%9D%A2%E8%AF%95%E9%A2%98/%E4%BA%92%E8%81%94%E7%BD%91%E5%A4%A7%E5%8E%82/%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8/2025-08-03-%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8-%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91-%E4%B8%80%E9%9D%A2/" title="字节跳动 后端开发工程师 一面">字节跳动 后端开发工程师 一面</a><time datetime="2025-08-03T14:52:52.000Z" title="Created 2025-08-03 14:52:52">2025-08-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-239-%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E6%9C%80%E5%A4%A7%E5%80%BC/" title="LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）">LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）</a><time datetime="2025-07-26T18:51:43.000Z" title="Created 2025-07-26 18:51:43">2025-07-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-560-%E5%92%8C%E4%B8%BAK%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/" title="LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）">LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）</a><time datetime="2025-07-26T15:59:27.000Z" title="Created 2025-07-26 15:59:27">2025-07-26</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2024 - 2026 By Adrian Wang</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', vb[0] + ' ' + vb[1] + ' ' + vb[2] + ' ' + vb[3])
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = '<!doctype html><html><head><meta charset="utf-8" />\n' +
+      '  <style>\n' +
+      '    html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ' + bg + '; }\n' +
+      '    svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }\n' +
+      '  </style>\n' +
+      '  </' + 'head><' + 'body>' + svgSource + '</' + 'body></' + 'html>'
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'forest'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = '%%{init: ' + JSON.stringify(config) + '}%%\n'
+      const mermaidID = 'mermaid-' + index
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const preToMermaid = () => {
+    const preMermaidEle = document.querySelectorAll('pre.mermaid')
+    if (preMermaidEle.length === 0) return
+
+    preMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    preToMermaid()
+    if (true) codeToMermaid()
+    const mermaidNodes = document.querySelectorAll('#article-container .mermaid-wrap')
+    if (mermaidNodes.length === 0) return
+
+    const runMermaidFn = () => runMermaid(mermaidNodes)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"language":"zh-CN","distractionFreeMode":true}
+
+  const commentCount = n => {
+    const isCommentCount = document.querySelector('#post-meta .gitalk-comment-count')
+    if (isCommentCount) {
+      isCommentCount.textContent= n
+    }
+  }
+
+  const initGitalk = (el, path) => {
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGitalk = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    const gitalk = new Gitalk({
+      clientID: 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo: 'blog-comments',
+      owner: 'AdrianWangs',
+      admin: ['AdrianWangs'],
+      updateCountCallback: commentCount,
+      ...option,
+      id: isShuoshuo ? path : (option && option.id) || '99ee01b91736fabfc26b482c8eb8f745'
+    })
+
+    gitalk.render('gitalk-container')
+  }
+
+  const loadGitalk = async(el, path) => {
+    if (typeof Gitalk === 'function') initGitalk(el, path)
+    else {
+      await btf.getCSS('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.css')
+      await btf.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.js')
+      initGitalk(el, path)
+    }
+  }
+
+  if (isShuoshuo) {
+    'Gitalk' === 'Gitalk'
+      ? window.shuoshuoComment = { loadComment: loadGitalk }
+      : window.loadOtherComment = loadGitalk
+    return
+  }
+
+  if ('Gitalk' === 'Gitalk' || !false) {
+    if (false) btf.loadComment(document.getElementById('gitalk-container'), loadGitalk)
+    else loadGitalk()
+  } else {
+    window.loadOtherComment = loadGitalk
+  }
+})()</script></div><script defer src="/js/echarts-theme-adapter.js"></script><script defer src="/js/category-tree.js"></script><script defer src="/js/reading-progress.js"></script><script defer src="/js/wide-mode.js"></script><script defer src="/js/font-size-toggle.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">Search</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  Loading Database</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div><script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",2],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-20",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1],["2025-07-06",1],["2025-07-09",1],["2025-07-20",3],["2025-07-26",2],["2025-08-03",1],["2026-01-18",1],["2026-02-13",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07","2025-08","2026-01","2026-02"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,48,10,1,1,1],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"AI","children":[{"name":"LLM","children":[],"count":1,"path":"AI/LLM"}],"count":1,"path":"AI"},{"name":"八股文","children":[{"name":"Go语言","children":[{"name":"GMP","children":[],"count":2,"path":"八股文/Go语言/GMP"},{"name":"垃圾回收","children":[],"count":1,"path":"八股文/Go语言/垃圾回收"},{"name":"Map","children":[],"count":7,"path":"八股文/Go语言/Map"}],"count":10,"path":"八股文/Go语言"},{"name":"操作系统","children":[],"count":2,"path":"八股文/操作系统"},{"name":"计算机网络","children":[],"count":2,"path":"八股文/计算机网络"},{"name":"Redis","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/Redis/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/Redis/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/Redis/高可用"},{"name":"内存管理","children":[],"count":1,"path":"八股文/Redis/内存管理"},{"name":"持久化","children":[],"count":3,"path":"八股文/Redis/持久化"},{"name":"数据结构","children":[],"count":8,"path":"八股文/Redis/数据结构"},{"name":"基础知识","children":[],"count":2,"path":"八股文/Redis/基础知识"},{"name":"数据类型","children":[],"count":5,"path":"八股文/Redis/数据类型"}],"count":25,"path":"八股文/Redis"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"存储原理","children":[],"count":5,"path":"八股文/MySQL/存储原理"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":61,"path":"八股文"},{"name":"面试经验","children":[],"count":8,"path":"面试经验"},{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"数组与哈希","children":[],"count":20,"path":"算法刷题/LeetCode/数组与哈希"},{"name":"数学","children":[],"count":3,"path":"算法刷题/LeetCode/数学"},{"name":"位运算","children":[],"count":2,"path":"算法刷题/LeetCode/位运算"},{"name":"链表","children":[],"count":9,"path":"算法刷题/LeetCode/链表"},{"name":"回溯","children":[],"count":5,"path":"算法刷题/LeetCode/回溯"},{"name":"模拟","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/模拟/错题集"}],"count":7,"path":"算法刷题/LeetCode/模拟"},{"name":"图论","children":[],"count":4,"path":"算法刷题/LeetCode/图论"},{"name":"树","children":[],"count":13,"path":"算法刷题/LeetCode/树"},{"name":"二分查找","children":[],"count":5,"path":"算法刷题/LeetCode/二分查找"},{"name":"栈","children":[],"count":5,"path":"算法刷题/LeetCode/栈"},{"name":"贪心","children":[],"count":4,"path":"算法刷题/LeetCode/贪心"},{"name":"字符串","children":[],"count":5,"path":"算法刷题/LeetCode/字符串"},{"name":"双指针","children":[],"count":1,"path":"算法刷题/LeetCode/双指针"},{"name":"动态规划","children":[],"count":14,"path":"算法刷题/LeetCode/动态规划"},{"name":"堆","children":[],"count":2,"path":"算法刷题/LeetCode/堆"}],"count":99,"path":"算法刷题/LeetCode"}],"count":101,"path":"算法刷题"},{"name":"AI工程","children":[{"name":"AI Coding","children":[],"count":1,"path":"AI工程/AI Coding"},{"name":"MCP","children":[],"count":1,"path":"AI工程/MCP"}],"count":2,"path":"AI工程"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body></html>

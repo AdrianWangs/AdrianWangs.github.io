@@ -1,0 +1,1080 @@
+<!DOCTYPE html><html lang="zh" data-theme="light"><head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end --><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>LeetCode 34 - 在排序数组中查找元素的第一个和最后一个位置 | Adrian Wang's blog</title><meta name="author" content="Adrian Wang"><meta name="copyright" content="Adrian Wang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="本文深入剖析 LeetCode 第 34 题，不仅提供 O(log n) 的二分搜索解法，更详细阐述其核心设计思想，包括为何选择两次二分搜索、循环不变量（loop invariant）的原理以及边界指针的精确收敛过程，助你真正掌握二分搜索的精髓。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LeetCode 34 - 在排序数组中查找元素的第一个和最后一个位置">
+<meta property="og:url" content="https://adrianwangs.github.io/2024/07/30/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-34-%E5%9C%A8%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E6%9F%A5%E6%89%BE%E5%85%83%E7%B4%A0%E7%9A%84%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%92%8C%E6%9C%80%E5%90%8E%E4%B8%80%E4%B8%AA%E4%BD%8D%E7%BD%AE/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="本文深入剖析 LeetCode 第 34 题，不仅提供 O(log n) 的二分搜索解法，更详细阐述其核心设计思想，包括为何选择两次二分搜索、循环不变量（loop invariant）的原理以及边界指针的精确收敛过程，助你真正掌握二分搜索的精髓。">
+<meta property="og:locale">
+<meta property="og:image" content="https://avatars.githubusercontent.com/u/72337244">
+<meta property="article:published_time" content="2024-07-30T14:15:17.000Z">
+<meta property="article:modified_time" content="2026-02-13T07:20:17.938Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="LeetCode">
+<meta property="article:tag" content="Medium">
+<meta property="article:tag" content="面试经典150">
+<meta property="article:tag" content="数组">
+<meta property="article:tag" content="二分搜索">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://avatars.githubusercontent.com/u/72337244"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "LeetCode 34 - 在排序数组中查找元素的第一个和最后一个位置",
+  "url": "https://adrianwangs.github.io/2024/07/30/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-34-%E5%9C%A8%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E6%9F%A5%E6%89%BE%E5%85%83%E7%B4%A0%E7%9A%84%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%92%8C%E6%9C%80%E5%90%8E%E4%B8%80%E4%B8%AA%E4%BD%8D%E7%BD%AE/",
+  "image": "https://avatars.githubusercontent.com/u/72337244",
+  "datePublished": "2024-07-30T14:15:17.000Z",
+  "dateModified": "2026-02-13T07:20:17.938Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Adrian Wang",
+      "url": "https://adrianwangs.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/images/favicon-32x32-next.png"><link rel="canonical" href="https://adrianwangs.github.io/2024/07/30/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-34-%E5%9C%A8%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E6%9F%A5%E6%89%BE%E5%85%83%E7%B4%A0%E7%9A%84%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%92%8C%E6%9C%80%E5%90%8E%E4%B8%80%E4%B8%AA%E4%BD%8D%E7%BD%AE/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0f172a')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"No results found for: ${query}","hits_stats":"${hits} articles found"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'LeetCode 34 - 在排序数组中查找元素的第一个和最后一个位置',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/category-tree.css"><link rel="stylesheet" href="/css/reading-progress.css"><link rel="stylesheet" href="/css/wide-mode.css"><link rel="stylesheet" href="/css/font-size-toggle.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">Loading...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      if ($loadingBox.classList.contains('loaded')) return
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+
+  if (document.readyState === 'complete') {
+    preloader.endLoading()
+  } else {
+    window.addEventListener('load', preloader.endLoading)
+    document.addEventListener('DOMContentLoaded', preloader.endLoading)
+    // Add timeout protection: force end after 7 seconds
+    setTimeout(preloader.endLoading, 7000)
+  }
+
+  if (false) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #f8fafc;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&amp;q=80);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Adrian Wang's blog</span></a><a class="nav-page-title" href="/"><span class="site-name">LeetCode 34 - 在排序数组中查找元素的第一个和最后一个位置</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">LeetCode 34 - 在排序数组中查找元素的第一个和最后一个位置</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2024-07-30T14:15:17.000Z" title="Created 2024-07-30 14:15:17">2024-07-30</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-02-13T07:20:17.938Z" title="Updated 2026-02-13 07:20:17">2026-02-13</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/">算法刷题</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/">LeetCode</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode/%E6%A8%A1%E6%8B%9F/">模拟</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>7mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="问题描述">问题描述</h2>
+<p>给定一个按照升序排列的整数数组 <code>nums</code>，和一个目标值 <code>target</code>。找出给定目标值在数组中的开始位置和结束位置。</p>
+<p>如果数组中不存在目标值 <code>target</code>，返回 <code>[-1, -1]</code>。</p>
+<p><strong>进阶：</strong> 你可以设计并实现时间复杂度为 O(log n) 的算法解决此问题吗？</p>
+<p><strong>示例 1:</strong></p>
+<ul>
+<li><strong>输入:</strong> <code>nums = [5,7,7,8,8,10]</code>, <code>target = 8</code></li>
+<li><strong>输出:</strong> <code>[3,4]</code></li>
+</ul>
+<p><strong>示例 2:</strong></p>
+<ul>
+<li><strong>输入:</strong> <code>nums = [5,7,7,8,8,10]</code>, <code>target = 6</code></li>
+<li><strong>输出:</strong> <code>[-1,-1]</code></li>
+</ul>
+<p><strong>示例 3:</strong></p>
+<ul>
+<li><strong>输入:</strong> <code>nums = []</code>, <code>target = 0</code></li>
+<li><strong>输出:</strong> <code>[-1,-1]</code></li>
+</ul>
+<p><strong>约束条件:</strong></p>
+<ul>
+<li><code>0 &lt;= nums.length &lt;= 10^5</code></li>
+<li><code>-10^9 &lt;= nums[i] &lt;= 10^9</code></li>
+<li><code>nums</code> 是一个非递减数组</li>
+<li><code>-10^9 &lt;= target &lt;= 10^9</code></li>
+</ul>
+<h2 id="核心设计思想：为何选择两次二分搜索？">核心设计思想：为何选择两次二分搜索？</h2>
+<p>要解决这个问题并满足 O(log n) 的时间复杂度，<strong>二分搜索</strong>是唯一可行的路径。但标准的二分搜索只能判断一个元素是否存在，或者找到它的任意一个位置。我们的问题更复杂：需要找到一个可能重复出现的目标值的<strong>确切左右边界</strong>。</p>
+<h4 id="方案一：一次二分搜索-线性扫描（被否决）">方案一：一次二分搜索 + 线性扫描（被否决）</h4>
+<p>一个自然而然的想法是：</p>
+<ol>
+<li>用一次标准的二分搜索找到 <code>target</code> 的<strong>任意一个</strong>位置 <code>p</code>。</li>
+<li>从 <code>p</code> 开始，向左线性扫描找到起始位置 <code>start</code>。</li>
+<li>从 <code>p</code> 开始，向右线性扫描找到结束位置 <code>end</code>。</li>
+</ol>
+<p>这种方法在 <code>target</code> 不重复或重复次数很少时表现良好。但是，考虑最坏情况：<code>nums = [8, 8, 8, ..., 8]</code>。此时，线性扫描的复杂度会退化到 O(n)，导致整个算法的时间复杂度变为 O(log n + n) = O(n)，不符合题目的进阶要求。</p>
+<h4 id="方案二：两次独立的二分搜索（最终选择）">方案二：两次独立的二分搜索（最终选择）</h4>
+<p>为了保证 O(log n) 的复杂度，我们必须在查找边界的过程中也使用对数时间复杂度的算法。这就引出了最终的设计：<strong>执行两次独立的、经过特殊改造的二分搜索</strong>。</p>
+<ol>
+<li><strong>第一次搜索</strong>：专门设计用于查找<strong>左边界</strong>（起始位置）。</li>
+<li><strong>第二次搜索</strong>：专门设计用于查找<strong>右边界</strong>（结束位置）。</li>
+</ol>
+<p>这种&quot;分而治之&quot;的思想，将一个复杂问题（寻找一个区间）分解为两个独立的、更简单的子问题（分别寻找左、右边界），每次查找都保持 O(log n) 的效率，从而确保总体复杂度达标。</p>
+<h2 id="解题思路与实现细节">解题思路与实现细节</h2>
+<h3 id="🚀-二分搜索的精髓：循环不变量与边界收敛">🚀 二分搜索的精髓：循环不变量与边界收敛</h3>
+<blockquote>
+<p><strong>重点标记：</strong><br>
+这道题是学习二分搜索的绝佳范例。它考察的不是你是否会写二分搜索，而是你是否真正理解其<strong>核心原理</strong>，特别是<strong>循环不变量 (loop invariant)</strong> 和<strong>边界收敛</strong>。</p>
+<p><strong>循环不变量</strong>是指在循环的每次迭代之前和之后都保持为真的一个条件。在我们的二分搜索中，这个不变量就是 <strong>“目标值（如果存在）一定在闭区间 <code>[left, right]</code> 内”</strong>。</p>
+<ul>
+<li>循环条件 <code>while (left &lt;= right)</code> 保证了只要这个区间有效（<code>left</code> 不大于 <code>right</code>），我们就继续搜索。当 <code>left &gt; right</code> 时，区间 <code>[left, right]</code> 变为空，说明搜索结束。</li>
+<li>边界更新 <code>left = mid + 1</code> 或 <code>right = mid - 1</code> 的设计，正是为了在排除 <code>mid</code> 后，继续维持这个不变量。</li>
+</ul>
+<p>理解了这一点，你就能自信地调整边界更新逻辑，以满足不同的查找目标（左边界、右边界，或第一个大于/小于某值的元素）。</p>
+</blockquote>
+<h3 id="第一次搜索：查找起始位置（左边界）">第一次搜索：查找起始位置（左边界）</h3>
+<p><strong>目标</strong>：找到第一个<strong>大于或等于</strong> <code>target</code> 的位置。</p>
+<ul>
+<li><strong><code>nums[mid] &lt; target</code></strong>: 这意味着 <code>mid</code> 以及其左边的所有元素都<strong>绝对不是</strong>起始位置。因此，我们将搜索区间的左边界移动到 <code>mid</code> 的右边：<code>left = mid + 1</code>。</li>
+<li><strong><code>nums[mid] &gt;= target</code></strong>: 这意味着 <code>mid</code> <strong>可能是</strong>起始位置，但它左边可能还有更早的 <code>target</code>。我们不能排除 <code>mid</code>，但可以肯定起始位置<strong>不会在 <code>mid</code> 的右边</strong>。因此，我们将搜索区间的右边界收缩到 <code>mid</code> 的左边：<code>right = mid - 1</code>，并期望在下一轮找到更靠左的位置。</li>
+</ul>
+<p><strong>指针收敛过程</strong>：<br>
+当循环结束时（<code>left &gt; right</code>），<code>left</code> 指针将停在这样一个位置：它是数组中第一个值大于或等于 <code>target</code> 的索引。我们只需在循环后检查 <code>nums[left]</code> 是否确实等于 <code>target</code>，即可确认是否找到了起始位置。</p>
+<h3 id="第二次搜索：查找结束位置（右边界）">第二次搜索：查找结束位置（右边界）</h3>
+<p><strong>目标</strong>：找到最后一个<strong>小于或等于</strong> <code>target</code> 的位置。</p>
+<ul>
+<li><strong><code>nums[mid] &lt;= target</code></strong>: 这意味着 <code>mid</code> <strong>可能是</strong>结束位置，或者结束位置在它的右边。我们不能排除 <code>mid</code>，但可以肯定结束位置<strong>不会在 <code>mid</code> 的左边</strong>。因此，我们将搜索区间的左边界移动到 <code>mid</code> 的右边：<code>left = mid + 1</code>，并期望在下一轮找到更靠右的位置。</li>
+<li><strong><code>nums[mid] &gt; target</code></strong>: 这意味着 <code>mid</code> 以及其右边的所有元素都<strong>绝对不是</strong>结束位置。因此，我们将搜索区间的右边界收缩到 <code>mid</code> 的左边：<code>right = mid - 1</code>。</li>
+</ul>
+<p><strong>指针收敛过程</strong>：<br>
+当循环结束时（<code>left &gt; right</code>），<code>right</code> 指针将停在这样一个位置：它是数组中最后一个值小于或等于 <code>target</code> 的索引。这个位置就是我们要找的结束位置。</p>
+<h2 id="代码实现">代码实现</h2>
+<p>这是使用 Go 语言实现的完整代码，其中包含了两次二分搜索。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * @lc app=leetcode.cn id=34 lang=golang</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * [34] 在排序数组中查找元素的第一个和最后一个位置</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// @lc code=start</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">searchRange</span><span class="params">(nums []<span class="type">int</span>, target <span class="type">int</span>)</span></span> []<span class="type">int</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> start, end <span class="type">int</span></span><br><span class="line"></span><br><span class="line">	n := <span class="built_in">len</span>(nums)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> n == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> []<span class="type">int</span>&#123;<span class="number">-1</span>, <span class="number">-1</span>&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// --- 第一次二分搜索：查找起始位置 ---</span></span><br><span class="line">	left, right := <span class="number">0</span>, n<span class="number">-1</span></span><br><span class="line">	<span class="keyword">for</span> left &lt;= right &#123;</span><br><span class="line">		mid := left + (right-left)&gt;&gt;<span class="number">1</span> <span class="comment">// 防止溢出</span></span><br><span class="line">		<span class="keyword">if</span> nums[mid] &lt; target &#123;</span><br><span class="line">			left = mid + <span class="number">1</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123; <span class="comment">// nums[mid] &gt;= target</span></span><br><span class="line">			<span class="comment">// 即使找到 target，也继续向左寻找更早出现的位置</span></span><br><span class="line">			right = mid - <span class="number">1</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 循环结束后，left 是第一个 &gt;= target 的位置</span></span><br><span class="line">	<span class="comment">// 检查左边界是否合法</span></span><br><span class="line">	<span class="keyword">if</span> left &gt;= n || nums[left] != target &#123;</span><br><span class="line">		<span class="keyword">return</span> []<span class="type">int</span>&#123;<span class="number">-1</span>, <span class="number">-1</span>&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	start = left</span><br><span class="line"></span><br><span class="line">	<span class="comment">// --- 第二次二分搜索：查找结束位置 ---</span></span><br><span class="line">	left, right = <span class="number">0</span>, n<span class="number">-1</span></span><br><span class="line">	<span class="keyword">for</span> left &lt;= right &#123;</span><br><span class="line">		mid := left + (right-left)&gt;&gt;<span class="number">1</span> <span class="comment">// 防止溢出</span></span><br><span class="line">		<span class="keyword">if</span> nums[mid] &lt;= target &#123;</span><br><span class="line">			<span class="comment">// 即使找到 target，也继续向右寻找更晚出现的位置</span></span><br><span class="line">			left = mid + <span class="number">1</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123; <span class="comment">// nums[mid] &gt; target</span></span><br><span class="line">			right = mid - <span class="number">1</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 循环结束后，right 是最后一个 &lt;= target 的位置</span></span><br><span class="line">	end = right</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> []<span class="type">int</span>&#123;start, end&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// @lc code=end</span></span><br></pre></td></tr></table></figure>
+<h2 id="复杂度分析">复杂度分析</h2>
+<ul>
+<li>
+<p><strong>时间复杂度:</strong> O(log n)</p>
+<ul>
+<li>我们执行了两次独立的二分搜索，每次的时间复杂度都是 O(log n)。</li>
+<li>因此，总的时间复杂度为 O(log n) + O(log n) = O(log n)。</li>
+</ul>
+</li>
+<li>
+<p><strong>空间复杂度:</strong> O(1)</p>
+<ul>
+<li>我们只使用了有限的几个变量 (<code>start</code>, <code>end</code>, <code>left</code>, <code>right</code>, <code>mid</code>, <code>n</code>)，没有使用额外的存储空间。</li>
+</ul>
+</li>
+</ul>
+<h2 id="关键收获">关键收获</h2>
+<ul>
+<li><strong>分治思想</strong>：将&quot;寻找一个区间&quot;的复杂问题，拆分为&quot;寻找左边界&quot;和&quot;寻找右边界&quot;两个独立的、更简单的问题，是解决复杂问题的有效策略。</li>
+<li><strong>理解循环不变量</strong>：二分搜索的核心是维护&quot;目标在 <code>[left, right]</code> 区间内&quot;这个不变量。理解这一点，可以帮助你正确地设计循环条件和边界更新逻辑。</li>
+<li><strong>边界调整的艺术</strong>：通过微调 <code>if</code> 条件和 <code>left</code>/<code>right</code> 的更新方式，二分搜索可以实现多种查找目标（如第一个大于X的数，最后一个小于X的数等），这是其强大灵活性的体现。</li>
+<li><strong>代码健壮性</strong>：计算 <code>mid</code> 时使用 <code>left + (right-left)&gt;&gt;1</code> 而不是 <code>(left+right)&gt;&gt;1</code>，可以有效防止当 <code>left</code> 和 <code>right</code> 都很大时可能发生的整数溢出问题。</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io">Adrian Wang</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io/2024/07/30/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-34-%E5%9C%A8%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E6%9F%A5%E6%89%BE%E5%85%83%E7%B4%A0%E7%9A%84%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%92%8C%E6%9C%80%E5%90%8E%E4%B8%80%E4%B8%AA%E4%BD%8D%E7%BD%AE/">https://adrianwangs.github.io/2024/07/30/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-34-%E5%9C%A8%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E6%9F%A5%E6%89%BE%E5%85%83%E7%B4%A0%E7%9A%84%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%92%8C%E6%9C%80%E5%90%8E%E4%B8%80%E4%B8%AA%E4%BD%8D%E7%BD%AE/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/LeetCode/">LeetCode</a><a class="post-meta__tags" href="/tags/Medium/">Medium</a><a class="post-meta__tags" href="/tags/%E9%9D%A2%E8%AF%95%E7%BB%8F%E5%85%B8150/">面试经典150</a><a class="post-meta__tags" href="/tags/%E6%95%B0%E7%BB%84/">数组</a><a class="post-meta__tags" href="/tags/%E4%BA%8C%E5%88%86%E6%90%9C%E7%B4%A2/">二分搜索</a></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width no-desc" href="/2025/04/18/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-41-first-missing-positive/" title="LeetCode 41 - 缺失的第一个正数（First Missing Positive）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">LeetCode 41 - 缺失的第一个正数（First Missing Positive）</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/05/30/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-68-%E6%96%87%E6%9C%AC%E5%B7%A6%E5%8F%B3%E5%AF%B9%E9%BD%90/" title="LeetCode 68 - 文本左右对齐（Text Justification）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-30</div><div class="info-item-2">LeetCode 68 - 文本左右对齐（Text Justification）</div></div><div class="info-2"><div class="info-item-1">详解文本左右对齐算法，通过模拟方法实现单词在指定宽度内的均匀分布，掌握字符串处理和空格分配的核心技巧</div></div></div></a><a class="pagination-related" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-560-%E5%92%8C%E4%B8%BAK%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/" title="LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-26</div><div class="info-item-2">LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）</div></div><div class="info-2"><div class="info-item-1">使用前缀和和哈希表解决子数组和问题，通过维护前缀和的出现次数来统计和为K的子数组数量</div></div></div></a><a class="pagination-related" href="/2025/05/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-134-%E5%8A%A0%E6%B2%B9%E7%AB%99/" title="LeetCode 134 - 加油站（Gas Station）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-26</div><div class="info-item-2">LeetCode 134 - 加油站（Gas Station）</div></div><div class="info-2"><div class="info-item-1">从超时的暴力解法到高效的贪心算法，深入分析加油站问题的解题思路和时间复杂度优化</div></div></div></a><a class="pagination-related" href="/2025/05/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-80-%E5%88%A0%E9%99%A4%E6%9C%89%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9-II/" title="LeetCode 80 - 删除有序数组中的重复项 II（Remove Duplicates from Sorted Array II）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-24</div><div class="info-item-2">LeetCode 80 - 删除有序数组中的重复项 II（Remove Duplicates from Sorted Array II）</div></div><div class="info-2"><div class="info-item-1">使用双指针技术解决有序数组去重问题，允许每个元素最多出现两次。核心思路是通过比较当前元素与目标位置前两个元素的关系来判断是否可以保留。</div></div></div></a><a class="pagination-related" href="/2025/06/01/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-209-%E9%95%BF%E5%BA%A6%E6%9C%80%E5%B0%8F%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/" title="LeetCode 209 - 长度最小的子数组（Minimum Size Subarray Sum）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-01</div><div class="info-item-2">LeetCode 209 - 长度最小的子数组（Minimum Size Subarray Sum）</div></div><div class="info-2"><div class="info-item-1">深入分析前缀和双指针与滑动窗口两种解法，比较时空复杂度差异，提供优雅的代码实现与详细的算法思路分析</div></div></div></a><a class="pagination-related" href="/2025/05/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-238-%E9%99%A4%E8%87%AA%E8%BA%AB%E4%BB%A5%E5%A4%96%E6%95%B0%E7%BB%84%E7%9A%84%E4%B9%98%E7%A7%AF/" title="LeetCode 238 - 除自身以外数组的乘积（Product of Array Except Self）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-25</div><div class="info-item-2">LeetCode 238 - 除自身以外数组的乘积（Product of Array Except Self）</div></div><div class="info-2"><div class="info-item-1">无需使用除法运算计算数组中除自身以外所有元素的乘积，介绍暴力解法、前缀后缀乘积、空间优化等多种方法，详细分析时空复杂度差异。</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="gitalk-container"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Adrian Wang</div><div class="author-info-description">一个完全由AI生成，但是内容高质量的Blog</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/AdrianWangs"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/AdrianWangs" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:wyz17601402786@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到 Adrian Wang 的博客！</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">问题描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E8%AE%BE%E8%AE%A1%E6%80%9D%E6%83%B3%EF%BC%9A%E4%B8%BA%E4%BD%95%E9%80%89%E6%8B%A9%E4%B8%A4%E6%AC%A1%E4%BA%8C%E5%88%86%E6%90%9C%E7%B4%A2%EF%BC%9F"><span class="toc-number">2.</span> <span class="toc-text">核心设计思想：为何选择两次二分搜索？</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B9%E6%A1%88%E4%B8%80%EF%BC%9A%E4%B8%80%E6%AC%A1%E4%BA%8C%E5%88%86%E6%90%9C%E7%B4%A2-%E7%BA%BF%E6%80%A7%E6%89%AB%E6%8F%8F%EF%BC%88%E8%A2%AB%E5%90%A6%E5%86%B3%EF%BC%89"><span class="toc-number">2.0.1.</span> <span class="toc-text">方案一：一次二分搜索 + 线性扫描（被否决）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B9%E6%A1%88%E4%BA%8C%EF%BC%9A%E4%B8%A4%E6%AC%A1%E7%8B%AC%E7%AB%8B%E7%9A%84%E4%BA%8C%E5%88%86%E6%90%9C%E7%B4%A2%EF%BC%88%E6%9C%80%E7%BB%88%E9%80%89%E6%8B%A9%EF%BC%89"><span class="toc-number">2.0.2.</span> <span class="toc-text">方案二：两次独立的二分搜索（最终选择）</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E9%A2%98%E6%80%9D%E8%B7%AF%E4%B8%8E%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82"><span class="toc-number">3.</span> <span class="toc-text">解题思路与实现细节</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%F0%9F%9A%80-%E4%BA%8C%E5%88%86%E6%90%9C%E7%B4%A2%E7%9A%84%E7%B2%BE%E9%AB%93%EF%BC%9A%E5%BE%AA%E7%8E%AF%E4%B8%8D%E5%8F%98%E9%87%8F%E4%B8%8E%E8%BE%B9%E7%95%8C%E6%94%B6%E6%95%9B"><span class="toc-number">3.1.</span> <span class="toc-text">🚀 二分搜索的精髓：循环不变量与边界收敛</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AC%A1%E6%90%9C%E7%B4%A2%EF%BC%9A%E6%9F%A5%E6%89%BE%E8%B5%B7%E5%A7%8B%E4%BD%8D%E7%BD%AE%EF%BC%88%E5%B7%A6%E8%BE%B9%E7%95%8C%EF%BC%89"><span class="toc-number">3.2.</span> <span class="toc-text">第一次搜索：查找起始位置（左边界）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E6%AC%A1%E6%90%9C%E7%B4%A2%EF%BC%9A%E6%9F%A5%E6%89%BE%E7%BB%93%E6%9D%9F%E4%BD%8D%E7%BD%AE%EF%BC%88%E5%8F%B3%E8%BE%B9%E7%95%8C%EF%BC%89"><span class="toc-number">3.3.</span> <span class="toc-text">第二次搜索：查找结束位置（右边界）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">代码实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%8D%E6%9D%82%E5%BA%A6%E5%88%86%E6%9E%90"><span class="toc-number">5.</span> <span class="toc-text">复杂度分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E6%94%B6%E8%8E%B7"><span class="toc-number">6.</span> <span class="toc-text">关键收获</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/1770966681983.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"/></a><div class="content"><a class="title" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透">拒绝 AI 名词焦虑：LLM 核心概念，一次讲透</a><time datetime="2026-02-13T10:00:00.000Z" title="Created 2026-02-13 10:00:00">2026-02-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/image_1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="温故知新——Golang GMP 万字洗髓经"/></a><div class="content"><a class="title" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经">温故知新——Golang GMP 万字洗髓经</a><time datetime="2026-01-18T00:00:00.000Z" title="Created 2026-01-18 00:00:00">2026-01-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/08/03/%E9%9D%A2%E8%AF%95%E9%A2%98/%E4%BA%92%E8%81%94%E7%BD%91%E5%A4%A7%E5%8E%82/%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8/2025-08-03-%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8-%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91-%E4%B8%80%E9%9D%A2/" title="字节跳动 后端开发工程师 一面">字节跳动 后端开发工程师 一面</a><time datetime="2025-08-03T14:52:52.000Z" title="Created 2025-08-03 14:52:52">2025-08-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-239-%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E6%9C%80%E5%A4%A7%E5%80%BC/" title="LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）">LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）</a><time datetime="2025-07-26T18:51:43.000Z" title="Created 2025-07-26 18:51:43">2025-07-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-560-%E5%92%8C%E4%B8%BAK%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/" title="LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）">LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）</a><time datetime="2025-07-26T15:59:27.000Z" title="Created 2025-07-26 15:59:27">2025-07-26</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2024 - 2026 By Adrian Wang</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', vb[0] + ' ' + vb[1] + ' ' + vb[2] + ' ' + vb[3])
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = '<!doctype html><html><head><meta charset="utf-8" />\n' +
+      '  <style>\n' +
+      '    html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ' + bg + '; }\n' +
+      '    svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }\n' +
+      '  </style>\n' +
+      '  </' + 'head><' + 'body>' + svgSource + '</' + 'body></' + 'html>'
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'forest'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = '%%{init: ' + JSON.stringify(config) + '}%%\n'
+      const mermaidID = 'mermaid-' + index
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const preToMermaid = () => {
+    const preMermaidEle = document.querySelectorAll('pre.mermaid')
+    if (preMermaidEle.length === 0) return
+
+    preMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    preToMermaid()
+    if (true) codeToMermaid()
+    const mermaidNodes = document.querySelectorAll('#article-container .mermaid-wrap')
+    if (mermaidNodes.length === 0) return
+
+    const runMermaidFn = () => runMermaid(mermaidNodes)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"language":"zh-CN","distractionFreeMode":true}
+
+  const commentCount = n => {
+    const isCommentCount = document.querySelector('#post-meta .gitalk-comment-count')
+    if (isCommentCount) {
+      isCommentCount.textContent= n
+    }
+  }
+
+  const initGitalk = (el, path) => {
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGitalk = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    const gitalk = new Gitalk({
+      clientID: 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo: 'blog-comments',
+      owner: 'AdrianWangs',
+      admin: ['AdrianWangs'],
+      updateCountCallback: commentCount,
+      ...option,
+      id: isShuoshuo ? path : (option && option.id) || '3bd5f10e5d3437a550ebd0c62ac8c09a'
+    })
+
+    gitalk.render('gitalk-container')
+  }
+
+  const loadGitalk = async(el, path) => {
+    if (typeof Gitalk === 'function') initGitalk(el, path)
+    else {
+      await btf.getCSS('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.css')
+      await btf.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.js')
+      initGitalk(el, path)
+    }
+  }
+
+  if (isShuoshuo) {
+    'Gitalk' === 'Gitalk'
+      ? window.shuoshuoComment = { loadComment: loadGitalk }
+      : window.loadOtherComment = loadGitalk
+    return
+  }
+
+  if ('Gitalk' === 'Gitalk' || !false) {
+    if (false) btf.loadComment(document.getElementById('gitalk-container'), loadGitalk)
+    else loadGitalk()
+  } else {
+    window.loadOtherComment = loadGitalk
+  }
+})()</script></div><script defer src="/js/echarts-theme-adapter.js"></script><script defer src="/js/category-tree.js"></script><script defer src="/js/reading-progress.js"></script><script defer src="/js/wide-mode.js"></script><script defer src="/js/font-size-toggle.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">Search</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  Loading Database</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div><script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",2],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-20",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1],["2025-07-06",1],["2025-07-09",1],["2025-07-20",3],["2025-07-26",2],["2025-08-03",1],["2026-01-18",1],["2026-02-13",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07","2025-08","2026-01","2026-02"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,48,10,1,1,1],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"AI","children":[{"name":"LLM","children":[],"count":1,"path":"AI/LLM"}],"count":1,"path":"AI"},{"name":"八股文","children":[{"name":"Go语言","children":[{"name":"GMP","children":[],"count":2,"path":"八股文/Go语言/GMP"},{"name":"垃圾回收","children":[],"count":1,"path":"八股文/Go语言/垃圾回收"},{"name":"Map","children":[],"count":7,"path":"八股文/Go语言/Map"}],"count":10,"path":"八股文/Go语言"},{"name":"操作系统","children":[],"count":2,"path":"八股文/操作系统"},{"name":"计算机网络","children":[],"count":2,"path":"八股文/计算机网络"},{"name":"Redis","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/Redis/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/Redis/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/Redis/高可用"},{"name":"内存管理","children":[],"count":1,"path":"八股文/Redis/内存管理"},{"name":"持久化","children":[],"count":3,"path":"八股文/Redis/持久化"},{"name":"数据结构","children":[],"count":8,"path":"八股文/Redis/数据结构"},{"name":"基础知识","children":[],"count":2,"path":"八股文/Redis/基础知识"},{"name":"数据类型","children":[],"count":5,"path":"八股文/Redis/数据类型"}],"count":25,"path":"八股文/Redis"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"存储原理","children":[],"count":5,"path":"八股文/MySQL/存储原理"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":61,"path":"八股文"},{"name":"面试经验","children":[],"count":8,"path":"面试经验"},{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"数组与哈希","children":[],"count":20,"path":"算法刷题/LeetCode/数组与哈希"},{"name":"数学","children":[],"count":3,"path":"算法刷题/LeetCode/数学"},{"name":"位运算","children":[],"count":2,"path":"算法刷题/LeetCode/位运算"},{"name":"链表","children":[],"count":9,"path":"算法刷题/LeetCode/链表"},{"name":"回溯","children":[],"count":5,"path":"算法刷题/LeetCode/回溯"},{"name":"模拟","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/模拟/错题集"}],"count":7,"path":"算法刷题/LeetCode/模拟"},{"name":"图论","children":[],"count":4,"path":"算法刷题/LeetCode/图论"},{"name":"树","children":[],"count":13,"path":"算法刷题/LeetCode/树"},{"name":"二分查找","children":[],"count":5,"path":"算法刷题/LeetCode/二分查找"},{"name":"栈","children":[],"count":5,"path":"算法刷题/LeetCode/栈"},{"name":"贪心","children":[],"count":4,"path":"算法刷题/LeetCode/贪心"},{"name":"字符串","children":[],"count":5,"path":"算法刷题/LeetCode/字符串"},{"name":"双指针","children":[],"count":1,"path":"算法刷题/LeetCode/双指针"},{"name":"动态规划","children":[],"count":14,"path":"算法刷题/LeetCode/动态规划"},{"name":"堆","children":[],"count":2,"path":"算法刷题/LeetCode/堆"}],"count":99,"path":"算法刷题/LeetCode"}],"count":101,"path":"算法刷题"},{"name":"AI工程","children":[{"name":"AI Coding","children":[],"count":1,"path":"AI工程/AI Coding"},{"name":"MCP","children":[],"count":1,"path":"AI工程/MCP"}],"count":2,"path":"AI工程"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body></html>

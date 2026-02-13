@@ -1,0 +1,1249 @@
+<!DOCTYPE html><html lang="zh" data-theme="light"><head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end --><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>算法目录 | Adrian Wang's blog</title><meta name="author" content="Adrian Wang"><meta name="copyright" content="Adrian Wang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="算法目录 本页面汇总了我在学习算法和解决编程问题过程中的笔记和心得。这些内容按算法类型进行分类，希望能对你有所帮助。 算法类型 数学  LeetCode 50 - Pow(x, n)（快速幂算法） - 使用快速幂算法高效计算 x 的 n 次方，通过二进制分解将时间复杂度从 O(n) 优化到 O(log n)，是数学计算中的经典优化技巧 [面试经典 150] LeetCode 172 - 阶乘后的零">
+<meta property="og:type" content="website">
+<meta property="og:title" content="算法目录">
+<meta property="og:url" content="https://adrianwangs.github.io/algorithms/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="算法目录 本页面汇总了我在学习算法和解决编程问题过程中的笔记和心得。这些内容按算法类型进行分类，希望能对你有所帮助。 算法类型 数学  LeetCode 50 - Pow(x, n)（快速幂算法） - 使用快速幂算法高效计算 x 的 n 次方，通过二进制分解将时间复杂度从 O(n) 优化到 O(log n)，是数学计算中的经典优化技巧 [面试经典 150] LeetCode 172 - 阶乘后的零">
+<meta property="og:locale">
+<meta property="og:image" content="https://avatars.githubusercontent.com/u/72337244">
+<meta property="article:published_time" content="2025-04-19T22:00:00.000Z">
+<meta property="article:modified_time" content="2026-02-13T07:20:17.945Z">
+<meta property="article:author" content="Adrian Wang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://avatars.githubusercontent.com/u/72337244"><script type="application/ld+json"></script><link rel="shortcut icon" href="/images/favicon-32x32-next.png"><link rel="canonical" href="https://adrianwangs.github.io/algorithms/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0f172a')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"No results found for: ${query}","hits_stats":"${hits} articles found"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '算法目录',
+  isHighlightShrink: false,
+  isToc: false,
+  pageType: 'page'
+}</script><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/category-tree.css"><link rel="stylesheet" href="/css/reading-progress.css"><link rel="stylesheet" href="/css/wide-mode.css"><link rel="stylesheet" href="/css/font-size-toggle.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">Loading...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      if ($loadingBox.classList.contains('loaded')) return
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+
+  if (document.readyState === 'complete') {
+    preloader.endLoading()
+  } else {
+    window.addEventListener('load', preloader.endLoading)
+    document.addEventListener('DOMContentLoaded', preloader.endLoading)
+    // Add timeout protection: force end after 7 seconds
+    setTimeout(preloader.endLoading, 7000)
+  }
+
+  if (false) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #f8fafc;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div></div></div><div class="page" id="body-wrap"><header class="not-home-page" id="page-header" style="background-image: url(https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&amp;q=80);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Adrian Wang's blog</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="page-site-info"><h1 id="site-title">算法目录</h1></div></header><main class="layout" id="content-inner"><div id="page"><div class="container" id="article-container"><h1>算法目录</h1>
+<p>本页面汇总了我在学习算法和解决编程问题过程中的笔记和心得。这些内容按算法类型进行分类，希望能对你有所帮助。</p>
+<h2 id="算法类型">算法类型</h2>
+<h3 id="数学">数学</h3>
+<ul>
+<li><a href="/2025/07/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-50-Pow-x-n/">LeetCode 50 - Pow(x, n)（快速幂算法）</a> - 使用快速幂算法高效计算 x 的 n 次方，通过二进制分解将时间复杂度从 O(n) 优化到 O(log n)，是数学计算中的经典优化技巧 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/07/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-172-%E9%98%B6%E4%B9%98%E5%90%8E%E7%9A%84%E9%9B%B6/">LeetCode 172 - 阶乘后的零（Factorial Trailing Zeroes）</a> - 通过统计因子中5的个数来计算阶乘末尾零的数量，关键在于理解每个零都是由2和5配对产生的 <strong>[面试经典 150]</strong></li>
+</ul>
+<h3 id="哈希表">哈希表</h3>
+<ul>
+<li><a href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-560-%E5%92%8C%E4%B8%BAK%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/">LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）</a> - 使用前缀和和哈希表解决子数组和问题，通过维护前缀和的出现次数来统计和为K的子数组数量，时间复杂度O(n)，空间复杂度O(n) <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/07/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-149-%E7%9B%B4%E7%BA%BF%E4%B8%8A%E6%9C%80%E5%A4%9A%E7%9A%84%E7%82%B9%E6%95%B0/">LeetCode 149 - 直线上最多的点数（Max Points on a Line）</a> - 使用哈希表存储斜率信息，通过枚举每个点作为基准点，计算与其他点形成的直线斜率，统计最多共线的点数。核心思路是避免浮点数精度问题，使用最简分数表示斜率 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/06/LeetCode-128-%E6%9C%80%E9%95%BF%E8%BF%9E%E7%BB%AD%E5%BA%8F%E5%88%97/">LeetCode 128 - 最长连续序列：一个循环引发的性能血案</a> - 通过对比两种循环方式，揭示一个细节如何导致性能天差地别，避免超时。</li>
+<li><a href="/2025/06/05/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-49-%E5%AD%97%E6%AF%8D%E5%BC%82%E4%BD%8D%E8%AF%8D%E5%88%86%E7%BB%84/">LeetCode 49 - 字母异位词分组（Group Anagrams）</a> - 详解基于排序和计数两种方法解决字母异位词分组问题，分析 Go 语言中数组作为哈希表键的特性 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/04/27/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-146-LRU-Cache/">LeetCode 146: LRU 缓存</a> - 哈希表和双向链表结合实现高效的 LRU 缓存</li>
+<li><a href="/2025/04/18/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-41-first-missing-positive/">LeetCode 41: 缺失的第一个正数（First Missing Positive）</a> - ❌ 使用原地哈希解决的 Hard 难度问题</li>
+</ul>
+<h3 id="字符串与模式匹配">字符串与模式匹配</h3>
+<ul>
+<li><a href="/2025/06/03/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-76-%E6%9C%80%E5%B0%8F%E8%A6%86%E7%9B%96%E5%AD%90%E4%B8%B2-%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90/">❌ LeetCode 76 - 最小覆盖子串（Minimum Window Substring）</a> - 深入分析最小覆盖子串问题的滑动窗口解法，通过错误分析帮助理解双指针技巧的正确使用方式 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/02/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-30-%E4%B8%B2%E8%81%94%E6%89%80%E6%9C%89%E5%8D%95%E8%AF%8D%E7%9A%84%E5%AD%90%E4%B8%B2/">LeetCode 30 - 串联所有单词的子串（Substring with Concatenation of All Words）</a> - 深入分析滑动窗口优化解法，对比暴力解法和滑动窗口的时间复杂度差异，解答为什么滑动窗口能显著提升性能 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/05/30/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-68-%E6%96%87%E6%9C%AC%E5%B7%A6%E5%8F%B3%E5%AF%B9%E9%BD%90/">LeetCode 68 - 文本左右对齐（Text Justification）</a> - 详解文本左右对齐算法，通过模拟方法实现单词在指定宽度内的均匀分布，掌握字符串处理和空格分配的核心技巧 <strong>[面试经典 150]</strong></li>
+<li><a href="2025/05/28/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-28-%E6%89%BE%E5%87%BA%E5%AD%97%E7%AC%A6%E4%B8%B2%E4%B8%AD%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%8C%B9%E9%85%8D%E9%A1%B9%E7%9A%84%E4%B8%8B%E6%A0%87/">LeetCode 28 - 找出字符串中第一个匹配项的下标</a> - 使用 KMP 算法解决字符串模式匹配问题，详细讲解 next 数组构建过程和算法优化，通过具体例子演示完整匹配流程 <strong>[面试经典 150]</strong></li>
+</ul>
+<h3 id="堆与优先队列">堆与优先队列</h3>
+<ul>
+<li><a href="/2025/05/14/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-295-%E6%95%B0%E6%8D%AE%E6%B5%81%E7%9A%84%E4%B8%AD%E4%BD%8D%E6%95%B0/">LeetCode 295 - 数据流的中位数 (Find Median from Data Stream)</a> - 使用两个堆（最大堆与最小堆）维护数据流的中位数，实现 O(log n) 插入和 O(1) 查询</li>
+<li><a href="/2025/05/13/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-347-%E5%89%8DK%E4%B8%AA%E9%AB%98%E9%A2%91%E5%85%83%E7%B4%A0/">LeetCode 347 - 前 K 个高频元素 (Top K Frequent Elements)</a> - 使用哈希表和堆解决前 K 个高频元素问题</li>
+</ul>
+<h3 id="栈与队列">栈与队列</h3>
+<ul>
+<li><a href="/2025/06/16/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-173-%E4%BA%8C%E5%8F%89%E6%90%9C%E7%B4%A2%E6%A0%91%E8%BF%AD%E4%BB%A3%E5%99%A8/">LeetCode 173 - 二叉搜索树迭代器（Binary Search Tree Iterator）</a> - 使用栈模拟中序遍历实现二叉搜索树迭代器，深入理解懒加载和均摊时间复杂度分析 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/08/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-224-%E5%9F%BA%E6%9C%AC%E8%AE%A1%E7%AE%97%E5%99%A8/">LeetCode 224 - 基本计算器（Basic Calculator）</a> - 使用栈解决带括号的基本计算器问题，掌握处理优先级和符号的核心技巧 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/05/13/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-84-%E6%9F%B1%E7%8A%B6%E5%9B%BE%E4%B8%AD%E6%9C%80%E5%A4%A7%E7%9A%84%E7%9F%A9%E5%BD%A2/">❌ LeetCode 84 - 柱状图中最大的矩形</a> - 深入剖析柱状图中最大矩形问题，解析暴力法、分治法和单调栈三种解法，以及单调栈实现中的常见错误。</li>
+<li><a href="/2025/05/12/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-739-%E6%AF%8F%E6%97%A5%E6%B8%A9%E5%BA%A6/">LeetCode 739 - 每日温度 (Daily Temperatures)</a> - 详细解析 LeetCode 739 题「每日温度」的解题思路，使用单调栈巧妙解决，并探讨代码优化，让你的代码更简洁。</li>
+<li><a href="/2025/05/11/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-394-%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%A7%A3%E7%A0%81/">LeetCode 394 - 字符串解码 (String Decode)</a> - 详细解析 LeetCode 第 394 题字符串解码，通过栈辅助实现，并提供优化思路和代码。</li>
+<li><a href="/2025/05/11/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-155-%E6%9C%80%E5%B0%8F%E6%A0%88/">LeetCode 155: 最小栈 (Min Stack)</a> - 设计一个支持 push ，pop ，top 操作，并能在常数时间内检索到最小元素的栈。</li>
+</ul>
+<h3 id="树结构与前缀树">树结构与前缀树</h3>
+<ul>
+<li><a href="/2025/07/01/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-212-%E5%8D%95%E8%AF%8D%E6%90%9C%E7%B4%A2-ii/">LeetCode 212 - 单词搜索 II（Word Search II）</a> - 使用字典树(Trie)优化的单词搜索问题，通过DFS遍历二维字符网格同时匹配字典树中的单词，实现高效的多单词搜索算法 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/29/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-211-%E6%B7%BB%E5%8A%A0%E4%B8%8E%E6%90%9C%E7%B4%A2%E5%8D%95%E8%AF%8D-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AE%BE%E8%AE%A1/">LeetCode 211 - 添加与搜索单词-数据结构设计（Design Add and Search Words Data Structure）</a> - 使用字典树(Trie)实现支持通配符搜索的单词字典，关键在于递归DFS处理’.'字符的所有可能匹配 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/05/05/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-208-%E5%AE%9E%E7%8E%B0-Trie-%E5%89%8D%E7%BC%80%E6%A0%91/">LeetCode 208: 实现 Trie 前缀树</a> - Trie 前缀树实现优化与空间复杂度分析</li>
+</ul>
+<h3 id="数组与矩阵">数组与矩阵</h3>
+<ul>
+<li><a href="/2025/06/07/LeetCode-57-%E6%8F%92%E5%85%A5%E5%8C%BA%E9%97%B4/">LeetCode 57. 插入区间</a> - 通过一次遍历实现新旧区间的合并，高效处理区间插入问题 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/05/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-274-H%E6%8C%87%E6%95%B0/">❌ LeetCode 274 - H 指数（H-Index）</a> - H 指数问题的三种解法详解：排序法、计数排序法和二分查找法，包含错误分析和解题思路对比</li>
+</ul>
+<h3 id="链表">链表</h3>
+<ul>
+<li><a href="/2025/04/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-148-Sort-List/">LeetCode 148: 排序链表（Sort List）</a> - 归并排序在链表中的两种实现：自底向上与自顶向下</li>
+<li><a href="/2025/04/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-24-Swap-Nodes-in-Pairs/">LeetCode 24: 两两交换链表中的节点（Swap Nodes in Pairs）</a> - 链表节点两两交换的递归和迭代解法比较</li>
+<li><a href="/2025/04/23/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-2-%E4%B8%A4%E6%95%B0%E7%9B%B8%E5%8A%A0/">LeetCode 2: 两数相加（Add Two Numbers）</a> - 链表表示的两数相加问题的代码优化与分析</li>
+<li><a href="/2025/04/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-142-Linked-List-Cycle-II/">LeetCode 142: 环形链表 II（Linked List Cycle II）</a> - Floyd 判圈算法数学原理详解与实现</li>
+<li><a href="/2025/04/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-234-Palindrome-Linked-List/">LeetCode 234: 回文链表（Palindrome Linked List）</a> - 判断链表是否为回文结构的多种解法与优化分析</li>
+<li><a href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-160-Intersection-of-Two-Linked-Lists/">❌ LeetCode 160: 相交链表（Intersection of Two Linked Lists）</a> - 寻找两个链表交点的多种方法与解法分析</li>
+<li><a href="/2025/04/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-206-Reverse-Linked-List">LeetCode 206: 反转链表</a> - 经典链表反转问题，包含递归和迭代两种解法</li>
+<li><a href="/2025/04/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-25-Reverse-Nodes-in-k-Group/">❌ LeetCode 25: K 个一组翻转链表（Reverse Nodes in k-Group）</a> - 分析了循环终止条件中的微妙错误</li>
+<li><a href="/2025/04/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-138-Copy-List-with-Random-Pointer/">❌ LeetCode 138: 随机链表的复制</a> - 链表深拷贝，处理 random 指针</li>
+</ul>
+<h3 id="回溯">回溯</h3>
+<ul>
+<li><a href="/2025/05/07/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-52-N%E7%9A%87%E5%90%8E-II/">LeetCode 52: N 皇后 II（N-Queens II）</a> - 使用位运算优化 N 皇后问题的空间复杂度，求解方案数量</li>
+<li><a href="/2025/05/07/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-51-N%E7%9A%87%E5%90%8E/">LeetCode 51: N 皇后（N-Queens）</a> - 利用回溯算法和对角线数学特性高效求解 N 皇后问题</li>
+<li><a href="/2025/05/06/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-131-%E5%88%86%E5%89%B2%E5%9B%9E%E6%96%87%E4%B8%B2/">❌ LeetCode 131: 分割回文串（Palindrome Partitioning）</a> - 动态规划预处理和记忆化搜索两种方法解决分割回文串问题</li>
+<li><a href="/2025/05/06/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-22-%E6%8B%AC%E5%8F%B7%E7%94%9F%E6%88%90/">LeetCode 22: 括号生成（Generate Parentheses）</a> - 回溯法和动态规划解决括号生成问题详解</li>
+<li><a href="/2025/05/06/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-78-%E5%AD%90%E9%9B%86/">LeetCode 78: 子集（Subsets）</a> - 位运算与回溯两种方法生成所有子集的详细对比</li>
+<li><a href="/2025/05/05/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-46-%E5%85%A8%E6%8E%92%E5%88%97-%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90/">❌ LeetCode 46: 全排列（Permutations）错误分析</a> - 分析在 Go 语言实现全排列时的切片复制误区</li>
+</ul>
+<h3 id="数组操作">数组操作</h3>
+<ul>
+<li><a href="/2025/05/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-238-%E9%99%A4%E8%87%AA%E8%BA%AB%E4%BB%A5%E5%A4%96%E6%95%B0%E7%BB%84%E7%9A%84%E4%B9%98%E7%A7%AF/">LeetCode 238: 除自身以外数组的乘积 (Product of Array Except Self)</a> - 前缀后缀乘积思想，四种解法对比：暴力、两数组、空间优化和特殊处理，深入分析时空复杂度差异</li>
+<li><a href="/2025/05/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/leetcode-31-next-permutation/">LeetCode 31: 下一个排列 (Next Permutation)</a> - 详解 LeetCode 31 题&quot;下一个排列&quot;的解题思路与 Go 语言实现。</li>
+<li><a href="/2025/05/13/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-215-%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E7%AC%ACK%E4%B8%AA%E6%9C%80%E5%A4%A7%E5%85%83%E7%B4%A0-%E8%B6%85%E6%97%B6%E5%88%86%E6%9E%90%E4%B8%8E%E4%BC%98%E5%8C%96/">❌ LeetCode 215: 数组中的第 K 个最大元素</a> - 分析 Quick Select 算法的超时原因，并提供针对重复元素和分区优化的正确实现</li>
+<li><a href="/2025/05/15/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-45-%E8%B7%B3%E8%B7%83%E6%B8%B8%E6%88%8F-II/">LeetCode 45: 跳跃游戏 II (Jump Game II)</a> - 通过贪心算法高效解决最少跳跃次数问题，详细分析贪心策略的原理与实现</li>
+<li><a href="/2025/05/10/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-169-%E5%A4%9A%E6%95%B0%E5%85%83%E7%B4%A0/">LeetCode 169: 多数元素（Majority Element）</a> - 使用摩尔投票算法高效找出数组中的多数元素</li>
+<li><a href="/2025/04/19/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-48-Rotate-Image/">LeetCode 48: 旋转图像（Rotate Image）</a> - 矩阵顺时针旋转 90 度的高效实现</li>
+<li><a href="/2025/04/19/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-54-Spiral-Matrix/">LeetCode 54: 螺旋矩阵（Spiral Matrix）</a> - ❌ 螺旋顺序遍历矩阵的解题思路与错误分析</li>
+<li><a href="/2025/04/19/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/leetcode-73-matrix-zeroes/">LeetCode 73: 矩阵置零（Matrix Zeroes）</a> - ❌ 原地算法实现矩阵置零的多种方法</li>
+</ul>
+<h3 id="双指针">双指针</h3>
+<ul>
+<li><a href="/2025/06/06/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-202-%E5%BF%AB%E4%B9%90%E6%95%B0/">LeetCode 202 - 快乐数 (Happy Number)</a> - 详细解析 LeetCode 第 202 题&quot;快乐数&quot;。通过快慢指针（弗洛伊德循环查找算法）判断一个数是否为快乐数，并分析其时间和空间复杂度。 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/01/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-209-%E9%95%BF%E5%BA%A6%E6%9C%80%E5%B0%8F%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/">LeetCode 209 - 长度最小的子数组 (Minimum Size Subarray Sum)</a> - 深入分析前缀和双指针与滑动窗口两种解法，比较时空复杂度差异，提供优雅的代码实现与详细的算法思路分析 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/05/31/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-15-%E4%B8%89%E6%95%B0%E4%B9%8B%E5%92%8C/">LeetCode 15 - 三数之和 (3Sum)</a> - 使用排序+双指针解决三数之和问题，通过固定一个数并用双指针寻找另外两个数的经典解法，详细演示算法执行过程 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/05/24/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-80-%E5%88%A0%E9%99%A4%E6%9C%89%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E9%87%8D%E5%A4%8D%E9%A1%B9-II/">LeetCode 80 - 删除有序数组中的重复项 II</a> - 使用双指针技术解决有序数组去重问题，允许每个元素最多出现两次，原地修改数组实现 O(1) 空间复杂度</li>
+<li><a href="/2025/05/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-287-%E5%AF%BB%E6%89%BE%E9%87%8D%E5%A4%8D%E6%95%B0/">LeetCode 287 - 寻找重复数</a> - 详细解析 LeetCode 287 “寻找重复数”，利用快慢指针（Floyd 判圈算法）在 O(n) 时间和 O(1) 空间内找到重复数。</li>
+<li><a href="/2025/05/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-75-%E9%A2%9C%E8%89%B2%E5%88%86%E7%B1%BB/">LeetCode 75 - 颜色分类 (Sort Colors)</a> - LeetCode 75 颜色分类题解，使用双指针原地排序包含 0、1、2 的数组。</li>
+<li><a href="/2025/04/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-234-Palindrome-Linked-List/">LeetCode 234: 回文链表（Palindrome Linked List）</a> - 判断链表是否为回文结构的多种解法与优化分析</li>
+</ul>
+<h3 id="滑动窗口">滑动窗口</h3>
+<ul>
+<li><a href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-239-%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E6%9C%80%E5%A4%A7%E5%80%BC/">LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）</a> - 使用单调队列解决滑动窗口最大值问题，通过维护递减队列来高效获取每个窗口的最大值，时间复杂度O(n)，空间复杂度O(k) <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/03/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-76-%E6%9C%80%E5%B0%8F%E8%A6%86%E7%9B%96%E5%AD%90%E4%B8%B2-%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90/">❌ LeetCode 76 - 最小覆盖子串（Minimum Window Substring）</a> - 深入分析最小覆盖子串问题的滑动窗口解法，通过错误分析帮助理解双指针技巧的正确使用方式 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/02/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-30-%E4%B8%B2%E8%81%94%E6%89%80%E6%9C%89%E5%8D%95%E8%AF%8D%E7%9A%84%E5%AD%90%E4%B8%B2/">LeetCode 30 - 串联所有单词的子串（Substring with Concatenation of All Words）</a> - 深入分析滑动窗口优化解法，对比暴力解法和滑动窗口的时间复杂度差异，解答为什么滑动窗口能显著提升性能 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/04/18/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-42-trapping-rain-water/">LeetCode 42: 接雨水（Trapping Rain Water）</a> - 使用双指针、动态规划和单调栈三种方法解决</li>
+<li><a href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-160-Intersection-of-Two-Linked-Lists/">❌ LeetCode 160: 相交链表（Intersection of Two Linked Lists）</a> - 寻找两个链表交点的多种方法与解法分析</li>
+</ul>
+<h3 id="二分查找">二分查找</h3>
+<ul>
+<li><a href="/2024/07/30/LeetCode-34-%E5%9C%A8%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E6%9F%A5%E6%89%BE%E5%85%83%E7%B4%A0%E7%9A%84%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%92%8C%E6%9C%80%E5%90%8E%E4%B8%80%E4%B8%AA%E4%BD%8D%E7%BD%AE/">LeetCode 34 - 在排序数组中查找元素的第一个和最后一个位置</a> - 详解通过两次二分搜索精确查找元素左右边界的技巧，是掌握二分搜索精髓的必刷题。 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/13/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-69-x%E7%9A%84%E5%B9%B3%E6%96%B9%E6%A0%B9/">LeetCode 69 - x 的平方根（Sqrt(x)）</a> - 使用二分查找算法求解整数平方根问题，核心思路是在[0,x]范围内二分搜索，时间复杂度 O(log x)，是一道经典的二分查找应用题目 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/05/11/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-4-%E5%AF%BB%E6%89%BE%E4%B8%A4%E4%B8%AA%E6%AD%A3%E5%BA%8F%E6%95%B0%E7%BB%84%E7%9A%84%E4%B8%AD%E4%BD%8D%E6%95%B0/">LeetCode 4: 寻找两个正序数组的中位数（Median of Two Sorted Arrays）</a> - 深入理解二分思想解决两个有序数组中位数问题</li>
+<li><a href="/2025/05/08/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-33-%E6%90%9C%E7%B4%A2%E6%97%8B%E8%BD%AC%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84-%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90/">❌ LeetCode 33: 搜索旋转排序数组（Search in Rotated Sorted Array）</a> - 分析旋转排序数组中查找旋转点的错误及其优雅解法</li>
+<li><a href="/2025/05/08/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-74-%E6%90%9C%E7%B4%A2%E4%BA%8C%E7%BB%B4%E7%9F%A9%E9%98%B5-%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90/">❌ LeetCode 74: 搜索二维矩阵（Search a 2D Matrix）</a> - 分析二分查找在矩阵搜索中的边界条件处理错误</li>
+<li><a href="/2025/05/08/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-35-%E6%90%9C%E7%B4%A2%E6%8F%92%E5%85%A5%E4%BD%8D%E7%BD%AE/">LeetCode 35: 搜索插入位置（Search Insert Position）</a> - Go 语言中二分搜索函数全解析与应用场景详解</li>
+<li><a href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-240-Search-a-2D-Matrix-II/">LeetCode 240: 搜索二维矩阵 II（Search a 2D Matrix II）</a> - 角落搜索法、二分查找法和分治法三种解法比较</li>
+<li><a href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-2563-%E7%BB%9F%E8%AE%A1%E5%85%AC%E5%B9%B3%E6%95%B0%E5%AF%B9%E7%9A%84%E6%95%B0%E7%9B%AE/">LeetCode 2563: 统计公平数目的数目（Count the Number of Fair Pairs）</a> - 利用排序和二分查找高效计算满足条件的数对</li>
+<li><a href="/2025/05/10/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-153-%E5%AF%BB%E6%89%BE%E6%97%8B%E8%BD%AC%E6%8E%92%E5%BA%8F%E6%95%B0%E7%BB%84%E4%B8%AD%E7%9A%84%E6%9C%80%E5%B0%8F%E5%80%BC/">LeetCode 153: 寻找旋转排序数组中的最小值</a> - 使用传统二分和 Go 的 sort.Search 解决</li>
+</ul>
+<h3 id="排序">排序</h3>
+<ul>
+<li><a href="/2025/04/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-148-Sort-List/">LeetCode 148: 排序链表（Sort List）</a> - 归并排序在链表中的两种实现：自底向上与自顶向下</li>
+</ul>
+<h3 id="设计">设计</h3>
+<ul>
+<li><a href="/2025/05/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-380-O1%E6%97%B6%E9%97%B4%E6%8F%92%E5%85%A5%E5%88%A0%E9%99%A4%E5%92%8C%E8%8E%B7%E5%8F%96%E9%9A%8F%E6%9C%BA%E5%85%83%E7%B4%A0/">❌ LeetCode 380: O(1) 时间插入、删除和获取随机元素</a> - 设计支持 O(1) 操作的随机集合，分析索引不一致错误和正确的删除策略</li>
+<li><a href="/2025/05/11/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-155-%E6%9C%80%E5%B0%8F%E6%A0%88/">LeetCode 155: 最小栈 (Min Stack)</a> - 设计一个支持 push ，pop ，top 操作，并能在常数时间内检索到最小元素的栈。</li>
+<li><a href="/2025/04/27/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-146-LRU-Cache/">LeetCode 146: LRU 缓存</a> - 哈希表和双向链表结合实现高效的 LRU 缓存</li>
+</ul>
+<h3 id="二叉树">二叉树</h3>
+<ul>
+<li><a href="/2025/06/18/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-530-%E4%BA%8C%E5%8F%89%E6%90%9C%E7%B4%A2%E6%A0%91%E7%9A%84%E6%9C%80%E5%B0%8F%E7%BB%9D%E5%AF%B9%E5%B7%AE/">LeetCode 530 - 二叉搜索树的最小绝对差（Minimum Absolute Difference in BST）</a> - 利用二叉搜索树中序遍历有序性的特点，通过一次遍历找出相邻节点的最小绝对差值，时间复杂度 O(n)，空间复杂度 O(h) <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/17/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-222-%E5%AE%8C%E5%85%A8%E4%BA%8C%E5%8F%89%E6%A0%91%E7%9A%84%E8%8A%82%E7%82%B9%E4%B8%AA%E6%95%B0/">LeetCode 222 - 完全二叉树的节点个数（Count Complete Tree Nodes）</a> - 利用完全二叉树的性质，通过计算左右子树高度来优化节点计数，时间复杂度O(log²n)的高效解法 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/15/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-112-%E8%B7%AF%E5%BE%84%E6%80%BB%E5%92%8C/">LeetCode 112 - 路径总和（Path Sum）</a> - 使用递归和深度优先搜索解决二叉树路径求和问题，详细解析递归思路和边界条件处理</li>
+<li><a href="/2025/06/15/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-117-%E5%A1%AB%E5%85%85%E6%AF%8F%E4%B8%AA%E8%8A%82%E7%82%B9%E7%9A%84%E4%B8%8B%E4%B8%80%E4%B8%AA%E5%8F%B3%E4%BE%A7%E8%8A%82%E7%82%B9%E6%8C%87%E9%92%88-ii/">LeetCode 117 - 填充每个节点的下一个右侧节点指针 II（Populating Next Right Pointers in Each Node II）</a> - 详解三种解法：哈希表 DFS、层序遍历 BFS、O(1)空间优化。通过图解和代码详细分析如何为二叉树每个节点填充下一个右侧节点指针 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/05/02/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-124-Binary-Tree-Maximum-Path-Sum/">❌ LeetCode 124: 二叉树中的最大路径和（Binary Tree Maximum Path Sum）</a> - 后序遍历与递归返回值设计解决树路径问题</li>
+<li><a href="/2025/04/30/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-236-%E4%BA%8C%E5%8F%89%E6%A0%91%E7%9A%84%E6%9C%80%E8%BF%91%E5%85%AC%E5%85%B1%E7%A5%96%E5%85%88/">LeetCode 236: 二叉树的最近公共祖先（Lowest Common Ancestor of a Binary Tree）</a> - 递归、父节点映射和路径比较法解决 LCA 问题</li>
+<li><a href="/2025/04/30/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-437-%E8%B7%AF%E5%BE%84%E6%80%BB%E5%92%8C-III/">❌ LeetCode 437: 路径总和 III（Path Sum III）</a> - 双重递归和前缀和优化对比，详解树路径问题的递归设计</li>
+<li><a href="/2025/04/30/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-105-%E4%BB%8E%E5%89%8D%E5%BA%8F%E4%B8%8E%E4%B8%AD%E5%BA%8F%E9%81%8D%E5%8E%86%E5%BA%8F%E5%88%97%E6%9E%84%E9%80%A0%E4%BA%8C%E5%8F%89%E6%A0%91/">LeetCode 105: 从前序与中序遍历序列构造二叉树（Construct Binary Tree from Preorder and Inorder Traversal）</a> - 递归和哈希表结合重建二叉树的两种优化方法</li>
+<li><a href="/2025/04/29/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-114-Binary-Tree-Flatten/">❌ LeetCode 114: 二叉树展开为链表 (Flatten Binary Tree to Linked List)</a> - 分析树转链表过程中的指针操作错误</li>
+<li><a href="/2025/04/29/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-230-Kth-Smallest-Element-in-BST/">LeetCode 230: 二叉搜索树中第 K 小的元素（Kth Smallest Element in a BST）</a> - 中序遍历解法与进阶优化方案</li>
+<li><a href="/2025/04/28/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-101-Symmetric-Tree">LeetCode 101: Symmetric Tree</a> - 使用递归和迭代方法判断二叉树是否对称</li>
+<li><a href="/2025/04/29/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-98-validate-binary-search-tree/">❌ LeetCode 98: 验证二叉搜索树（Validate Binary Search Tree）</a> - 分析二叉搜索树验证中的比较运算符错误</li>
+<li><a href="/2025/04/29/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-543-Binary-Tree-Diameter/">❌ LeetCode 543: 二叉树的直径（Binary Tree Diameter）</a> - 在 DFS 计算树深度的同时维护全局最大直径</li>
+</ul>
+<h3 id="图">图</h3>
+<ul>
+<li><a href="/2025/06/29/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-127-%E5%8D%95%E8%AF%8D%E6%8E%A5%E9%BE%99/">LeetCode 127 - 单词接龙（Word Ladder）</a> - 使用BFS和虚拟节点技巧解决单词接龙问题，将单词转换建模为图的最短路径，巧妙利用中间节点连接相似单词 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-433-%E6%9C%80%E5%B0%8F%E5%9F%BA%E5%9B%A0%E5%8F%98%E5%8C%96/">LeetCode 433 - 最小基因变化 (Minimum Genetic Mutation)</a> - 详解 Dijkstra 与广度优先搜索 (BFS) 在解决基因序列最短转换路径问题中的应用与对比。 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/23/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-909-%E8%9B%87%E6%A2%AF%E6%A3%8B-%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90/">❌ LeetCode 909 - 蛇梯棋（Snakes and Ladders）</a> - 蛇梯棋BFS解法错误分析：坐标转换逻辑、内存限制超出、循环蛇梯处理等多个实现难点的深度解析 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/22/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-399-%E9%99%A4%E6%B3%95%E6%B1%82%E5%80%BC/">LeetCode 399 - 除法求值（Evaluate Division）</a> - 使用图论和DFS解决除法求值问题，将除法关系建模为带权重的有向图，通过路径搜索计算查询结果 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/06/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-133-%E5%85%8B%E9%9A%86%E5%9B%BE/">LeetCode 133 - 克隆图（Clone Graph）</a> - 使用DFS和哈希表解决图的深拷贝问题，深入分析访问标记时机对避免无限递归的重要性 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/05/03/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-207-%E8%AF%BE%E7%A8%8B%E8%A1%A8/">LeetCode 207: 课程表（Course Schedule）</a> - 使用 BFS 拓扑排序和 DFS 检测环两种方法解决课程依赖问题</li>
+</ul>
+<h3 id="动态规划">动态规划</h3>
+<ul>
+<li><a href="/2025/05/21/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-72-%E7%BC%96%E8%BE%91%E8%B7%9D%E7%A6%BB/">LeetCode 72 - 编辑距离 (Edit Distance)</a> - 详解 LeetCode 72 题编辑距离的动态规划解法，包括状态定义、状态转移方程和代码实现。</li>
+<li><a href="/2025/05/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-1143-%E6%9C%80%E9%95%BF%E5%85%AC%E5%85%B1%E5%AD%90%E5%BA%8F%E5%88%97/">LeetCode 1143 - 最长公共子序列 (Longest Common Subsequence)</a> - LeetCode 1143 最长公共子序列问题详解，使用动态规划思路解决，并提供 Go 语言的实现代码和复杂度分析。</li>
+<li>❌ <a href="/2025/05/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-5-%E6%9C%80%E9%95%BF%E5%9B%9E%E6%96%87%E5%AD%90%E4%B8%B2%E9%94%99%E8%AF%AF%E5%88%86%E6%9E%90/">LeetCode 5 - 最长回文子串：动态规划填表顺序错误分析</a> - 详细分析 LeetCode 第 5 题&quot;最长回文子串&quot;动态规划解法的常见填表顺序错误，并提供正确的思路与实现。</li>
+<li>❌ <a href="/2025/05/18/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/leetcode-32-longest-valid-parentheses-dp-error-analysis/">LeetCode 32 - 最长有效括号：动态规划思路错题分析</a> - 详细分析 LeetCode 32 题 ‘最长有效括号’ 动态规划解法中一个常见的状态转移错误，并提供正确的思路和代码。</li>
+<li><a href="/2025/05/17/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-416-%E5%88%86%E5%89%B2%E7%AD%89%E5%92%8C%E5%AD%90%E9%9B%86/">LeetCode 416 - 分割等和子集 (Partition Equal Subset Sum)</a> - LeetCode 416 分割等和子集问题详解，使用动态规划（0/1 背包问题）解决。</li>
+<li><a href="/2025/05/17/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-152-%E4%B9%98%E7%A7%AF%E6%9C%80%E5%A4%A7%E5%AD%90%E6%95%B0%E7%BB%84/">LeetCode 152 - 乘积最大子数组 (Maximum Product Subarray)</a> - LeetCode 152 乘积最大子数组的解题思路、代码实现和复杂度分析。</li>
+<li><a href="/2025/05/17/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-300-%E6%9C%80%E9%95%BF%E9%80%92%E5%A2%9E%E5%AD%90%E5%BA%8F%E5%88%97/">LeetCode 300: 最长递增子序列 - 动态规划与贪心优化</a> - 详细解析 LeetCode 300 ‘最长递增子序列’ 问题的动态规划解法和更优的贪心算法结合二分查找的思路，并提供带有注释的 Go 语言实现。</li>
+<li><a href="/2025/05/16/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-322-%E9%9B%B6%E9%92%B1%E5%85%91%E6%8D%A2/">❌ LeetCode 322: 零钱兑换</a> - 零钱兑换是一个经典的完全背包问题，分析了错误的解题思路以及两种正确的动态规划实现方式</li>
+<li><a href="/2025/05/06/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-131-%E5%88%86%E5%89%B2%E5%9B%9E%E6%96%87%E4%B8%B2/">❌ LeetCode 131: 分割回文串（Palindrome Partitioning）</a> - 动态规划预处理和记忆化搜索两种方法解决分割回文串问题</li>
+<li><a href="/2025/05/06/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-22-%E6%8B%AC%E5%8F%B7%E7%94%9F%E6%88%90/">LeetCode 22: 括号生成（Generate Parentheses）</a> - 回溯法和动态规划解决括号生成问题详解</li>
+<li><a href="/2025/05/06/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-790-%E5%A4%9A%E7%B1%B3%E8%AF%BA%E5%92%8C%E6%89%98%E7%B1%B3%E8%AF%BA%E5%B9%B3%E9%93%BA/">❌ LeetCode 790: 多米诺和托米诺平铺（Domino and Tromino Tiling）</a> - 状态定义与转移方程解决瓷砖平铺的组合计数问题</li>
+</ul>
+<h3 id="位运算">位运算</h3>
+<ul>
+<li><a href="/2025/05/10/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-136-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97/">LeetCode 136: 只出现一次的数字（Single Number）</a> - 使用异或运算解决的数组元素查找问题，详解位运算特性</li>
+<li><a href="/2025/05/07/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-52-N%E7%9A%87%E5%90%8E-II/">LeetCode 52: N 皇后 II（N-Queens II）</a> - 使用位运算优化 N 皇后问题的空间复杂度，求解方案数量</li>
+<li><a href="/2025/05/06/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-78-%E5%AD%90%E9%9B%86/">LeetCode 78: 子集（Subsets）</a> - 位运算与回溯两种方法生成所有子集的详细对比</li>
+</ul>
+<h3 id="贪心算法">贪心算法</h3>
+<ul>
+<li><a href="/2025/06/08/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-452-%E7%94%A8%E6%9C%80%E5%B0%91%E6%95%B0%E9%87%8F%E7%9A%84%E7%AE%AD%E5%BC%95%E7%88%86%E6%B0%94%E7%90%83/">LeetCode 452 - 用最少数量的箭引爆气球 (Minimum Number of Arrows to Burst Balloons)</a> - 贪心算法解决区间重叠问题，通过按右端点排序找到最少箭数引爆所有气球 <strong>[面试经典 150]</strong></li>
+<li><a href="/2025/05/27/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-135-%E5%88%86%E5%8F%91%E7%B3%96%E6%9E%9C/">❌ LeetCode 135 - 分发糖果 (Candy)</a> - 分发糖果问题的贪心算法解法，重点分析一次遍历的状态机处理思路和常见的边界情况错误</li>
+<li><a href="/2025/05/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-134-%E5%8A%A0%E6%B2%B9%E7%AB%99/">❌ LeetCode 134 - 加油站 (Gas Station)</a> - 从超时的暴力解法到高效的贪心算法，深入分析加油站问题的解题思路和时间复杂度优化</li>
+<li><a href="/2025/05/17/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-300-%E6%9C%80%E9%95%BF%E9%80%92%E5%A2%9E%E5%AD%90%E5%BA%8F%E5%88%97/">LeetCode 300: 最长递增子序列 - 动态规划与贪心优化</a> - 详细解析 LeetCode 300 ‘最长递增子序列’ 问题的动态规划解法和更优的贪心算法结合二分查找的思路，并提供带有注释的 Go 语言实现。</li>
+<li><a href="/2025/05/16/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-763-%E5%88%92%E5%88%86%E5%AD%97%E6%AF%8D%E5%8C%BA%E9%97%B4/">LeetCode 763: 划分字母区间 (Partition Labels)</a> - 利用贪心策略和字符最后出现位置，实现字符串的最优分区</li>
+<li><a href="/2025/05/15/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-45-%E8%B7%B3%E8%B7%83%E6%B8%B8%E6%88%8F-II/">LeetCode 45: 跳跃游戏 II (Jump Game II)</a> - 通过贪心算法高效解决最少跳跃次数问题，详细分析贪心策略的原理与实现</li>
+</ul>
+<h3 id="分治算法">分治算法</h3>
+<ul>
+<li><a href="/2025/05/10/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-169-%E5%A4%9A%E6%95%B0%E5%85%83%E7%B4%A0/">LeetCode 169: 多数元素（Majority Element）</a> - 使用摩尔投票算法高效找出数组中的多数元素</li>
+<li><a href="/2025/04/20/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-240-Search-a-2D-Matrix-II/">LeetCode 240: 搜索二维矩阵 II（Search a 2D Matrix II）</a> - 角落搜索法、二分查找法和分治法三种解法比较</li>
+<li><a href="/2025/05/11/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-4-%E5%AF%BB%E6%89%BE%E4%B8%A4%E4%B8%AA%E6%AD%A3%E5%BA%8F%E6%95%B0%E7%BB%84%E7%9A%84%E4%B8%AD%E4%BD%8D%E6%95%B0/">LeetCode 4: 寻找两个正序数组的中位数（Median of Two Sorted Arrays）</a> - 深入理解二分思想解决两个有序数组中位数问题</li>
+</ul>
+</div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="gitalk-container"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Adrian Wang</div><div class="author-info-description">一个完全由AI生成，但是内容高质量的Blog</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/AdrianWangs"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/AdrianWangs" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:wyz17601402786@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到 Adrian Wang 的博客！</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/1770966681983.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"/></a><div class="content"><a class="title" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透">拒绝 AI 名词焦虑：LLM 核心概念，一次讲透</a><time datetime="2026-02-13T10:00:00.000Z" title="Created 2026-02-13 10:00:00">2026-02-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/image_1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="温故知新——Golang GMP 万字洗髓经"/></a><div class="content"><a class="title" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经">温故知新——Golang GMP 万字洗髓经</a><time datetime="2026-01-18T00:00:00.000Z" title="Created 2026-01-18 00:00:00">2026-01-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/08/03/%E9%9D%A2%E8%AF%95%E9%A2%98/%E4%BA%92%E8%81%94%E7%BD%91%E5%A4%A7%E5%8E%82/%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8/2025-08-03-%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8-%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91-%E4%B8%80%E9%9D%A2/" title="字节跳动 后端开发工程师 一面">字节跳动 后端开发工程师 一面</a><time datetime="2025-08-03T14:52:52.000Z" title="Created 2025-08-03 14:52:52">2025-08-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-239-%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E6%9C%80%E5%A4%A7%E5%80%BC/" title="LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）">LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）</a><time datetime="2025-07-26T18:51:43.000Z" title="Created 2025-07-26 18:51:43">2025-07-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-560-%E5%92%8C%E4%B8%BAK%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/" title="LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）">LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）</a><time datetime="2025-07-26T15:59:27.000Z" title="Created 2025-07-26 15:59:27">2025-07-26</time></div></div></div></div><div class="card-widget">
+    <div class="category-tree-widget">
+      <div class="ct-header">
+        <div class="ct-title">
+          <i class="fas fa-folder-open"></i>
+          <span>Categories</span>
+        </div>
+        <div class="ct-actions">
+          <button class="ct-expand-all" title="全部展开">
+            <i class="fas fa-expand-alt"></i>
+          </button>
+          <button class="ct-collapse-all" title="全部收起">
+            <i class="fas fa-compress-alt"></i>
+          </button>
+          <button class="ct-fullwidth" title="全宽展示">
+            <i class="fas fa-expand"></i>
+          </button>
+        </div>
+      </div>
+      <ul class="ct-root">
+        <li class="ct-item has-children" data-level="0"><div class="ct-item-inner" style="padding-left: 0px;"><span class="ct-toggle"><i class="fas fa-chevron-right"></i></span><a class="ct-link" href="/categories/AI/"><span class="ct-name">AI</span><span class="ct-count">1</span></a></div><ul class="ct-children"><li class="ct-item " data-level="1"><div class="ct-item-inner" style="padding-left: 20px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/AI/LLM/"><span class="ct-name">LLM</span><span class="ct-count">1</span></a></div></li></ul></li><li class="ct-item has-children" data-level="0"><div class="ct-item-inner" style="padding-left: 0px;"><span class="ct-toggle"><i class="fas fa-chevron-right"></i></span><a class="ct-link" href="/categories/AI工程/"><span class="ct-name">AI工程</span><span class="ct-count">2</span></a></div><ul class="ct-children"><li class="ct-item " data-level="1"><div class="ct-item-inner" style="padding-left: 20px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/AI工程/AI-Coding/"><span class="ct-name">AI Coding</span><span class="ct-count">1</span></a></div></li><li class="ct-item " data-level="1"><div class="ct-item-inner" style="padding-left: 20px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/AI工程/MCP/"><span class="ct-name">MCP</span><span class="ct-count">1</span></a></div></li></ul></li><li class="ct-item has-children" data-level="0"><div class="ct-item-inner" style="padding-left: 0px;"><span class="ct-toggle"><i class="fas fa-chevron-right"></i></span><a class="ct-link" href="/categories/八股文/"><span class="ct-name">八股文</span><span class="ct-count">61</span></a></div><ul class="ct-children"><li class="ct-item has-children" data-level="1"><div class="ct-item-inner" style="padding-left: 20px;"><span class="ct-toggle"><i class="fas fa-chevron-right"></i></span><a class="ct-link" href="/categories/八股文/Go语言/"><span class="ct-name">Go语言</span><span class="ct-count">10</span></a></div><ul class="ct-children"><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/Go语言/GMP/"><span class="ct-name">GMP</span><span class="ct-count">2</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/Go语言/Map/"><span class="ct-name">Map</span><span class="ct-count">7</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/Go语言/垃圾回收/"><span class="ct-name">垃圾回收</span><span class="ct-count">1</span></a></div></li></ul></li><li class="ct-item has-children" data-level="1"><div class="ct-item-inner" style="padding-left: 20px;"><span class="ct-toggle"><i class="fas fa-chevron-right"></i></span><a class="ct-link" href="/categories/八股文/MySQL/"><span class="ct-name">MySQL</span><span class="ct-count">22</span></a></div><ul class="ct-children"><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/MySQL/事务/"><span class="ct-name">事务</span><span class="ct-count">2</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/MySQL/内存/"><span class="ct-name">内存</span><span class="ct-count">1</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/MySQL/存储原理/"><span class="ct-name">存储原理</span><span class="ct-count">5</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/MySQL/日志/"><span class="ct-name">日志</span><span class="ct-count">1</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/MySQL/索引/"><span class="ct-name">索引</span><span class="ct-count">7</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/MySQL/锁/"><span class="ct-name">锁</span><span class="ct-count">6</span></a></div></li></ul></li><li class="ct-item has-children" data-level="1"><div class="ct-item-inner" style="padding-left: 20px;"><span class="ct-toggle"><i class="fas fa-chevron-right"></i></span><a class="ct-link" href="/categories/八股文/Redis/"><span class="ct-name">Redis</span><span class="ct-count">25</span></a></div><ul class="ct-children"><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/Redis/内存管理/"><span class="ct-name">内存管理</span><span class="ct-count">1</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/Redis/分布式锁/"><span class="ct-name">分布式锁</span><span class="ct-count">1</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/Redis/基础知识/"><span class="ct-name">基础知识</span><span class="ct-count">2</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/Redis/持久化/"><span class="ct-name">持久化</span><span class="ct-count">3</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/Redis/数据类型/"><span class="ct-name">数据类型</span><span class="ct-count">5</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/Redis/数据结构/"><span class="ct-name">数据结构</span><span class="ct-count">8</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/Redis/缓存/"><span class="ct-name">缓存</span><span class="ct-count">2</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/Redis/高可用/"><span class="ct-name">高可用</span><span class="ct-count">3</span></a></div></li></ul></li><li class="ct-item " data-level="1"><div class="ct-item-inner" style="padding-left: 20px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/操作系统/"><span class="ct-name">操作系统</span><span class="ct-count">2</span></a></div></li><li class="ct-item " data-level="1"><div class="ct-item-inner" style="padding-left: 20px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/八股文/计算机网络/"><span class="ct-name">计算机网络</span><span class="ct-count">2</span></a></div></li></ul></li><li class="ct-item has-children" data-level="0"><div class="ct-item-inner" style="padding-left: 0px;"><span class="ct-toggle"><i class="fas fa-chevron-right"></i></span><a class="ct-link" href="/categories/算法刷题/"><span class="ct-name">算法刷题</span><span class="ct-count">101</span></a></div><ul class="ct-children"><li class="ct-item has-children" data-level="1"><div class="ct-item-inner" style="padding-left: 20px;"><span class="ct-toggle"><i class="fas fa-chevron-right"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/"><span class="ct-name">LeetCode</span><span class="ct-count">99</span></a></div><ul class="ct-children"><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/二分查找/"><span class="ct-name">二分查找</span><span class="ct-count">5</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/位运算/"><span class="ct-name">位运算</span><span class="ct-count">2</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/动态规划/"><span class="ct-name">动态规划</span><span class="ct-count">14</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/双指针/"><span class="ct-name">双指针</span><span class="ct-count">1</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/回溯/"><span class="ct-name">回溯</span><span class="ct-count">5</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/图论/"><span class="ct-name">图论</span><span class="ct-count">4</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/堆/"><span class="ct-name">堆</span><span class="ct-count">2</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/字符串/"><span class="ct-name">字符串</span><span class="ct-count">5</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/数学/"><span class="ct-name">数学</span><span class="ct-count">3</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/数组与哈希/"><span class="ct-name">数组与哈希</span><span class="ct-count">20</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/栈/"><span class="ct-name">栈</span><span class="ct-count">5</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/树/"><span class="ct-name">树</span><span class="ct-count">13</span></a></div></li><li class="ct-item has-children" data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle"><i class="fas fa-chevron-right"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/模拟/"><span class="ct-name">模拟</span><span class="ct-count">7</span></a></div><ul class="ct-children"><li class="ct-item " data-level="3"><div class="ct-item-inner" style="padding-left: 60px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/模拟/错题集/"><span class="ct-name">错题集</span><span class="ct-count">1</span></a></div></li></ul></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/贪心/"><span class="ct-name">贪心</span><span class="ct-count">4</span></a></div></li><li class="ct-item " data-level="2"><div class="ct-item-inner" style="padding-left: 40px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/算法刷题/LeetCode/链表/"><span class="ct-name">链表</span><span class="ct-count">9</span></a></div></li></ul></li></ul></li><li class="ct-item " data-level="0"><div class="ct-item-inner" style="padding-left: 0px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/系统设计/"><span class="ct-name">系统设计</span><span class="ct-count">1</span></a></div></li><li class="ct-item " data-level="0"><div class="ct-item-inner" style="padding-left: 0px;"><span class="ct-toggle ct-leaf"><i class="fas fa-file-alt"></i></span><a class="ct-link" href="/categories/面试经验/"><span class="ct-name">面试经验</span><span class="ct-count">8</span></a></div></li>
+      </ul>
+    </div>
+  </div><div class="card-widget card-tags"><div class="item-headline"><i class="fas fa-tags"></i><span>Tags</span></div><div class="card-tag-cloud"><a href="/tags/AI-Coding/" style="font-size: 1.15em; color: rgb(131, 50, 72);">AI Coding</a><a href="/tags/%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91/" style="font-size: 1.22em; color: rgb(111, 58, 119);">后端开发</a><a href="/tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E7%8E%87/" style="font-size: 1.15em; color: rgb(67, 50, 151);">工程效率</a><a href="/tags/Trae/" style="font-size: 1.15em; color: rgb(158, 155, 68);">Trae</a><a href="/tags/Skills/" style="font-size: 1.15em; color: rgb(86, 110, 140);">Skills</a><a href="/tags/SubAgent/" style="font-size: 1.15em; color: rgb(111, 83, 135);">SubAgent</a><a href="/tags/AI/" style="font-size: 1.15em; color: rgb(173, 50, 121);">AI</a><a href="/tags/LLM/" style="font-size: 1.17em; color: rgb(50, 137, 50);">LLM</a><a href="/tags/%E5%A4%A7%E6%A8%A1%E5%9E%8B/" style="font-size: 1.15em; color: rgb(187, 158, 77);">大模型</a><a href="/tags/Prompt-Engineering/" style="font-size: 1.15em; color: rgb(50, 134, 62);">Prompt Engineering</a><a href="/tags/Agent/" style="font-size: 1.15em; color: rgb(177, 199, 164);">Agent</a><a href="/tags/Meta-Prompt/" style="font-size: 1.15em; color: rgb(50, 80, 50);">Meta Prompt</a><a href="/tags/%E4%BA%8C%E5%8F%89%E6%A0%91/" style="font-size: 1.27em; color: rgb(105, 142, 170);">二叉树</a><a href="/tags/%E9%80%92%E5%BD%92/" style="font-size: 1.28em; color: rgb(124, 114, 91);">递归</a><a href="/tags/%E8%BF%AD%E4%BB%A3/" style="font-size: 1.22em; color: rgb(168, 194, 174);">迭代</a><a href="/tags/%E6%B7%B1%E5%BA%A6%E4%BC%98%E5%85%88%E6%90%9C%E7%B4%A2/" style="font-size: 1.35em; color: rgb(86, 89, 50);">深度优先搜索</a><a href="/tags/%E5%B9%BF%E5%BA%A6%E4%BC%98%E5%85%88%E6%90%9C%E7%B4%A2/" style="font-size: 1.23em; color: rgb(50, 188, 50);">广度优先搜索</a><a href="/tags/Easy/" style="font-size: 1.28em; color: rgb(174, 128, 50);">Easy</a><a href="/tags/LeetCode/" style="font-size: 1.45em; color: rgb(50, 128, 50);">LeetCode</a><a href="/tags/Hot100/" style="font-size: 1.42em; color: rgb(78, 50, 69);">Hot100</a><a href="/tags/%E5%88%86%E6%B2%BB/" style="font-size: 1.18em; color: rgb(50, 50, 157);">分治</a><a href="/tags/%E5%93%88%E5%B8%8C/" style="font-size: 1.25em; color: rgb(161, 79, 193);">哈希</a><a href="/tags/Medium/" style="font-size: 1.43em; color: rgb(56, 124, 140);">Medium</a><a href="/tags/%E6%A0%91/" style="font-size: 1.17em; color: rgb(72, 97, 56);">树</a><a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 1.32em; color: rgb(50, 164, 125);">动态规划</a><a href="/tags/%E5%B1%82%E5%BA%8F%E9%81%8D%E5%8E%86/" style="font-size: 1.15em; color: rgb(197, 50, 50);">层序遍历</a><a href="/tags/%E9%9D%A2%E8%AF%95%E7%BB%8F%E5%85%B8150/" style="font-size: 1.38em; color: rgb(72, 199, 50);">面试经典150</a><a href="/tags/Hard/" style="font-size: 1.33em; color: rgb(134, 110, 189);">Hard</a><a href="/tags/%E2%9D%8C%E9%94%99%E9%A2%98%E9%9B%86/" style="font-size: 1.37em; color: rgb(189, 181, 50);">❌错题集</a><a href="/tags/%E5%9B%BE/" style="font-size: 1.2em; color: rgb(50, 170, 50);">图</a><a href="/tags/BFS/" style="font-size: 1.18em; color: rgb(151, 50, 111);">BFS</a><a href="/tags/Go/" style="font-size: 1.2em; color: rgb(50, 67, 143);">Go</a><a href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" style="font-size: 1.23em; color: rgb(50, 185, 65);">性能优化</a><a href="/tags/%E5%93%88%E5%B8%8C%E8%A1%A8/" style="font-size: 1.3em; color: rgb(173, 114, 184);">哈希表</a><a href="/tags/%E5%9B%9E%E6%BA%AF/" style="font-size: 1.23em; color: rgb(50, 50, 50);">回溯</a><a href="/tags/DFS/" style="font-size: 1.17em; color: rgb(145, 94, 50);">DFS</a><a href="/tags/%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95/" style="font-size: 1.22em; color: rgb(193, 50, 108);">贪心算法</a><a href="/tags/%E6%95%B0%E7%BB%84/" style="font-size: 1.4em; color: rgb(50, 173, 50);">数组</a><a href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/" style="font-size: 1.2em; color: rgb(121, 50, 50);">位运算</a><a href="/tags/%E9%93%BE%E8%A1%A8/" style="font-size: 1.3em; color: rgb(161, 50, 50);">链表</a></div></div><div class="card-widget card-archives">
+    <div class="item-headline">
+      <i class="fas fa-archive"></i>
+      <span>Archives</span>
+      
+    </div>
+  
+    <ul class="card-archive-list">
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2026/02/">
+            <span class="card-archive-list-date">
+              2026年02月
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2026/01/">
+            <span class="card-archive-list-date">
+              2026年01月
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/08/">
+            <span class="card-archive-list-date">
+              2025年08月
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/07/">
+            <span class="card-archive-list-date">
+              2025年07月
+            </span>
+            <span class="card-archive-list-count">10</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/06/">
+            <span class="card-archive-list-date">
+              2025年06月
+            </span>
+            <span class="card-archive-list-count">48</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/05/">
+            <span class="card-archive-list-date">
+              2025年05月
+            </span>
+            <span class="card-archive-list-count">81</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/04/">
+            <span class="card-archive-list-date">
+              2025年04月
+            </span>
+            <span class="card-archive-list-count">31</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2024/07/">
+            <span class="card-archive-list-date">
+              2024年07月
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+    </ul>
+  </div><div class="card-widget card-webinfo"><div class="item-headline"><i class="fas fa-chart-line"></i><span>Website Info</span></div><div class="webinfo"><div class="webinfo-item"><div class="item-name">Article Count :</div><div class="item-count">174</div></div><div class="webinfo-item"><div class="item-name">Total Word Count :</div><div class="item-count">464.2k</div></div><div class="webinfo-item"><div class="item-name">Unique Visitors :</div><div class="item-count" id="busuanzi_value_site_uv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">Page Views :</div><div class="item-count" id="busuanzi_value_site_pv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">Last Update :</div><div class="item-count" id="last-push-date" data-lastPushDate="2026-02-13T07:20:53.765Z"><i class="fa-solid fa-spinner fa-spin"></i></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2024 - 2026 By Adrian Wang</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', vb[0] + ' ' + vb[1] + ' ' + vb[2] + ' ' + vb[3])
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = '<!doctype html><html><head><meta charset="utf-8" />\n' +
+      '  <style>\n' +
+      '    html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ' + bg + '; }\n' +
+      '    svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }\n' +
+      '  </style>\n' +
+      '  </' + 'head><' + 'body>' + svgSource + '</' + 'body></' + 'html>'
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'forest'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = '%%{init: ' + JSON.stringify(config) + '}%%\n'
+      const mermaidID = 'mermaid-' + index
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const preToMermaid = () => {
+    const preMermaidEle = document.querySelectorAll('pre.mermaid')
+    if (preMermaidEle.length === 0) return
+
+    preMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    preToMermaid()
+    if (true) codeToMermaid()
+    const mermaidNodes = document.querySelectorAll('#article-container .mermaid-wrap')
+    if (mermaidNodes.length === 0) return
+
+    const runMermaidFn = () => runMermaid(mermaidNodes)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"language":"zh-CN","distractionFreeMode":true}
+
+  const commentCount = n => {
+    const isCommentCount = document.querySelector('#post-meta .gitalk-comment-count')
+    if (isCommentCount) {
+      isCommentCount.textContent= n
+    }
+  }
+
+  const initGitalk = (el, path) => {
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGitalk = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    const gitalk = new Gitalk({
+      clientID: 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo: 'blog-comments',
+      owner: 'AdrianWangs',
+      admin: ['AdrianWangs'],
+      updateCountCallback: commentCount,
+      ...option,
+      id: isShuoshuo ? path : (option && option.id) || 'b1ac14e683780f75af181ef124a9df27'
+    })
+
+    gitalk.render('gitalk-container')
+  }
+
+  const loadGitalk = async(el, path) => {
+    if (typeof Gitalk === 'function') initGitalk(el, path)
+    else {
+      await btf.getCSS('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.css')
+      await btf.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.js')
+      initGitalk(el, path)
+    }
+  }
+
+  if (isShuoshuo) {
+    'Gitalk' === 'Gitalk'
+      ? window.shuoshuoComment = { loadComment: loadGitalk }
+      : window.loadOtherComment = loadGitalk
+    return
+  }
+
+  if ('Gitalk' === 'Gitalk' || !false) {
+    if (false) btf.loadComment(document.getElementById('gitalk-container'), loadGitalk)
+    else loadGitalk()
+  } else {
+    window.loadOtherComment = loadGitalk
+  }
+})()</script></div><script defer src="/js/echarts-theme-adapter.js"></script><script defer src="/js/category-tree.js"></script><script defer src="/js/reading-progress.js"></script><script defer src="/js/wide-mode.js"></script><script defer src="/js/font-size-toggle.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">Search</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  Loading Database</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div><script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",2],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-20",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1],["2025-07-06",1],["2025-07-09",1],["2025-07-20",3],["2025-07-26",2],["2025-08-03",1],["2026-01-18",1],["2026-02-13",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07","2025-08","2026-01","2026-02"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,48,10,1,1,1],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"AI","children":[{"name":"LLM","children":[],"count":1,"path":"AI/LLM"}],"count":1,"path":"AI"},{"name":"八股文","children":[{"name":"Go语言","children":[{"name":"GMP","children":[],"count":2,"path":"八股文/Go语言/GMP"},{"name":"垃圾回收","children":[],"count":1,"path":"八股文/Go语言/垃圾回收"},{"name":"Map","children":[],"count":7,"path":"八股文/Go语言/Map"}],"count":10,"path":"八股文/Go语言"},{"name":"操作系统","children":[],"count":2,"path":"八股文/操作系统"},{"name":"计算机网络","children":[],"count":2,"path":"八股文/计算机网络"},{"name":"Redis","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/Redis/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/Redis/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/Redis/高可用"},{"name":"内存管理","children":[],"count":1,"path":"八股文/Redis/内存管理"},{"name":"持久化","children":[],"count":3,"path":"八股文/Redis/持久化"},{"name":"数据结构","children":[],"count":8,"path":"八股文/Redis/数据结构"},{"name":"基础知识","children":[],"count":2,"path":"八股文/Redis/基础知识"},{"name":"数据类型","children":[],"count":5,"path":"八股文/Redis/数据类型"}],"count":25,"path":"八股文/Redis"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"存储原理","children":[],"count":5,"path":"八股文/MySQL/存储原理"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":61,"path":"八股文"},{"name":"面试经验","children":[],"count":8,"path":"面试经验"},{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"数组与哈希","children":[],"count":20,"path":"算法刷题/LeetCode/数组与哈希"},{"name":"数学","children":[],"count":3,"path":"算法刷题/LeetCode/数学"},{"name":"位运算","children":[],"count":2,"path":"算法刷题/LeetCode/位运算"},{"name":"链表","children":[],"count":9,"path":"算法刷题/LeetCode/链表"},{"name":"回溯","children":[],"count":5,"path":"算法刷题/LeetCode/回溯"},{"name":"模拟","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/模拟/错题集"}],"count":7,"path":"算法刷题/LeetCode/模拟"},{"name":"图论","children":[],"count":4,"path":"算法刷题/LeetCode/图论"},{"name":"树","children":[],"count":13,"path":"算法刷题/LeetCode/树"},{"name":"二分查找","children":[],"count":5,"path":"算法刷题/LeetCode/二分查找"},{"name":"栈","children":[],"count":5,"path":"算法刷题/LeetCode/栈"},{"name":"贪心","children":[],"count":4,"path":"算法刷题/LeetCode/贪心"},{"name":"字符串","children":[],"count":5,"path":"算法刷题/LeetCode/字符串"},{"name":"双指针","children":[],"count":1,"path":"算法刷题/LeetCode/双指针"},{"name":"动态规划","children":[],"count":14,"path":"算法刷题/LeetCode/动态规划"},{"name":"堆","children":[],"count":2,"path":"算法刷题/LeetCode/堆"}],"count":99,"path":"算法刷题/LeetCode"}],"count":101,"path":"算法刷题"},{"name":"AI工程","children":[{"name":"AI Coding","children":[],"count":1,"path":"AI工程/AI Coding"},{"name":"MCP","children":[],"count":1,"path":"AI工程/MCP"}],"count":2,"path":"AI工程"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body></html>

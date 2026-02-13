@@ -1,0 +1,1551 @@
+<!DOCTYPE html><html lang="zh" data-theme="light"><head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end --><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>MySQL 是怎么加锁的？—— 深入解析MySQL锁机制 | Adrian Wang's blog</title><meta name="author" content="Adrian Wang"><meta name="copyright" content="Adrian Wang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="深入剖析MySQL的锁机制原理，包括行锁、表锁、间隙锁、记录锁和next-key锁等不同类型及其实现原理，通过命令分析实例帮助理解MySQL如何加行级锁。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL 是怎么加锁的？—— 深入解析MySQL锁机制">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="深入剖析MySQL的锁机制原理，包括行锁、表锁、间隙锁、记录锁和next-key锁等不同类型及其实现原理，通过命令分析实例帮助理解MySQL如何加行级锁。">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970217982.png">
+<meta property="article:published_time" content="2025-05-11T15:30:00.000Z">
+<meta property="article:modified_time" content="2026-02-13T07:20:17.710Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="锁机制">
+<meta property="article:tag" content="行级锁">
+<meta property="article:tag" content="表级锁">
+<meta property="article:tag" content="next-key锁">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970217982.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "MySQL 是怎么加锁的？—— 深入解析MySQL锁机制",
+  "url": "https://adrianwangs.github.io/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/",
+  "image": "https://adrianwangs.github.io/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970217982.png",
+  "datePublished": "2025-05-11T15:30:00.000Z",
+  "dateModified": "2026-02-13T07:20:17.710Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Adrian Wang",
+      "url": "https://adrianwangs.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/images/favicon-32x32-next.png"><link rel="canonical" href="https://adrianwangs.github.io/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0f172a')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"No results found for: ${query}","hits_stats":"${hits} articles found"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MySQL 是怎么加锁的？—— 深入解析MySQL锁机制',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/category-tree.css"><link rel="stylesheet" href="/css/reading-progress.css"><link rel="stylesheet" href="/css/wide-mode.css"><link rel="stylesheet" href="/css/font-size-toggle.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">Loading...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      if ($loadingBox.classList.contains('loaded')) return
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+
+  if (document.readyState === 'complete') {
+    preloader.endLoading()
+  } else {
+    window.addEventListener('load', preloader.endLoading)
+    document.addEventListener('DOMContentLoaded', preloader.endLoading)
+    // Add timeout protection: force end after 7 seconds
+    setTimeout(preloader.endLoading, 7000)
+  }
+
+  if (false) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #f8fafc;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970217982.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Adrian Wang's blog</span></a><a class="nav-page-title" href="/"><span class="site-name">MySQL 是怎么加锁的？—— 深入解析MySQL锁机制</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">MySQL 是怎么加锁的？—— 深入解析MySQL锁机制</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2025-05-11T15:30:00.000Z" title="Created 2025-05-11 15:30:00">2025-05-11</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-02-13T07:20:17.710Z" title="Updated 2026-02-13 07:20:17">2026-02-13</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/">八股文</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/">MySQL</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/%E9%94%81/">锁</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">11.8k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>40mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1>MySQL 是怎么加锁的？</h1>
+<h2 id="什么-SQL-语句会加行级锁？">什么 SQL 语句会加行级锁？</h2>
+<p>InnoDB 存储引擎支持行级锁，而 MyISAM 存储引擎则不支持。因此，后续内容均基于 InnoDB 引擎进行讨论。</p>
+<p>所以，当我们探讨 MySQL 如何添加行级锁时，实际上是在讨论 InnoDB 引擎是如何实现行级锁的。</p>
+<p>普通的 <code>select</code> 语句通常不会对记录加锁，因为它属于&quot;快照读&quot;（Snapshot Read），是通过 MVCC（多版本并发控制）机制实现的，目的是提供一致性的非阻塞读。</p>
+<p>如果希望在查询时对记录施加行级锁，可以使用以下两种方式，这类会加锁的查询被称为&quot;锁定读&quot;（Locking Read）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> 对读取的记录加共享锁 (S型锁)</span><br><span class="line"><span class="keyword">select</span> ... lock <span class="keyword">in</span> share mode;</span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 对读取的记录加独占锁 (X型锁)</span><br><span class="line"><span class="keyword">select</span> ... <span class="keyword">for</span> <span class="keyword">update</span>;</span><br></pre></td></tr></table></figure>
+<p>上述这两条语句必须在事务中执行，<strong>因为锁的生命周期与事务绑定，事务一旦提交，所有锁便会释放</strong>。因此，在使用这些语句时，务必先通过 <code>begin</code> 或 <code>start transaction</code> 开启一个事务。</p>
+<p><strong>除了上述的锁定读语句会添加行级锁之外，<code>update</code> 和 <code>delete</code> 操作同样会添加行级锁，并且它们添加的都是独占锁 (X 型锁)</strong>。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> 对操作的记录加独占锁 (X型锁)</span><br><span class="line"><span class="keyword">update</span> <span class="keyword">table</span> .... <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 对操作的记录加独占锁 (X型锁)</span><br><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> <span class="keyword">table</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<p>共享锁（S 锁）的特性是&quot;读读共享，读写互斥&quot;，即多个事务可以同时持有同一记录的 S 锁进行读取，但任何持有 S 锁的事务都不能写入，任何尝试写入的事务也不能获取 S 锁。</p>
+<p>独占锁（X 锁）的特性是&quot;写写互斥，读写互斥&quot;，即一旦一个事务持有了记录的 X 锁，其他任何事务都不能再对该记录施加 S 锁或 X 锁。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970217982.png" alt="1746970217982"></p>
+<h2 id="行级锁有哪些种类？">行级锁有哪些种类？</h2>
+<p>在不同的事务隔离级别下，行级锁的种类也有所不同。</p>
+<p>在&quot;读已提交&quot;（Read Committed）隔离级别下，行级锁主要表现为记录锁（Record Lock），即仅仅锁定某一条记录。</p>
+<p>在&quot;可重复读&quot;（Repeatable Read）隔离级别下，为了避免&quot;幻读&quot;（Phantom Read）问题，除了记录锁之外，还引入了间隙锁（Gap Lock）。因此，在该隔离级别下，行级锁主要有以下三类：</p>
+<ul>
+<li><strong>Record Lock (记录锁)</strong>：仅仅锁定一条记录。</li>
+<li><strong>Gap Lock (间隙锁)</strong>：锁定一个范围，但不包括记录本身。</li>
+<li><strong>Next-Key Lock (临键锁)</strong>：Record Lock + Gap Lock 的组合，锁定一个范围，并且锁定记录本身。</li>
+</ul>
+<p>接下来，我们分别详细介绍这三种行级锁。</p>
+<h3 id="Record-Lock">Record Lock</h3>
+<p>Record Lock，即记录锁，用于锁定单条记录。记录锁分为 S 型记录锁和 X 型记录锁：</p>
+<ul>
+<li>当一个事务为某条记录添加了 S 型记录锁后，其他事务仍然可以继续为该记录添加 S 型记录锁（S 锁之间兼容），但不能添加 X 型记录锁（S 锁与 X 锁互斥）。</li>
+<li>当一个事务为某条记录添加了 X 型记录锁后，其他事务既不能为该记录添加 S 型记录锁（S 锁与 X 锁互斥），也不能添加 X 型记录锁（X 锁之间也互斥）。</li>
+</ul>
+<p>例如，当一个事务执行以下语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql <span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">mysql <span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t_test <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br></pre></td></tr></table></figure>
+<p>该事务会为表中主键 <code>id = 1</code> 的记录添加一个 X 型的记录锁。此时，如果其他事务尝试对这条记录进行删除或更新操作，这些操作将会被阻塞。值得注意的是，如果其他事务尝试插入一条 <code>id = 1</code> 的新记录，该操作不会被这个记录锁阻塞，但会因为主键的唯一性约束而报错。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970230632.png" alt="1746970230632"></p>
+<p>当事务执行 <code>commit</code> 后，其在事务过程中产生的所有锁都将被释放。</p>
+<h3 id="Gap-Lock">Gap Lock</h3>
+<p>Gap Lock，即间隙锁，仅存在于可重复读隔离级别中，其主要目的是为了解决该隔离级别下的幻读问题。</p>
+<p>例如，若表中存在一个覆盖 <code>id</code> 范围 <code>(3, 5)</code> 的间隙锁，那么其他事务将无法插入 <code>id = 4</code> 这条记录，从而有效地防止了幻读现象的发生。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970239002.png" alt="1746970239002"></p>
+<p>间隙锁虽然也区分 X 型和 S 型，但实际上它们之间并没有功能上的差异。<strong>间隙锁之间是相互兼容的，即两个事务可以同时持有包含共同间隙范围的间隙锁，它们之间不存在互斥关系。这是因为间隙锁的核心目标是阻止新的记录插入到间隙中，以防止幻读。</strong></p>
+<h3 id="Next-Key-Lock">Next-Key Lock</h3>
+<p>Next-Key Lock，即临键锁，是 Record Lock 和 Gap Lock 的结合体。它锁定一个范围，并且同时锁定范围右边界上的那条记录本身。通常我们说的 Next-Key Lock 的区间是一个左开右闭的区间。</p>
+<p>例如，若表中存在一个覆盖 <code>id</code> 范围 <code>(3, 5]</code> 的 next-key lock，那么其他事务既不能插入 <code>id = 4</code> 的记录（被 Gap 部分覆盖），也不能修改或删除 <code>id = 5</code> 这条记录（被 Record 部分覆盖）。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970246308.png" alt="1746970246308"></p>
+<p>因此，next-key lock 既能保护目标记录不被修改或删除，又能阻止其他事务在被保护记录之前的间隙中插入新记录。</p>
+<p><strong>由于 next-key lock 包含了记录锁和间隙锁，如果一个事务获取了 X 型的 next-key lock，那么其他事务试图获取相同范围的 X 型 next-key lock 时将会被阻塞。</strong></p>
+<p>例如，一个事务持有了范围为 <code>(1, 10]</code> 的 X 型 next-key lock，那么其他事务在尝试获取相同范围的 X 型 next-key lock 时就会发生阻塞。</p>
+<p>虽然覆盖相同范围的间隙锁是相互兼容的，但对于 next-key lock 中的记录锁部分，我们仍需考虑 X 型与 S 型锁之间的兼容关系：X 型的记录锁与 X 型的记录锁是冲突的，X 型记录锁与 S 型记录锁也是冲突的。</p>
+<h2 id="MySQL-是怎么加行级锁的？">MySQL 是怎么加行级锁的？</h2>
+<p>行级锁的加锁规则相当复杂，不同的查询场景下，其加锁形式也会有所不同。</p>
+<p><strong>MySQL 加锁的对象是索引，而加锁的基本单位是 next-key lock</strong>。next-key lock 由记录锁和间隙锁组合而成，其锁定范围通常是一个<strong>前开后闭</strong>的区间（例如 <code>(a, b]</code>）。相对地，单纯的间隙锁锁定的是一个<strong>前开后开</strong>的区间（例如 <code>(a, b)</code>）。</p>
+<p>然而，在特定场景下，next-key lock 可能会&quot;退化&quot;为记录锁或间隙锁。总结其退化原则就是：<strong>在仅通过记录锁或间隙锁就能有效避免幻读问题的场景下，next-key lock 就会进行相应的退化。</strong></p>
+<p>接下来，我们将使用以下表结构进行实验说明：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> `<span class="keyword">user</span>` (</span><br><span class="line">  `id` <span class="type">bigint</span> <span class="keyword">NOT NULL</span> AUTO_INCREMENT,</span><br><span class="line">  `name` <span class="type">varchar</span>(<span class="number">30</span>) <span class="keyword">COLLATE</span> utf8mb4_unicode_ci <span class="keyword">NOT NULL</span>,</span><br><span class="line">  `age` <span class="type">int</span> <span class="keyword">NOT NULL</span>,</span><br><span class="line">  <span class="keyword">PRIMARY KEY</span> (`id`),</span><br><span class="line">  KEY `index_age` (`age`) <span class="keyword">USING</span> BTREE</span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB <span class="keyword">DEFAULT</span> CHARSET<span class="operator">=</span>utf8mb4 <span class="keyword">COLLATE</span><span class="operator">=</span>utf8mb4_unicode_ci;</span><br></pre></td></tr></table></figure>
+<p>其中，<code>id</code> 是主键索引（唯一索引），<code>age</code> 是普通索引（非唯一索引），<code>name</code> 是一个没有索引的普通列。</p>
+<p>表中的初始记录如下：</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>name</th>
+<th>age</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>路飞</td>
+<td>19</td>
+</tr>
+<tr>
+<td>5</td>
+<td>索隆</td>
+<td>21</td>
+</tr>
+<tr>
+<td>10</td>
+<td>山治</td>
+<td>22</td>
+</tr>
+<tr>
+<td>15</td>
+<td>乌索普</td>
+<td>20</td>
+</tr>
+<tr>
+<td>20</td>
+<td>香克斯</td>
+<td>39</td>
+</tr>
+</tbody>
+</table>
+<p>本次实验环境的 <strong>MySQL 版本为 8.0.26，事务隔离级别为「可重复读」</strong>。</p>
+<p>请注意，不同 MySQL 版本的加锁规则可能存在细微差异，但总体逻辑是相似的。</p>
+<h3 id="唯一索引等值查询">唯一索引等值查询</h3>
+<p>当使用唯一索引进行等值查询时，根据查询的记录是否存在，加锁规则有所不同：</p>
+<ul>
+<li>当查询的记录 <strong>「存在」</strong> 时，在索引树上定位到该记录后，施加在该记录索引项上的 next-key lock 会<strong>退化为「记录锁」</strong>。</li>
+<li>当查询的记录 <strong>「不存在」</strong> 时，在索引树上找到第一条大于该查询记录值的记录后，施加在该记录索引项上的 next-key lock 会<strong>退化为「间隙锁」</strong>，该间隙锁覆盖的范围是查不到的那条记录到这条大于它的记录之间的间隙。</li>
+</ul>
+<p>接下来通过两个案例进行说明。</p>
+<h4 id="1、记录存在的情况">1、记录存在的情况</h4>
+<p>假设事务 A 执行以下等值查询语句，且查询的记录 <code>id = 1</code> <strong>存在</strong>于表中：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name   <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> 路飞   <span class="operator">|</span>  <span class="number">19</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.02</span> sec)</span><br></pre></td></tr></table></figure>
+<p>此时，事务 A 会为 <code>id = 1</code> 的这条记录添加一个 <strong>X 型的记录锁</strong>。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970299852.png" alt="1746970299852"></p>
+<p>若此时有其他事务尝试对 <code>id = 1</code> 的记录进行更新或删除操作，这些操作都将被阻塞。这是因为更新或删除操作也会尝试对该记录添加 X 型的记录锁，而 X 锁与 X 锁之间是互斥的。</p>
+<p>例如：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970306340.png" alt="1746970306340"></p>
+<p>由于事务 A 对 <code>id = 1</code> 的记录持有了 X 型记录锁，事务 B 修改 <code>id=1</code> 记录的操作和事务 C 删除 <code>id=1</code> 记录的操作都会被阻塞。</p>
+<blockquote>
+<p>有什么命令可以分析加了什么锁？</p>
+</blockquote>
+<p>我们可以通过执行 <code>select * from performance_schema.data_locks\G;</code> 这条语句，来查看当前事务在执行 SQL 过程中具体添加了哪些锁。</p>
+<p>以上述事务 A 为例，分析其加锁情况：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970318268.png" alt="1746970318268"></p>
+<p>从上图的输出可以看到，事务 A 共添加了两种锁：</p>
+<ul>
+<li><strong>表锁 (Table Lock)</strong>：类型为 <code>IX</code> (Intent Exclusive，意向排他锁)。这是 InnoDB 在对行加锁前，为了协调表级锁和行级锁的关系而自动加的表级锁。</li>
+<li><strong>行锁 (Row Lock)</strong>：<code>LOCK_TYPE</code> 显示为 <code>RECORD</code>，表示这是一个行级锁。</li>
+</ul>
+<p>我们重点关注行级锁。通过 <code>LOCK_MODE</code> 字段可以进一步区分是 next-key 锁、间隙锁还是记录锁：</p>
+<ul>
+<li>如果 <code>LOCK_MODE</code> 为 <code>X</code>，通常表示 next-key 锁。</li>
+<li>如果 <code>LOCK_MODE</code> 为 <code>X, REC_NOT_GAP</code>，明确表示是记录锁。</li>
+<li>如果 <code>LOCK_MODE</code> 为 <code>X, GAP</code>，明确表示是间隙锁。</li>
+</ul>
+<p>因此，在这个例子中，<strong>事务 A 在 <code>id = 1</code> 这条记录的主键索引上添加的是 X 型记录锁</strong>，锁定的就是 <code>id = 1</code> 这一行数据。这使得其他事务无法对该记录进行更新和删除。</p>
+<p>从这里也可以看出，<strong>加锁是针对索引进行的</strong>。由于此查询语句通过聚簇索引（即主键索引）进行扫描，因此锁是施加在主键索引上的。对相应记录的主键索引项添加记录锁后，其他事务就不能更新或删除这条记录了。</p>
+<blockquote>
+<p>为什么唯一索引等值查询且记录存在的场景下，next-key lock 会退化成记录锁？</p>
+</blockquote>
+<p>核心原因在于，在这种特定场景下，<strong>仅依靠记录锁就足以避免幻读问题</strong>。</p>
+<p>幻读的定义是：在一个事务内，前后两次执行相同的查询，结果集却不一致（例如，多出或少了一些行）。要避免幻读，就需要防止在两次查询之间，结果集中的某条记录被其他事务删除，或者有其他事务插入了新的符合查询条件的记录。</p>
+<ul>
+<li><strong>防止新记录插入</strong>：由于主键具有唯一性约束，任何其他事务尝试插入一条 <code>id = 1</code> 的新记录时，都会因为主键冲突而失败。这就保证了事务 A 在多次查询 <code>id = 1</code> 的记录时，不会凭空多出一条 <code>id = 1</code> 的记录。</li>
+<li><strong>防止记录被删除/修改</strong>：由于事务 A 对 <code>id = 1</code> 的记录添加了记录锁，其他事务无法删除或修改这条记录。这就保证了事务 A 在多次查询 <code>id = 1</code> 的记录时，该记录不会消失或被改变。</li>
+</ul>
+<p>综上，一个记录锁已经能确保查询 <code>id=1</code> 的结果一致性，因此 next-key lock 退化为更轻量级的记录锁是合理的优化。</p>
+<h4 id="2、记录不存在的情况">2、记录不存在的情况</h4>
+<p>假设事务 A 执行以下等值查询语句，但查询的记录 <code>id = 2</code> <strong>不存在</strong>于表中：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">2</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="keyword">Empty</span> <span class="keyword">set</span> (<span class="number">0.03</span> sec)</span><br></pre></td></tr></table></figure>
+<p>接下来，通过 <code>select * from performance_schema.data_locks\G;</code> 查看加锁情况：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970329203.png" alt="1746970329203"></p>
+<p>从上图可以看到，行锁的 <code>LOCK_MODE</code> 为 <code>X, GAP</code>，表示添加了 X 型的间隙锁。</p>
+<p>具体分析：<br>
+MySQL 在主键索引上查找 <code>id = 2</code> 的记录。由于 <code>id = 2</code> 不存在，它会找到第一个大于 2 的记录，即 <code>id = 5</code>。然后，在 <code>id = 5</code> 这条记录对应的主键索引项上添加一个间隙锁。这个间隙锁覆盖的范围是表中 <code>id = 5</code> 之前的记录 <code>id = 1</code> 到 <code>id = 5</code> 之间的间隙，即 <code>(1, 5)</code>。</p>
+<p>因此，<strong>事务 A 在主键索引上添加了一个覆盖范围 <code>(1, 5)</code> 的 X 型间隙锁。</strong></p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970337602.png" alt="1746970337602"></p>
+<p>这个间隙锁意味着，其他事务将无法插入 <code>id</code> 值为 2、3、4 的新记录，因为这些值都落在了 <code>(1, 5)</code> 这个间隙内。</p>
+<p>注意：如果其他事务尝试插入 <code>id = 1</code> 或 <code>id = 5</code> 的记录，它们不会被这个间隙锁阻塞，而是会因为主键冲突（表中已存在这些记录）而报错。</p>
+<p>例如：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970344320.png" alt="1746970344320"></p>
+<p>由于事务 A 持有范围为 <code>(1, 5)</code> 的 X 型间隙锁，事务 B 尝试插入 <code>id = 3</code> 的记录时，其操作会被阻塞。</p>
+<blockquote>
+<p>这个间隙锁的范围 <code>(1, 5)</code> 是如何确定的？</p>
+</blockquote>
+<p>根据 <code>performance_schema.data_locks</code> 的输出，如果 <code>LOCK_MODE</code> 是 next-key 锁或间隙锁，<code>LOCK_DATA</code> 字段通常表示锁范围的&quot;右边界&quot;。在此次事务 A 的例子中，<code>LOCK_DATA</code> 是 5。<br>
+然后，锁范围的&quot;左边界&quot;是表中 <code>id</code> 为 5 的记录的前一条记录的 <code>id</code> 值，即 1。<br>
+因此，间隙锁的范围确定为 <code>(1, 5)</code>。</p>
+<blockquote>
+<p>为什么唯一索引等值查询且记录「不存在」的场景下，next-key lock 会退化成「间隙锁」？</p>
+</blockquote>
+<p>原因同样是为了在避免幻读的前提下，使用尽可能小的锁范围。</p>
+<ul>
+<li><strong>为什么不是 next-key lock？</strong> 如果对 <code>id = 5</code> 的索引项加 next-key lock <code>(1, 5]</code>，这意味着其他事务无法删除或修改 <code>id = 5</code> 这条记录。但我们查询的是 <code>id = 2</code>，只要保证前后两次查询 <code>id = 2</code> 的结果集相同（即没有新的 <code>id = 2</code> 插入），就能避免幻读。<code>id = 5</code> 是否被删除对查询 <code>id = 2</code> 的结果没有影响。因此，没有必要锁定 <code>id = 5</code> 本身，一个覆盖 <code>(1, 5)</code> 的间隙锁足以阻止 <code>id = 2, 3, 4</code> 的插入。</li>
+<li><strong>为什么不是记录锁？</strong> 锁是施加在索引项上的。由于查询的记录 <code>id = 2</code> 本身并不存在于索引中，自然无法对一个不存在的记录施加记录锁。</li>
+</ul>
+<p>因此，退化为间隙锁 <code>(1, 5)</code> 是最合适的选择。</p>
+<h3 id="唯一索引范围查询">唯一索引范围查询</h3>
+<p>唯一索引的范围查询与等值查询的加锁规则有所不同。</p>
+<p>当使用唯一索引进行范围查询时，<strong>MySQL 会对扫描到的每一个索引项（满足条件的记录以及扫描过程中遇到的用于界定范围的记录）尝试添加 next-key 锁。然后，根据具体情况，这些 next-key 锁可能会退化成记录锁或间隙锁</strong>：</p>
+<ul>
+<li>情况一：对于 <strong>「大于等于 (&gt;=)」</strong> 的范围查询，由于其中包含了等值查询的条件，如果等值部分（例如 <code>id = X</code> in <code>id &gt;= X</code>）的记录<strong>存在</strong>于表中，那么施加在该记录索引项上的 next-key 锁会<strong>退化成记录锁</strong>。对于范围覆盖的其他记录，则仍可能是 next-key 锁。</li>
+<li>情况二：对于 <strong>「小于 (&lt;) 或小于等于 (&lt;=)」</strong> 的范围查询，处理方式取决于条件值的记录是否存在于表中：
+<ul>
+<li>当条件值的记录<strong>不存在</strong>于表中时（例如 <code>id &lt; 6</code> 或 <code>id &lt;= 6</code>，而表中没有 <code>id = 6</code> 的记录），无论是「小于」还是「小于等于」的查询，当扫描到第一个不满足范围条件（即大于或等于条件值）的记录时（作为范围的终止点），施加在该终止记录索引项上的 next-key 锁会<strong>退化成间隙锁</strong>。其他被扫描到的满足条件的记录，其索引项上通常加的是 next-key 锁。</li>
+<li>当条件值的记录<strong>存在</strong>于表中时（例如 <code>id &lt; 5</code> 或 <code>id &lt;= 5</code>，且表中有 <code>id = 5</code> 的记录）：
+<ul>
+<li>如果是「小于 (&lt;)」条件的范围查询（如 <code>id &lt; 5</code>），当扫描到条件值的记录（即 <code>id = 5</code>，它是第一个不满足 <code>id &lt; 5</code> 的记录）时，施加在该记录索引项上的 next-key 锁会<strong>退化成间隙锁</strong>。其他被扫描到的满足条件的记录，其索引项上通常加的是 next-key 锁。</li>
+<li>如果是「小于等于 (&lt;=)」条件的范围查询（如 <code>id &lt;= 5</code>），当扫描到条件值的记录（即 <code>id = 5</code>，它是满足条件的最后一条记录）时，施加在该记录索引项上的 next-key 锁通常<strong>不会退化</strong>。其他被扫描到的满足条件的记录，其索引项上通常加的也是 next-key 锁。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>接下来，通过几个实验来验证上述结论。</p>
+<h4 id="1、针对「大于或者大于等于」的范围查询">1、针对「大于或者大于等于」的范围查询</h4>
+<blockquote>
+<p>实验一：针对「大于 (&gt;)」的范围查询。</p>
+</blockquote>
+<p>假设事务 A 执行以下范围查询语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">&gt;</span> <span class="number">15</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name      <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">20</span> <span class="operator">|</span> 香克斯    <span class="operator">|</span>  <span class="number">39</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br></pre></td></tr></table></figure>
+<p>事务 A 的加锁过程分析如下：</p>
+<ol>
+<li>扫描到的第一条满足 <code>id &gt; 15</code> 的记录是 <code>id = 20</code>。由于这是一个严格大于的查询，不是等值查询，因此在 <code>id = 20</code> 这条记录的主键索引项上添加的是一个 next-key 锁，其覆盖范围是 <code>(15, 20]</code>（左边界是表中 <code>id=20</code> 之前的记录 <code>id=15</code>）。</li>
+<li>由于是范围查询，MySQL 会继续向后扫描，以确定范围的上限。即使 <code>id = 20</code> 是表中的最后一条用户记录，InnoDB 内部还有一个特殊的&quot;supremum pseudo-record&quot;来标识索引的末尾。当扫描到这个 supremum 记录时，会为它添加一个 next-key 锁，覆盖范围是 <code>(20, +∞]</code>。</li>
+<li>扫描结束。</li>
+</ol>
+<p>因此，事务 A 在主键索引上添加了两个 X 型的 next-key 锁：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970353980.png" alt="1746970353980"></p>
+<ul>
+<li>在 <code>id = 20</code> 记录的主键索引项上，施加了范围为 <code>(15, 20]</code> 的 next-key 锁。这意味着其他事务既无法更新或删除 <code>id = 20</code> 的记录，也无法插入 <code>id</code> 值为 16、17、18、19 的新记录。</li>
+<li>在 supremum pseudo-record 的主键索引项上，施加了范围为 <code>(20, +∞]</code> 的 next-key 锁。这意味着其他事务无法插入 <code>id</code> 值大于 20 的新记录。</li>
+</ul>
+<p>通过 <code>select * from performance_schema.data_locks\G;</code> 确认加锁情况（仅截取行级锁部分）：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970365637.png" alt="1746970365637"></p>
+<p>从上图分析，<code>LOCK_MODE</code> 均为 <code>X</code>，表示 next-key 锁。</p>
+<ul>
+<li><code>LOCK_DATA: 20</code> 对应 <code>(15, 20]</code> 的 next-key 锁。</li>
+<li><code>LOCK_DATA: supremum pseudo-record</code> 对应 <code>(20, +∞]</code> 的 next-key 锁。<br>
+这与我们的分析一致。</li>
+</ul>
+<blockquote>
+<p>实验二：针对「大于等于 (&gt;=)」的范围查询。</p>
+</blockquote>
+<p>假设事务 A 执行以下范围查询语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">&gt;=</span> <span class="number">15</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name      <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">15</span> <span class="operator">|</span> 乌索普    <span class="operator">|</span>  <span class="number">20</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">20</span> <span class="operator">|</span> 香克斯    <span class="operator">|</span>  <span class="number">39</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+<p>事务 A 的加锁过程分析如下：</p>
+<ol>
+<li>首先处理 <code>id = 15</code> 的部分（等值条件）。由于记录 <code>id = 15</code> 存在，施加在该记录主键索引项上的 next-key 锁会<strong>退化为记录锁</strong>，仅锁定 <code>id = 15</code> 这一行。</li>
+<li>继续范围查找，扫描到下一条记录 <code>id = 20</code>。在 <code>id = 20</code> 的主键索引项上添加 next-key 锁，范围是 <code>(15, 20]</code>。</li>
+<li>继续向后扫描到 supremum pseudo-record，为其添加 next-key 锁，范围是 <code>(20, +∞]</code>。</li>
+<li>扫描结束。</li>
+</ol>
+<p>事务 A 在主键索引上添加了三个 X 型的锁：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970396194.png" alt="1746970396194"></p>
+<ul>
+<li>在 <code>id = 15</code> 记录的主键索引项上，施加了记录锁，锁定 <code>id = 15</code>。</li>
+<li>在 <code>id = 20</code> 记录的主键索引项上，施加了范围为 <code>(15, 20]</code> 的 next-key 锁。</li>
+<li>在 supremum pseudo-record 的主键索引项上，施加了范围为 <code>(20, +∞]</code> 的 next-key 锁。</li>
+</ul>
+<p>通过 <code>select * from performance_schema.data_locks\G;</code> 确认加锁情况：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970403063.png" alt="1746970403063"></p>
+<p>分析上图：</p>
+<ul>
+<li><code>LOCK_DATA: 15</code>, <code>LOCK_MODE: X, REC_NOT_GAP</code> 表示对 <code>id = 15</code> 加了记录锁。</li>
+<li><code>LOCK_DATA: 20</code>, <code>LOCK_MODE: X</code> 表示对 <code>id = 20</code> 加了 <code>(15, 20]</code> 的 next-key 锁。</li>
+<li><code>LOCK_DATA: supremum pseudo-record</code>, <code>LOCK_MODE: X</code> 表示加了 <code>(20, +∞]</code> 的 next-key 锁。<br>
+这与我们的分析一致，并验证了：在「大于等于」条件的唯一索引范围查询中，若条件值的记录存在，其索引项上的 next-key 锁会退化为记录锁。</li>
+</ul>
+<h4 id="2、针对「小于或者小于等于」的范围查询">2、针对「小于或者小于等于」的范围查询</h4>
+<blockquote>
+<p>实验一：针对「小于 (&lt;)」的范围查询，且查询条件值的记录「不存在」于表中。</p>
+</blockquote>
+<p>假设事务 A 执行以下范围查询语句，注意条件值 <code>id = 6</code> 的记录并<strong>不存在</strong>于表中：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">6</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name   <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> 路飞   <span class="operator">|</span>  <span class="number">19</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">5</span> <span class="operator">|</span> 索隆   <span class="operator">|</span>  <span class="number">21</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)  <span class="comment">-- 返回的记录是 id=1 和 id=5</span></span><br></pre></td></tr></table></figure>
+<p>事务 A 的加锁过程分析如下：</p>
+<ol>
+<li>扫描到的第一条满足 <code>id &lt; 6</code> 的记录是 <code>id = 1</code>。在其主键索引项上添加 next-key 锁，范围是 <code>(-∞, 1]</code> (这里的 <code>-∞</code> 表示索引的起始)。</li>
+<li>继续范围查找，扫描到下一条满足 <code>id &lt; 6</code> 的记录是 <code>id = 5</code>。在其主键索引项上添加 next-key 锁，范围是 <code>(1, 5]</code>。</li>
+<li>继续扫描，下一条记录是 <code>id = 10</code>。这条记录不满足 <code>id &lt; 6</code> 的条件，它是第一个不满足条件的记录，因此作为扫描的终止点。施加在 <code>id = 10</code> 这条记录主键索引项上的 next-key 锁会<strong>退化成间隙锁</strong>，覆盖的范围是 <code>(5, 10)</code>。</li>
+<li>由于找到了不满足条件的记录，扫描停止。</li>
+</ol>
+<p>事务 A 在主键索引上添加了三个 X 型的锁：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970412678.png" alt="1746970412678"></p>
+<ul>
+<li>在 <code>id = 1</code> 记录的主键索引项上，施加了范围为 <code>(-∞, 1]</code> 的 next-key 锁。</li>
+<li>在 <code>id = 5</code> 记录的主键索引项上，施加了范围为 <code>(1, 5]</code> 的 next-key 锁。</li>
+<li>在 <code>id = 10</code> 记录的主键索引项上，施加了范围为 <code>(5, 10)</code> 的间隙锁。这个间隙锁会阻止插入 <code>id</code> 值为 6, 7, 8, 9 的新记录。</li>
+</ul>
+<p>通过 <code>select * from performance_schema.data_locks\G;</code> 确认加锁情况：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970432932.png" alt="1746970432932"></p>
+<p>分析上图：</p>
+<ul>
+<li><code>LOCK_DATA: 1</code>, <code>LOCK_MODE: X</code> 对应 <code>(-∞, 1]</code> 的 next-key 锁。</li>
+<li><code>LOCK_DATA: 5</code>, <code>LOCK_MODE: X</code> 对应 <code>(1, 5]</code> 的 next-key 锁。</li>
+<li><code>LOCK_DATA: 10</code>, <code>LOCK_MODE: X, GAP</code> 对应 <code>(5, 10)</code> 的间隙锁。<br>
+这与我们的分析一致。</li>
+</ul>
+<p>值得注意的是，如果此实验中的查询条件改为 <code>id &lt;= 6</code>（而 <code>id=6</code> 仍然不存在），其加锁行为与 <code>id &lt; 6</code> 的情况是相同的，因为扫描的终止点依然是 <code>id=10</code>，并且在其上加间隙锁 <code>(5,10)</code>。</p>
+<p>因此，可以得出结论：<strong>针对「小于或小于等于」的唯一索引范围查询，若条件值的记录不存在于表中，当扫描到终止范围查询的记录（即第一个不满足条件的记录）时，施加在该记录索引项上的 next-key 锁会退化成间隙锁。其他被扫描到的满足条件的记录，其索引项上加的是 next-key 锁。</strong></p>
+<blockquote>
+<p>实验二：针对「小于等于 (&lt;=)」的范围查询，且查询条件值的记录「存在」于表中。</p>
+</blockquote>
+<p>假设事务 A 执行以下范围查询语句，注意条件值 <code>id = 5</code> 的记录<strong>存在</strong>于表中：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">&lt;=</span> <span class="number">5</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name   <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> 路飞   <span class="operator">|</span>  <span class="number">19</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">5</span> <span class="operator">|</span> 索隆   <span class="operator">|</span>  <span class="number">21</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+<p>事务 A 的加锁过程分析如下：</p>
+<ol>
+<li>扫描到的第一条记录是 <code>id = 1</code>。在其主键索引项上添加 next-key 锁，范围为 <code>(-∞, 1]</code>。</li>
+<li>继续范围查找，扫描到下一条记录是 <code>id = 5</code>。这条记录满足 <code>id &lt;= 5</code>，并且是条件值的记录。在其主键索引项上添加 next-key 锁，范围为 <code>(1, 5]</code>。由于这是满足条件的最后一条记录（根据主键唯一性），扫描在此基本结束。</li>
+<li>扫描停止。</li>
+</ol>
+<p>事务 A 在主键索引上添加了两个 X 型的 next-key 锁：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970447328.png" alt="1746970447328"></p>
+<ul>
+<li>在 <code>id = 1</code> 记录的主键索引项上，施加了范围为 <code>(-∞, 1]</code> 的 next-key 锁。</li>
+<li>在 <code>id = 5</code> 记录的主键索引项上，施加了范围为 <code>(1, 5]</code> 的 next-key 锁。</li>
+</ul>
+<p>通过 <code>select * from performance_schema.data_locks\G;</code> 确认加锁情况：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970454035.png" alt="1746970454035"></p>
+<p>分析上图，两个锁的 <code>LOCK_MODE</code> 均为 <code>X</code>，与我们的分析一致。这里 <code>id = 5</code> 上的 next-key 锁没有退化。</p>
+<blockquote>
+<p>实验三：针对「小于 (&lt;)」的范围查询，且查询条件值的记录「存在」于表中。</p>
+</blockquote>
+<p>假设事务 A 执行以下查询，条件值 <code>id = 5</code> 的记录<strong>存在</strong>于表中：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">5</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name   <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> 路飞   <span class="operator">|</span>  <span class="number">19</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+<p>事务 A 的加锁过程分析如下：</p>
+<ol>
+<li>扫描到的第一条满足 <code>id &lt; 5</code> 的记录是 <code>id = 1</code>。在其主键索引项上添加 next-key 锁，范围为 <code>(-∞, 1]</code>。</li>
+<li>继续范围查找，扫描到下一条记录是 <code>id = 5</code>。这条记录是第一个不满足 <code>id &lt; 5</code> 条件的记录（即它等于条件值）。施加在该记录主键索引项上的 next-key 锁会<strong>退化为间隙锁</strong>，锁范围是 <code>(1, 5)</code>。</li>
+<li>由于找到了不满足条件的记录，扫描停止。</li>
+</ol>
+<p>事务 A 在主键索引上添加了两种 X 型锁：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970462543.png" alt="1746970462543"></p>
+<ul>
+<li>在 <code>id = 1</code> 记录的主键索引项上，施加了范围为 <code>(-∞, 1]</code> 的 next-key 锁。</li>
+<li>在 <code>id = 5</code> 记录的主键索引项上，施加了范围为 <code>(1, 5)</code> 的间隙锁。这个间隙锁会阻止插入 <code>id</code> 值为 2, 3, 4 的新记录。</li>
+</ul>
+<p>通过 <code>select * from performance_schema.data_locks\G;</code> 确认加锁情况：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970468825.png" alt="1746970468825"></p>
+<p>分析上图：</p>
+<ul>
+<li><code>LOCK_DATA: 1</code>, <code>LOCK_MODE: X</code> 对应 <code>(-∞, 1]</code> 的 next-key 锁。</li>
+<li><code>LOCK_DATA: 5</code>, <code>LOCK_MODE: X, GAP</code> 对应 <code>(1, 5)</code> 的间隙锁。<br>
+这与我们的分析一致。</li>
+</ul>
+<p>综合这三个实验，我们可以总结出「小于或小于等于」的唯一索引范围查询的退化规则：</p>
+<ul>
+<li>当条件值的记录<strong>不存在</strong>于表中时：无论是「小于」还是「小于等于」查询，扫描到终止范围的记录（第一个不满足条件的记录）时，其索引项上的 next-key 锁会<strong>退化成间隙锁</strong>。</li>
+<li>当条件值的记录<strong>存在</strong>于表中时：
+<ul>
+<li>如果是「小于 (&lt;)」查询，扫描到终止范围的记录（即条件值本身）时，其索引项上的 next-key 锁会<strong>退化成间隙锁</strong>。</li>
+<li>如果是「小于等于 (&lt;=)」查询，扫描到终止范围的记录（即条件值本身，也是满足条件的最后一条记录）时，其索引项上的 next-key 锁<strong>通常不会退化</strong>。</li>
+</ul>
+</li>
+</ul>
+<p>其他被扫描到的、满足查询条件的记录，其索引项上通常施加的是 next-key 锁。</p>
+<h3 id="非唯一索引等值查询">非唯一索引等值查询</h3>
+<p>当使用非唯一索引（二级索引）进行等值查询时，情况更为复杂，因为这通常涉及到对两个索引的加锁操作：<strong>一个是二级索引本身，另一个是与满足条件的二级索引条目对应的主键索引</strong>。对主键索引加锁时，通常只针对那些满足查询条件的记录的主键。</p>
+<p>针对非唯一索引等值查询，根据查询的记录是否存在，加锁规则也有所不同：</p>
+<ul>
+<li>当查询的记录**「存在」**时：由于是非唯一索引，可能存在多个索引值相同的记录。查询过程会扫描二级索引，直到找到第一个不符合条件的二级索引记录才停止。
+<ul>
+<li><strong>在二级索引上</strong>：对于扫描到的、满足查询条件的二级索引记录，会添加 <strong>next-key 锁</strong>。对于扫描过程中遇到的第一个不符合查询条件的二级索引记录，其上的 next-key 锁会<strong>退化成间隙锁</strong>。</li>
+<li><strong>在主键索引上</strong>：对于那些通过二级索引找到的、符合查询条件的记录，会在它们对应的主键索引项上添加<strong>记录锁</strong>。</li>
+</ul>
+</li>
+<li>当查询的记录**「不存在」**时：
+<ul>
+<li><strong>在二级索引上</strong>：扫描到第一个不符合条件的（即大于查询值的）二级索引记录，其上的 next-key 锁会<strong>退化成间隙锁</strong>。</li>
+<li><strong>在主键索引上</strong>：由于没有找到满足查询条件的记录，所以不会对主键索引加锁。</li>
+</ul>
+</li>
+</ul>
+<p>接下来通过两个实验进行说明。</p>
+<h4 id="1、记录不存在的情况">1、记录不存在的情况</h4>
+<blockquote>
+<p>实验一：针对非唯一索引等值查询，查询的值不存在的情况。</p>
+</blockquote>
+<p>我们先分析非唯一索引等值查询时，记录不存在的情况，这相对简单一些。<br>
+假设事务 A 对非唯一索引 <code>age</code> 进行等值查询，且表中不存在 <code>age = 25</code> 的记录。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> age <span class="operator">=</span> <span class="number">25</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="keyword">Empty</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+<p>事务 A 的加锁过程分析如下：</p>
+<ul>
+<li>在二级索引 <code>index_age</code> 上查找 <code>age = 25</code>。由于不存在，会定位到第一个大于 25 的 <code>age</code> 值，即 <code>age = 39</code>（对应记录 <code>id=20, name='香克斯', age=39</code>）。</li>
+<li>施加在 <code>age = 39</code> 这条二级索引记录上的 next-key 锁会<strong>退化成间隙锁</strong>。这个间隙锁的范围是 <code>(22, 39)</code>，其中 22 是 <code>age=39</code> 之前的一个 <code>age</code> 值（来自 <code>id=10, name='山治', age=22</code>）。</li>
+<li>查询结束。</li>
+</ul>
+<p>因此，事务 A 在 <code>age = 39</code> (具体是 <code>id=20, age=39</code> 这条记录) 的二级索引项上，添加了一个 X 型的间隙锁，范围是 <code>(22, 39)</code>。这个锁意味着其他事务无法插入 <code>age</code> 值为 23、24、25、…、38 的新记录。<br>
+（关于插入 <code>age = 22</code> 或 <code>age = 39</code> 的情况，会更复杂，稍后讨论。）</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970488972.png" alt="1746970488972"></p>
+<p>通过 <code>select * from performance_schema.data_locks\G;</code> 确认加锁情况（仅截取行级锁部分）：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970495945.png" alt="1746970495945"></p>
+<p>从上图分析，<code>INDEX_NAME: index_age</code>，<code>LOCK_MODE: X, GAP</code>，<code>LOCK_DATA</code> 显示 <code>39, 20</code>。<br>
+这表明在二级索引 <code>index_age</code> 上，针对 <code>age = 39</code> (其主键 <code>id = 20</code>) 的索引项，施加了一个间隙锁。其 <code>age</code> 值的范围是 <code>(22, 39)</code>。</p>
+<p>此时，若其他事务尝试插入 <code>age</code> 值为 23 到 38 之间的新记录，这些插入操作都会被阻塞。<br>
+但对于插入 <code>age = 22</code> 或 <code>age = 39</code> 的记录，情况会更复杂，取决于插入记录的主键值。</p>
+<blockquote>
+<p>当一个事务持有二级索引的间隙锁 <code>(22, 39)</code> (基于 age 值) 时，其他事务插入 <code>age = 22</code> 或 <code>age = 39</code> 的记录能否成功？</p>
+</blockquote>
+<p>要理解这一点，首先要知道：<strong>插入操作在尝试插入一条新记录前，会先在 B+树（此处指二级索引树）中定位其插入位置。如果该插入位置的&quot;下一条&quot;记录的索引项上存在间隙锁（或 next-key 锁的间隙部分）覆盖了这个插入点，则插入会被阻塞。</strong></p>
+<p>二级索引树的记录是先按二级索引值（<code>age</code>）排序，如果二级索引值相同，则再按主键值（<code>id</code>）排序。</p>
+<p>基于前面的实验，事务 A 在 <code>(id=20, age=39)</code> 这条记录的二级索引项上，施加了 <code>age</code> 范围为 <code>(22, 39)</code> 的间隙锁。</p>
+<ul>
+<li>
+<p><strong>尝试插入 <code>age = 22</code> 的记录</strong>：</p>
+<ul>
+<li>若其他事务插入 <code>(id=3, age=22)</code>：在二级索引树中，这条记录会排在 <code>(id=10, age=22)</code> 之前。其插入位置的下一条记录是 <code>(id=10, age=22)</code>。由于 <code>(id=10, age=22)</code> 的二级索引项上没有被事务 A 的间隙锁覆盖（事务 A 的间隙锁与 <code>age=22</code> 的记录不直接相关），<strong>此插入通常可以成功</strong>（假设没有其他锁）。</li>
+<li>若其他事务插入 <code>(id=12, age=22)</code>：在二级索引树中，这条记录会排在 <code>(id=10, age=22)</code> 之后，但在 <code>(id=20, age=39)</code> 之前。其插入位置的下一条记录是 <code>(id=20, age=39)</code>。由于 <code>(id=20, age=39)</code> 的二级索引项上正好有事务 A 施加的间隙锁 <code>(22, 39)</code>，<strong>此插入会被阻塞</strong>。</li>
+</ul>
+</li>
+<li>
+<p><strong>尝试插入 <code>age = 39</code> 的记录</strong>：</p>
+<ul>
+<li>若其他事务插入 <code>(id=3, age=39)</code>：在二级索引树中，这条记录会排在 <code>(id=20, age=39)</code> 之前。其插入位置的下一条记录是 <code>(id=20, age=39)</code>。由于 <code>(id=20, age=39)</code> 的二级索引项上有间隙锁，<strong>此插入会被阻塞</strong>。</li>
+<li>若其他事务插入 <code>(id=21, age=39)</code>：在二级索引树中，这条记录会排在 <code>(id=20, age=39)</code> 之后。其插入位置的下一条记录可能是 supremum pseudo-record（如果 <code>id=21, age=39</code> 是最大的）。如果下一条记录没有被间隙锁覆盖，<strong>此插入可以成功</strong>。</li>
+</ul>
+</li>
+</ul>
+<p>所以，<strong>当一个事务持有二级索引的间隙锁 (如 <code>age</code> 范围 <code>(22, 39)</code>) 时，能否成功插入边界值 (<code>age=22</code> 或 <code>age=39</code>) 的新记录，关键在于新记录的主键值如何决定其在二级索引中的精确位置，以及该精确位置的下一条记录是否被间隙锁覆盖。</strong></p>
+<p>现在回头看 <code>performance_schema.data_locks</code> 的输出：<code>LOCK_DATA: 39, 20</code><br>
+<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970514906.png" alt="1746970514906"></p>
+<ul>
+<li><code>LOCK_DATA</code> 的第一个值 <code>39</code> 代表 <code>age</code> 值，它是间隙锁或 next-key 锁范围的右边界（对于二级索引）。</li>
+<li><code>LOCK_DATA</code> 的第二个值 <code>20</code> 代表与 <code>age=39</code> 关联的记录的 <code>id</code> 值。</li>
+</ul>
+<p>这个 <code>LOCK_DATA: 39, 20</code> 结合 <code>LOCK_MODE: X, GAP</code> 更准确地解释了：事务 A 在 <code>(id=20, age=39)</code> 这条记录的二级索引项上，施加了 <code>age</code> 值范围为 <code>(22, 39)</code> 的 X 型间隙锁。并且，<strong>这个 <code>id=20</code> 暗示了：如果其他事务尝试插入 <code>age = 39</code> 的新记录，那么当新记录的 <code>id</code> 值小于 <code>20</code> 时，插入会被阻塞；如果新记录的 <code>id</code> 值大于或等于 <code>20</code>，则可能成功（取决于其精确的下一条记录是否有锁）。</strong></p>
+<p>对于插入 <code>age = 22</code> 的情况，<code>performance_schema.data_locks</code> 的输出本身不能直接分析出哪些 <code>id</code> 值可以插入。这需要我们自己根据二级索引的 B+树结构，确定插入位置，然后判断其下一条记录是否有间隙锁。</p>
+<h4 id="2、记录存在的情况">2、记录存在的情况</h4>
+<blockquote>
+<p>实验二：针对非唯一索引等值查询，查询的值存在的情况。</p>
+</blockquote>
+<p>假设事务 A 对非唯一索引 <code>age</code> 进行等值查询，且表中存在 <code>age = 22</code> 的记录（即 <code>id=10, name='山治', age=22</code>）。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> age <span class="operator">=</span> <span class="number">22</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name   <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">10</span> <span class="operator">|</span> 山治   <span class="operator">|</span>  <span class="number">22</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+-----+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+<p>事务 A 的加锁过程分析如下：</p>
+<ol>
+<li><strong>二级索引 <code>index_age</code> 上的操作</strong>：
+<ul>
+<li>由于是非唯一索引，即使找到 <code>age = 22</code> 的记录，仍需继续扫描以查找其他可能的 <code>age = 22</code> 的记录（按主键 <code>id</code> 排序）。</li>
+<li>扫描到 <code>(id=10, age=22)</code>。这是满足条件的记录。在其二级索引项上添加 <strong>next-key 锁</strong>。该锁的范围，根据前一个 <code>age</code> 值 21 (来自 <code>id=5, age=21</code>)，应该是 <code>(21, 22]</code> (基于 age 值，并包含 <code>id=10</code>)。</li>
+<li>继续扫描，下一条二级索引记录是 <code>(id=20, age=39)</code>。这条记录不符合 <code>age = 22</code> 的条件，是第一个不符合条件的记录。因此，施加在 <code>(id=20, age=39)</code> 这条二级索引记录上的 next-key 锁会<strong>退化成间隙锁</strong>，<code>age</code> 范围是 <code>(22, 39)</code>。</li>
+</ul>
+</li>
+<li><strong>主键索引上的操作</strong>：
+<ul>
+<li>对于通过二级索引找到的、符合查询条件的记录 <code>(id=10, age=22)</code>，会在其对应的主键索引项（即 <code>id = 10</code>）上添加 <strong>X 型记录锁</strong>。</li>
+</ul>
+</li>
+<li>扫描结束。</li>
+</ol>
+<p>总结事务 A 添加的 X 型锁：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970528363.png" alt="1746970528363"></p>
+<ul>
+<li><strong>主键索引 (<code>PRIMARY</code>)</strong>：
+<ul>
+<li>在 <code>id = 10</code> 的记录上，添加了记录锁。</li>
+</ul>
+</li>
+<li><strong>二级索引 (<code>index_age</code>)</strong>：
+<ul>
+<li>在 <code>(id=10, age=22)</code> 的二级索引项上，添加了 <code>age</code> 范围为 <code>(21, 22]</code> 的 next-key 锁。</li>
+<li>在 <code>(id=20, age=39)</code> 的二级索引项上，添加了 <code>age</code> 范围为 <code>(22, 39)</code> 的间隙锁。</li>
+</ul>
+</li>
+</ul>
+<p>通过 <code>select * from performance_schema.data_locks\G;</code> 确认加锁情况：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970534738.png" alt="1746970534738"></p>
+<p>分析上图：</p>
+<ul>
+<li>
+<p><strong>二级索引 (<code>INDEX_NAME: index_age</code>)</strong>：</p>
+<ul>
+<li><code>LOCK_DATA: 22, 10</code>, <code>LOCK_MODE: X</code>：对应 <code>(id=10, age=22)</code> 上的 next-key 锁，<code>age</code> 范围 <code>(21, 22]</code>。
+<ul>
+<li>这意味着其他事务不能轻易更新或删除 <code>age=22</code> 且 <code>id=10</code> 的记录。</li>
+<li>对于插入新的 <code>age=21</code> 或 <code>age=22</code> 的记录：
+<ul>
+<li>插入 <code>age=21</code>：若新记录 <code>id &lt; 5</code> (<code>(id=5,age=21)</code>是表中已存在的 age=21 的记录)，可能成功。若新记录 <code>id &gt; 5</code>，其下一条可能是 <code>(id=10,age=22)</code> (被 next-key 锁覆盖) 或 <code>(id=20,age=39)</code> (被间隙锁覆盖)，导致阻塞。</li>
+<li>插入 <code>age=22</code>：从 <code>LOCK_DATA: 22, 10</code> 可知，若新记录 <code>id &lt; 10</code>，会被此 next-key 锁阻塞。若新记录 <code>id &gt; 10</code>，其下一条可能是 <code>(id=20,age=39)</code> (被间隙锁覆盖)，也会被阻塞。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>LOCK_DATA: 39, 20</code>, <code>LOCK_MODE: X, GAP</code>：对应 <code>(id=20, age=39)</code> 上的间隙锁，<code>age</code> 范围 <code>(22, 39)</code>。
+<ul>
+<li>这意味着其他事务无法插入 <code>age</code> 值为 23 到 38 的记录。</li>
+<li>对于插入新的 <code>age=22</code> 或 <code>age=39</code> 的记录：
+<ul>
+<li>插入 <code>age=22</code>：若新记录 <code>id &lt; 10</code>，会被前一个 next-key 锁阻塞。若新记录 <code>id &gt; 10</code>，其下一条可能是 <code>(id=20,age=39)</code> (被此间隙锁覆盖)，也会被阻塞。因此，实际上很难插入新的 <code>age=22</code> 记录。</li>
+<li>插入 <code>age=39</code>：从 <code>LOCK_DATA: 39, 20</code> 可知，若新记录 <code>id &lt; 20</code>，会被此间隙锁阻塞。若 <code>id &gt;= 20</code>，可能成功。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>主键索引 (<code>INDEX_NAME: PRIMARY</code>)</strong>：</p>
+<ul>
+<li><code>LOCK_DATA: 10</code>, <code>LOCK_MODE: X, REC_NOT_GAP</code>：对 <code>id = 10</code> 添加了记录锁。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>为什么在这个实验案例中，需要在二级索引上添加 <code>age</code> 范围 <code>(22, 39)</code> 的间隙锁？</p>
+</blockquote>
+<p>核心原因仍然是为了<strong>避免幻读现象</strong>。</p>
+<p>考虑查询语句 <code>select * from user where age = 22 for update;</code></p>
+<p>如果事务 A 在二级索引上只对 <code>(id=10, age=22)</code> 添加 <code>age</code> 范围 <code>(21, 22]</code> 的 next-key 锁，而不添加后续的 <code>(22, 39)</code> 间隙锁，那么幻读是有可能发生的。</p>
+<p>如前所述，<code>age</code> 范围 <code>(21, 22]</code> 的 next-key 锁（作用于 <code>(id=10, age=22)</code>）并不能完全阻止其他事务插入新的 <code>age = 22</code> 的记录。例如，其他事务理论上可以尝试插入 <code>(id=12, age=22)</code>。如果这个插入成功了，那么事务 A 再次执行 <code>select * from user where age = 22 for update;</code> 时，就会发现多了一条记录，产生了幻读。</p>
+<p><strong>当在 <code>(id=20, age=39)</code> 的二级索引项上添加了 <code>age</code> 范围 <code>(22, 39)</code> 的间隙锁后，其他事务尝试插入 <code>(id=12, age=22)</code> 时，其在二级索引树上的插入位置的下一条记录将是 <code>(id=20, age=39)</code>。由于该记录的二级索引项上有这个间隙锁，插入操作就会被阻塞。这样就有效地避免了幻读。</strong></p>
+<p>因此，这个额外的间隙锁是防止在 <code>age=22</code> 条件下出现幻读的关键。</p>
+<h3 id="非唯一索引范围查询">非唯一索引范围查询</h3>
+<p>非唯一索引的范围查询与主键索引（唯一索引）的范围查询在加锁行为上有一个显著区别：<strong>对于非唯一索引的范围查询，其在二级索引上添加的 next-key lock 通常不会发生退化为纯间隙锁或纯记录锁的情况。</strong> 也就是说，扫描到的二级索引记录通常都会被施加 next-key 锁。</p>
+<p>我们来分析一个例子，事务 A 执行以下范围查询语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">begin</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> age <span class="operator">&gt;=</span> <span class="number">22</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name      <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">10</span> <span class="operator">|</span> 山治      <span class="operator">|</span>  <span class="number">22</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">20</span> <span class="operator">|</span> 香克斯    <span class="operator">|</span>  <span class="number">39</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-----------+-----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br></pre></td></tr></table></figure>
+<p>事务 A 的加锁过程分析如下：</p>
+<ol>
+<li><strong>二级索引 <code>index_age</code> 上的操作</strong>：
+<ul>
+<li>扫描到的第一条满足 <code>age &gt;= 22</code> 的二级索引记录是 <code>(id=10, age=22)</code>。虽然范围查询包含了等值条件 (<code>age = 22</code>)，但因为这是非唯一索引，所以通常不会发生像唯一索引那样的锁退化。因此，在 <code>(id=10, age=22)</code> 的二级索引项上添加 <strong>next-key 锁</strong>，<code>age</code> 范围是 <code>(21, 22]</code>。</li>
+<li>继续范围扫描，下一条满足条件的二级索引记录是 <code>(id=20, age=39)</code>。在其二级索引项上添加 <strong>next-key 锁</strong>，<code>age</code> 范围是 <code>(22, 39]</code>。</li>
+<li>继续向后扫描到二级索引的 supremum pseudo-record，为其添加 <strong>next-key 锁</strong>，<code>age</code> 范围是 <code>(39, +∞]</code>。</li>
+</ul>
+</li>
+<li><strong>主键索引上的操作</strong>：
+<ul>
+<li>对于通过二级索引找到的、符合查询条件的记录 <code>(id=10, age=22)</code>，在其主键索引项 (<code>id=10</code>) 上添加 <strong>X 型记录锁</strong>。</li>
+<li>对于记录 <code>(id=20, age=39)</code>，在其主键索引项 (<code>id=20</code>) 上添加 <strong>X 型记录锁</strong>。</li>
+</ul>
+</li>
+<li>扫描结束。</li>
+</ol>
+<p>总结事务 A 添加的 X 型锁：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970548753.png" alt="1746970548753"></p>
+<ul>
+<li><strong>主键索引 (<code>id</code> 列)</strong>：
+<ul>
+<li>在 <code>id = 10</code> 的记录上，添加记录锁。</li>
+<li>在 <code>id = 20</code> 的记录上，添加记录锁。</li>
+</ul>
+</li>
+<li><strong>二级索引 (<code>age</code> 列)</strong>：
+<ul>
+<li>在 <code>(id=10, age=22)</code> 的二级索引项上，添加了 <code>age</code> 范围 <code>(21, 22]</code> 的 next-key 锁。</li>
+<li>在 <code>(id=20, age=39)</code> 的二级索引项上，添加了 <code>age</code> 范围 <code>(22, 39]</code> 的 next-key 锁。</li>
+<li>在二级索引的 supremum pseudo-record 上，添加了 <code>age</code> 范围 <code>(39, +∞]</code> 的 next-key 锁。</li>
+</ul>
+</li>
+</ul>
+<p>这些锁共同确保了在 <code>age &gt;= 22</code> 的范围内不会出现幻读，并且符合条件的记录不能被并发修改。</p>
+<blockquote>
+<p>在 <code>age &gt;= 22</code> 的范围查询中，<code>age = 22</code> 的记录存在且属于等值部分，为什么不像唯一索引那样，将在 <code>(id=10, age=22)</code> 的二级索引项上的 next-key 锁退化为记录锁？</p>
+</blockquote>
+<p>这是因为 <code>age</code> 字段是非唯一索引，不具有唯一性。如果仅对 <code>(id=10, age=22)</code> 的二级索引项施加记录锁（记录锁主要防止删除/修改，对防止在&quot;旁边&quot;插入相同 <code>age</code> 值但不同 <code>id</code> 的记录效果有限），那么其他事务仍然可能插入一条新的 <code>age = 22</code> 的记录（例如 <code>(id=12, age=22)</code>）。如果这样的插入成功，事务 A 再次执行查询时就会看到不同的结果集，从而发生幻读。</p>
+<p>因此，在非唯一索引的范围查询中，保持 next-key 锁（它包含了间隙锁的功能）对于防止幻读至关重要。</p>
+<h3 id="没有加索引的查询">没有加索引的查询</h3>
+<p>前面的案例中，我们的查询语句都利用了索引进行扫描和定位记录，然后对扫描到的索引项进行加锁。</p>
+<p><strong>如果锁定读查询语句（<code>SELECT ... FOR UPDATE</code> 或 <code>SELECT ... LOCK IN SHARE MODE</code>）的 <code>WHERE</code> 条件没有使用索引列，或者查询优化器未能选择使用索引，导致执行全表扫描，那么情况会变得非常严重：InnoDB 会对表中的每一条记录（准确地说是每一个聚簇索引记录）都施加 next-key 锁。这实际上相当于锁定了整张表。</strong></p>
+<p>此时，任何其他事务尝试对该表进行增、删、改操作（即使是针对未被查询条件直接命中的行）都会被阻塞，直到持有全表锁的事务提交或回滚。</p>
+<p>不仅是锁定读查询语句，<code>UPDATE</code> 和 <code>DELETE</code> 语句如果其 <code>WHERE</code> 条件没有有效利用索引，同样会导致全表扫描，并对每一条记录的聚簇索引项添加 next-key 锁，从而锁住全表。</p>
+<p>因此，<strong>在线上环境中执行 <code>UPDATE</code>、<code>DELETE</code>、<code>SELECT ... FOR UPDATE</code> 等具有加锁性质的语句时，务必检查这些语句是否能够有效利用索引。如果发生全表扫描，其对并发性能的影响将是灾难性的。</strong></p>
+<h2 id="总结">总结</h2>
+<p>本次我们以 <strong>MySQL 8.0.26</strong> 版本，在<strong>可重复读</strong>隔离级别下，通过一系列实验，详细探讨了唯一索引和非唯一索引在不同查询场景下的行级锁加锁规则。</p>
+<p>核心的加锁规则可以概括如下：</p>
+<p><strong>唯一索引等值查询</strong>：</p>
+<ul>
+<li>当查询的记录**「存在」<strong>时，施加在该记录索引项上的 next-key lock 会</strong>退化为「记录锁」**。</li>
+<li>当查询的记录**「不存在」<strong>时，会找到索引中第一条大于查询值的记录，并施加在该记录索引项上的 next-key lock 会</strong>退化为「间隙锁」**，覆盖查询值与该较大值之间的间隙。</li>
+</ul>
+<p><strong>非唯一索引等值查询</strong>：</p>
+<ul>
+<li>当查询的记录**「存在」**时：
+<ul>
+<li><strong>二级索引</strong>：对扫描到的满足条件的二级索引记录加 <strong>next-key 锁</strong>；对第一个不满足条件的二级索引记录，其 next-key 锁<strong>退化为间隙锁</strong>。</li>
+<li><strong>主键索引</strong>：对符合查询条件的记录的主键索引项加<strong>记录锁</strong>。</li>
+</ul>
+</li>
+<li>当查询的记录**「不存在」**时：
+<ul>
+<li><strong>二级索引</strong>：扫描到第一条不符合条件（大于查询值）的二级索引记录，其 next-key 锁<strong>退化为间隙锁</strong>。</li>
+<li><strong>主键索引</strong>：不加锁。</li>
+</ul>
+</li>
+</ul>
+<p><strong>范围查询的差异</strong>：</p>
+<ul>
+<li><strong>唯一索引</strong>的范围查询，在特定条件下（如等值部分、扫描边界等），next-key lock 可能会退化为间隙锁或记录锁。</li>
+<li><strong>非唯一索引</strong>的范围查询，其在二级索引上添加的 next-key lock 通常<strong>不会退化</strong>，以更全面地防止幻读。</li>
+</ul>
+<p>理解 MySQL 为何如此设计加锁机制的关键在于从<strong>避免幻读</strong>的角度去分析。可重复读隔离级别要求防止幻读，而这些复杂的加锁规则（特别是 next-key 锁和间隙锁的运用）正是为了在保证并发性的同时实现这一目标。</p>
+<p>最后，再次强调一件至关重要的事情：在线上执行 <code>UPDATE</code>、<code>DELETE</code>、<code>SELECT ... FOR UPDATE</code> 等具有加锁性质的语句时，<strong>务必检查其执行计划，确保它们能够有效利用索引。如果发生全表扫描，将会对每一个索引记录施加 next-key 锁，相当于锁住整个表，这对系统的并发处理能力是极为不利的。</strong></p>
+<p>最后附上「@一只小铭」同学总结的流程图，以供参考。</p>
+<p>唯一索引加锁的流程图（<strong>请注意：此流程图主要针对「主键索引」。如果是二级唯一索引，除了图中所示的对二级索引的加锁规则外，还会对查询到的记录的主键索引项额外添加「记录锁」。此流程图未明确提示这一点，特此文字补充说明</strong>）：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970564337.png" alt="1746970564337"></p>
+<p>非唯一索引加锁的流程图：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/1746970653139.png" alt="1746970653139"></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io">Adrian Wang</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/">https://adrianwangs.github.io/2025/05/11/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E9%94%81%E7%9A%84/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/MySQL/">MySQL</a><a class="post-meta__tags" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="post-meta__tags" href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/">锁机制</a><a class="post-meta__tags" href="/tags/%E8%A1%8C%E7%BA%A7%E9%94%81/">行级锁</a><a class="post-meta__tags" href="/tags/%E8%A1%A8%E7%BA%A7%E9%94%81/">表级锁</a><a class="post-meta__tags" href="/tags/next-key%E9%94%81/">next-key锁</a></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/05/11/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-155-%E6%9C%80%E5%B0%8F%E6%A0%88/" title="LeetCode 155 - 最小栈 (Min Stack)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">LeetCode 155 - 最小栈 (Min Stack)</div></div><div class="info-2"><div class="info-item-1">设计一个支持 push ，pop ，top 操作，并能在常数时间内检索到最小元素的栈。</div></div></div></a><a class="pagination-related  no-desc" href="/2025/05/11/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-4-%E5%AF%BB%E6%89%BE%E4%B8%A4%E4%B8%AA%E6%AD%A3%E5%BA%8F%E6%95%B0%E7%BB%84%E7%9A%84%E4%B8%AD%E4%BD%8D%E6%95%B0/" title="LeetCode 4.寻找两个正序数组的中位数 - 深入理解二分思想"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">LeetCode 4.寻找两个正序数组的中位数 - 深入理解二分思想</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/05/08/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/2025-05-08-MySQL%E9%94%81%E6%9C%BA%E5%88%B6%E8%AF%A6%E8%A7%A3/" title="MySQL锁机制详解：从原理到实践"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/08/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/2025-05-08-MySQL%E9%94%81%E6%9C%BA%E5%88%B6%E8%AF%A6%E8%A7%A3/1746795271430.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-08</div><div class="info-item-2">MySQL锁机制详解：从原理到实践</div></div><div class="info-2"><div class="info-item-1">全面详解MySQL的锁机制，包括锁的分类、InnoDB锁实现、死锁处理以及实践应用，帮助数据库开发者更好地理解和处理并发控制问题。</div></div></div></a><a class="pagination-related" href="/2025/05/06/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E4%BA%8B%E5%8A%A1/2025-05-06-MySQL%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/" title="MySQL事务隔离级别的实现原理"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/06/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E4%BA%8B%E5%8A%A1/2025-05-06-MySQL%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/1746514159574.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-06</div><div class="info-item-2">MySQL事务隔离级别的实现原理</div></div><div class="info-2"><div class="info-item-1">深入剖析MySQL中的四种事务隔离级别（读未提交、读已提交、可重复读、串行化）的实现原理，包括MVCC多版本并发控制、锁机制、快照读与当前读的工作原理及底层实现细节。</div></div></div></a><a class="pagination-related no-desc" href="/2025/05/16/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/2025-05-16-MySQL-%E6%AD%BB%E9%94%81%E4%BA%86-%E6%80%8E%E4%B9%88%E5%8A%9E%EF%BC%9F/" title="MySQL 死锁了，怎么办？"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/16/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/2025-05-16-MySQL-%E6%AD%BB%E9%94%81%E4%BA%86-%E6%80%8E%E4%B9%88%E5%8A%9E%EF%BC%9F/1747411836905.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-16</div><div class="info-item-2">MySQL 死锁了，怎么办？</div></div></div></a><a class="pagination-related" href="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/" title="MySQL单表建议数据量"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/MYSQL%E5%8D%95%E8%A1%A8%E5%BB%BA%E8%AE%AE%E6%95%B0%E6%8D%AE%E9%87%8F/1746350930968.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-04</div><div class="info-item-2">MySQL单表建议数据量</div></div><div class="info-2"><div class="info-item-1">详细分析了MySQL单表2000W条数据建议值的来源与实际意义。通过B+树索引结构、页存储机制和查询性能解释了这一建议值的合理性，以及实际应用中影响表数据量上限的关键因素。</div></div></div></a><a class="pagination-related" href="/2025/05/24/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E6%97%A5%E5%BF%97/%E6%97%A5%E5%BF%97/" title="八股文: MySQL 日志系统详解 - undo log、redo log、binlog"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/24/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E6%97%A5%E5%BF%97/%E6%97%A5%E5%BF%97/1747967912006.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-24</div><div class="info-item-2">八股文: MySQL 日志系统详解 - undo log、redo log、binlog</div></div><div class="info-2"><div class="info-item-1">深入解析MySQL三大日志系统：undo log回滚日志、redo log重做日志、binlog归档日志的作用原理和实现机制，理解事务ACID特性的底层实现</div></div></div></a><a class="pagination-related" href="/2025/05/05/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/2025-05-05-count-vs-count1/" title="MySQL八股: COUNT(*)与COUNT(1)的区别与性能对比"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/05/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/2025-05-05-count-vs-count1/1746455045381.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-05</div><div class="info-item-2">MySQL八股: COUNT(*)与COUNT(1)的区别与性能对比</div></div><div class="info-2"><div class="info-item-1">深入解析MySQL中COUNT(*)与COUNT(1)的区别，从执行原理到性能对比，分析各种场景下的最佳选择及优化建议，帮助你回答这道经典面试题。</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="gitalk-container"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Adrian Wang</div><div class="author-info-description">一个完全由AI生成，但是内容高质量的Blog</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/AdrianWangs"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/AdrianWangs" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:wyz17601402786@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到 Adrian Wang 的博客！</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">MySQL 是怎么加锁的？</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88-SQL-%E8%AF%AD%E5%8F%A5%E4%BC%9A%E5%8A%A0%E8%A1%8C%E7%BA%A7%E9%94%81%EF%BC%9F"><span class="toc-number">1.1.</span> <span class="toc-text">什么 SQL 语句会加行级锁？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A1%8C%E7%BA%A7%E9%94%81%E6%9C%89%E5%93%AA%E4%BA%9B%E7%A7%8D%E7%B1%BB%EF%BC%9F"><span class="toc-number">1.2.</span> <span class="toc-text">行级锁有哪些种类？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Record-Lock"><span class="toc-number">1.2.1.</span> <span class="toc-text">Record Lock</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Gap-Lock"><span class="toc-number">1.2.2.</span> <span class="toc-text">Gap Lock</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Next-Key-Lock"><span class="toc-number">1.2.3.</span> <span class="toc-text">Next-Key Lock</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MySQL-%E6%98%AF%E6%80%8E%E4%B9%88%E5%8A%A0%E8%A1%8C%E7%BA%A7%E9%94%81%E7%9A%84%EF%BC%9F"><span class="toc-number">1.3.</span> <span class="toc-text">MySQL 是怎么加行级锁的？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%AD%89%E5%80%BC%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.3.1.</span> <span class="toc-text">唯一索引等值查询</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1%E3%80%81%E8%AE%B0%E5%BD%95%E5%AD%98%E5%9C%A8%E7%9A%84%E6%83%85%E5%86%B5"><span class="toc-number">1.3.1.1.</span> <span class="toc-text">1、记录存在的情况</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2%E3%80%81%E8%AE%B0%E5%BD%95%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E6%83%85%E5%86%B5"><span class="toc-number">1.3.1.2.</span> <span class="toc-text">2、记录不存在的情况</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.3.2.</span> <span class="toc-text">唯一索引范围查询</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1%E3%80%81%E9%92%88%E5%AF%B9%E3%80%8C%E5%A4%A7%E4%BA%8E%E6%88%96%E8%80%85%E5%A4%A7%E4%BA%8E%E7%AD%89%E4%BA%8E%E3%80%8D%E7%9A%84%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.3.2.1.</span> <span class="toc-text">1、针对「大于或者大于等于」的范围查询</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2%E3%80%81%E9%92%88%E5%AF%B9%E3%80%8C%E5%B0%8F%E4%BA%8E%E6%88%96%E8%80%85%E5%B0%8F%E4%BA%8E%E7%AD%89%E4%BA%8E%E3%80%8D%E7%9A%84%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.3.2.2.</span> <span class="toc-text">2、针对「小于或者小于等于」的范围查询</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9D%9E%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%AD%89%E5%80%BC%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.3.3.</span> <span class="toc-text">非唯一索引等值查询</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1%E3%80%81%E8%AE%B0%E5%BD%95%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E6%83%85%E5%86%B5"><span class="toc-number">1.3.3.1.</span> <span class="toc-text">1、记录不存在的情况</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2%E3%80%81%E8%AE%B0%E5%BD%95%E5%AD%98%E5%9C%A8%E7%9A%84%E6%83%85%E5%86%B5"><span class="toc-number">1.3.3.2.</span> <span class="toc-text">2、记录存在的情况</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9D%9E%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.3.4.</span> <span class="toc-text">非唯一索引范围查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B2%A1%E6%9C%89%E5%8A%A0%E7%B4%A2%E5%BC%95%E7%9A%84%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.3.5.</span> <span class="toc-text">没有加索引的查询</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">1.4.</span> <span class="toc-text">总结</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/1770966681983.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"/></a><div class="content"><a class="title" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透">拒绝 AI 名词焦虑：LLM 核心概念，一次讲透</a><time datetime="2026-02-13T10:00:00.000Z" title="Created 2026-02-13 10:00:00">2026-02-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/image_1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="温故知新——Golang GMP 万字洗髓经"/></a><div class="content"><a class="title" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经">温故知新——Golang GMP 万字洗髓经</a><time datetime="2026-01-18T00:00:00.000Z" title="Created 2026-01-18 00:00:00">2026-01-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/08/03/%E9%9D%A2%E8%AF%95%E9%A2%98/%E4%BA%92%E8%81%94%E7%BD%91%E5%A4%A7%E5%8E%82/%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8/2025-08-03-%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8-%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91-%E4%B8%80%E9%9D%A2/" title="字节跳动 后端开发工程师 一面">字节跳动 后端开发工程师 一面</a><time datetime="2025-08-03T14:52:52.000Z" title="Created 2025-08-03 14:52:52">2025-08-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-239-%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E6%9C%80%E5%A4%A7%E5%80%BC/" title="LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）">LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）</a><time datetime="2025-07-26T18:51:43.000Z" title="Created 2025-07-26 18:51:43">2025-07-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-560-%E5%92%8C%E4%B8%BAK%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/" title="LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）">LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）</a><time datetime="2025-07-26T15:59:27.000Z" title="Created 2025-07-26 15:59:27">2025-07-26</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2024 - 2026 By Adrian Wang</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', vb[0] + ' ' + vb[1] + ' ' + vb[2] + ' ' + vb[3])
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = '<!doctype html><html><head><meta charset="utf-8" />\n' +
+      '  <style>\n' +
+      '    html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ' + bg + '; }\n' +
+      '    svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }\n' +
+      '  </style>\n' +
+      '  </' + 'head><' + 'body>' + svgSource + '</' + 'body></' + 'html>'
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'forest'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = '%%{init: ' + JSON.stringify(config) + '}%%\n'
+      const mermaidID = 'mermaid-' + index
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const preToMermaid = () => {
+    const preMermaidEle = document.querySelectorAll('pre.mermaid')
+    if (preMermaidEle.length === 0) return
+
+    preMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    preToMermaid()
+    if (true) codeToMermaid()
+    const mermaidNodes = document.querySelectorAll('#article-container .mermaid-wrap')
+    if (mermaidNodes.length === 0) return
+
+    const runMermaidFn = () => runMermaid(mermaidNodes)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"language":"zh-CN","distractionFreeMode":true}
+
+  const commentCount = n => {
+    const isCommentCount = document.querySelector('#post-meta .gitalk-comment-count')
+    if (isCommentCount) {
+      isCommentCount.textContent= n
+    }
+  }
+
+  const initGitalk = (el, path) => {
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGitalk = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    const gitalk = new Gitalk({
+      clientID: 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo: 'blog-comments',
+      owner: 'AdrianWangs',
+      admin: ['AdrianWangs'],
+      updateCountCallback: commentCount,
+      ...option,
+      id: isShuoshuo ? path : (option && option.id) || '89067fad9ff413921e37cf711daaf0f1'
+    })
+
+    gitalk.render('gitalk-container')
+  }
+
+  const loadGitalk = async(el, path) => {
+    if (typeof Gitalk === 'function') initGitalk(el, path)
+    else {
+      await btf.getCSS('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.css')
+      await btf.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.js')
+      initGitalk(el, path)
+    }
+  }
+
+  if (isShuoshuo) {
+    'Gitalk' === 'Gitalk'
+      ? window.shuoshuoComment = { loadComment: loadGitalk }
+      : window.loadOtherComment = loadGitalk
+    return
+  }
+
+  if ('Gitalk' === 'Gitalk' || !false) {
+    if (false) btf.loadComment(document.getElementById('gitalk-container'), loadGitalk)
+    else loadGitalk()
+  } else {
+    window.loadOtherComment = loadGitalk
+  }
+})()</script></div><script defer src="/js/echarts-theme-adapter.js"></script><script defer src="/js/category-tree.js"></script><script defer src="/js/reading-progress.js"></script><script defer src="/js/wide-mode.js"></script><script defer src="/js/font-size-toggle.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">Search</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  Loading Database</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div><script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",2],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-20",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1],["2025-07-06",1],["2025-07-09",1],["2025-07-20",3],["2025-07-26",2],["2025-08-03",1],["2026-01-18",1],["2026-02-13",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07","2025-08","2026-01","2026-02"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,48,10,1,1,1],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"AI","children":[{"name":"LLM","children":[],"count":1,"path":"AI/LLM"}],"count":1,"path":"AI"},{"name":"八股文","children":[{"name":"Go语言","children":[{"name":"GMP","children":[],"count":2,"path":"八股文/Go语言/GMP"},{"name":"垃圾回收","children":[],"count":1,"path":"八股文/Go语言/垃圾回收"},{"name":"Map","children":[],"count":7,"path":"八股文/Go语言/Map"}],"count":10,"path":"八股文/Go语言"},{"name":"操作系统","children":[],"count":2,"path":"八股文/操作系统"},{"name":"计算机网络","children":[],"count":2,"path":"八股文/计算机网络"},{"name":"Redis","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/Redis/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/Redis/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/Redis/高可用"},{"name":"内存管理","children":[],"count":1,"path":"八股文/Redis/内存管理"},{"name":"持久化","children":[],"count":3,"path":"八股文/Redis/持久化"},{"name":"数据结构","children":[],"count":8,"path":"八股文/Redis/数据结构"},{"name":"基础知识","children":[],"count":2,"path":"八股文/Redis/基础知识"},{"name":"数据类型","children":[],"count":5,"path":"八股文/Redis/数据类型"}],"count":25,"path":"八股文/Redis"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"存储原理","children":[],"count":5,"path":"八股文/MySQL/存储原理"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":61,"path":"八股文"},{"name":"面试经验","children":[],"count":8,"path":"面试经验"},{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"数组与哈希","children":[],"count":20,"path":"算法刷题/LeetCode/数组与哈希"},{"name":"数学","children":[],"count":3,"path":"算法刷题/LeetCode/数学"},{"name":"位运算","children":[],"count":2,"path":"算法刷题/LeetCode/位运算"},{"name":"链表","children":[],"count":9,"path":"算法刷题/LeetCode/链表"},{"name":"回溯","children":[],"count":5,"path":"算法刷题/LeetCode/回溯"},{"name":"模拟","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/模拟/错题集"}],"count":7,"path":"算法刷题/LeetCode/模拟"},{"name":"图论","children":[],"count":4,"path":"算法刷题/LeetCode/图论"},{"name":"树","children":[],"count":13,"path":"算法刷题/LeetCode/树"},{"name":"二分查找","children":[],"count":5,"path":"算法刷题/LeetCode/二分查找"},{"name":"栈","children":[],"count":5,"path":"算法刷题/LeetCode/栈"},{"name":"贪心","children":[],"count":4,"path":"算法刷题/LeetCode/贪心"},{"name":"字符串","children":[],"count":5,"path":"算法刷题/LeetCode/字符串"},{"name":"双指针","children":[],"count":1,"path":"算法刷题/LeetCode/双指针"},{"name":"动态规划","children":[],"count":14,"path":"算法刷题/LeetCode/动态规划"},{"name":"堆","children":[],"count":2,"path":"算法刷题/LeetCode/堆"}],"count":99,"path":"算法刷题/LeetCode"}],"count":101,"path":"算法刷题"},{"name":"AI工程","children":[{"name":"AI Coding","children":[],"count":1,"path":"AI工程/AI Coding"},{"name":"MCP","children":[],"count":1,"path":"AI工程/MCP"}],"count":2,"path":"AI工程"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body></html>

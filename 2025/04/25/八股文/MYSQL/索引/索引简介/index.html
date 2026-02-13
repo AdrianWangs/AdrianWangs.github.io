@@ -1,0 +1,1423 @@
+<!DOCTYPE html><html lang="zh" data-theme="light"><head><!-- hexo injector head_begin start --><script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script><!-- hexo injector head_begin end --><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>MySQL索引简介 | Adrian Wang's blog</title><meta name="author" content="Adrian Wang"><meta name="copyright" content="Adrian Wang"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="什么是索引？ 索引是数据库中用于提高查询效率的数据结构，类似于书籍的目录，帮助数据库系统快速定位和访问数据。合理的索引设计可以显著提升查询性能，减少资源消耗。 索引的分类 按数据结构分类  B+tree 索引：MySQL 默认索引类型，适用于范围查询和排序 Hash 索引：适合等值查询，不支持范围查询和排序 Full-text 索引：用于全文搜索，支持复杂文本查询   B+tree 索引(Inno">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL索引简介">
+<meta property="og:url" content="https://adrianwangs.github.io/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/index.html">
+<meta property="og:site_name" content="Adrian Wang&#39;s blog">
+<meta property="og:description" content="什么是索引？ 索引是数据库中用于提高查询效率的数据结构，类似于书籍的目录，帮助数据库系统快速定位和访问数据。合理的索引设计可以显著提升查询性能，减少资源消耗。 索引的分类 按数据结构分类  B+tree 索引：MySQL 默认索引类型，适用于范围查询和排序 Hash 索引：适合等值查询，不支持范围查询和排序 Full-text 索引：用于全文搜索，支持复杂文本查询   B+tree 索引(Inno">
+<meta property="og:locale">
+<meta property="og:image" content="https://adrianwangs.github.io/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745568387988.png">
+<meta property="article:published_time" content="2025-04-25T15:53:24.000Z">
+<meta property="article:modified_time" content="2026-02-13T07:20:17.656Z">
+<meta property="article:author" content="Adrian Wang">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="索引">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://adrianwangs.github.io/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745568387988.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "MySQL索引简介",
+  "url": "https://adrianwangs.github.io/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/",
+  "image": "https://adrianwangs.github.io/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745568387988.png",
+  "datePublished": "2025-04-25T15:53:24.000Z",
+  "dateModified": "2026-02-13T07:20:17.656Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Adrian Wang",
+      "url": "https://adrianwangs.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/images/favicon-32x32-next.png"><link rel="canonical" href="https://adrianwangs.github.io/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0f172a')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"No results found for: ${query}","hits_stats":"${hits} articles found"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MySQL索引简介',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/category-tree.css"><link rel="stylesheet" href="/css/reading-progress.css"><link rel="stylesheet" href="/css/wide-mode.css"><link rel="stylesheet" href="/css/font-size-toggle.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">Loading...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      if ($loadingBox.classList.contains('loaded')) return
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+
+  if (document.readyState === 'complete') {
+    preloader.endLoading()
+  } else {
+    window.addEventListener('load', preloader.endLoading)
+    document.addEventListener('DOMContentLoaded', preloader.endLoading)
+    // Add timeout protection: force end after 7 seconds
+    setTimeout(preloader.endLoading, 7000)
+  }
+
+  if (false) {
+    btf.addGlobalFn('pjaxSend', preloader.initLoading, 'preloader_init')
+    btf.addGlobalFn('pjaxComplete', preloader.endLoading, 'preloader_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #f8fafc;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745568387988.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Adrian Wang's blog</span></a><a class="nav-page-title" href="/"><span class="site-name">MySQL索引简介</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> Search</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives"><i class="fa-fw fas fa-th-list"></i><span> 全部文章</span></a></div><div class="menus_item"><span class="site-page group"><span> 八股文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/golang"><i class="fa-fw fab fa-golang"></i><span> Golang</span></a></li><li><a class="site-page child" href="/mysql"><i class="fa-fw fas fa-database"></i><span> MySQL</span></a></li><li><a class="site-page child" href="/redis"><i class="fa-fw fas fa-fire"></i><span> Redis</span></a></li><li><a class="site-page child" href="/network"><i class="fa-fw fas fa-globe"></i><span> 计算机网络</span></a></li><li><a class="site-page child" href="/operating-system"><i class="fa-fw fas fa-microchip"></i><span> 操作系统</span></a></li><li><a class="site-page child" href="/architecture"><i class="fa-fw fas fa-sitemap"></i><span> 架构</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/algorithms"><i class="fa-fw fas fa-book"></i><span> Leetcode题解</span></a></div><div class="menus_item"><a class="site-page" href="/interview"><i class="fa-fw fas fa-briefcase"></i><span> 面试经验</span></a></div><div class="menus_item"><a class="site-page" href="/about"><i class="fa-fw fas fa-user"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">MySQL索引简介</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2025-04-25T15:53:24.000Z" title="Created 2025-04-25 15:53:24">2025-04-25</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-02-13T07:20:17.656Z" title="Updated 2026-02-13 07:20:17">2026-02-13</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/">八股文</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/">MySQL</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%85%AB%E8%82%A1%E6%96%87/MySQL/%E7%B4%A2%E5%BC%95/">索引</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">11.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>37mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="什么是索引？">什么是索引？</h2>
+<p>索引是数据库中用于提高查询效率的数据结构，类似于书籍的目录，帮助数据库系统快速定位和访问数据。合理的索引设计可以显著提升查询性能，减少资源消耗。</p>
+<h2 id="索引的分类">索引的分类</h2>
+<h3 id="按数据结构分类">按数据结构分类</h3>
+<ul>
+<li><strong>B+tree 索引</strong>：MySQL 默认索引类型，适用于范围查询和排序</li>
+<li><strong>Hash 索引</strong>：适合等值查询，不支持范围查询和排序</li>
+<li><strong>Full-text 索引</strong>：用于全文搜索，支持复杂文本查询</li>
+</ul>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745568387988.png" alt="1745568387988"></p>
+<h4 id="B-tree-索引-InnoDB-默认索引类型">B+tree 索引(InnoDB 默认索引类型)</h4>
+<p>InnoDB 是在 MySQL 5.5 之后成为默认的 MySQL 存储引擎，B+Tree 索引类型也是 MySQL 存储引擎采用最多的索引类型。</p>
+<p>在创建表时，InnoDB 存储引擎会根据不同的场景选择不同的列作为索引：</p>
+<ul>
+<li>如果有主键，默认会使用主键作为聚簇索引的索引键（key）；</li>
+<li>如果没有主键，就选择第一个不包含 NULL 值的唯一列作为聚簇索引的索引键（key）；</li>
+<li>在上面两个都没有的情况下，InnoDB 将自动生成一个隐式自增 id 列作为聚簇索引的索引键（key）；</li>
+</ul>
+<p>其它索引都属于辅助索引（Secondary Index），也被称为二级索引或非聚簇索引。<strong>创建的主键索引和二级索引默认使用的是 B+Tree 索引</strong>。</p>
+<p>B+Tree 是一种多叉树，叶子节点才存放数据，非叶子节点只存放索引，而且每个节点里的数据是<strong>按主键顺序存放</strong>的。每一层父节点的索引值都会出现在下层子节点的索引值中，因此在叶子节点中，包括了所有的索引值信息，并且每一个叶子节点都指向下一个叶子节点，形成一个链表。</p>
+<p>举个例子，先创建一张商品表，id 为主键，如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> `product`  (</span><br><span class="line">  `id` <span class="type">int</span>(<span class="number">11</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">  `product_no` <span class="type">varchar</span>(<span class="number">20</span>)  <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `name` <span class="type">varchar</span>(<span class="number">255</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  `price` <span class="type">decimal</span>(<span class="number">10</span>, <span class="number">2</span>) <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  <span class="keyword">PRIMARY KEY</span> (`id`) <span class="keyword">USING</span> BTREE</span><br><span class="line">) <span class="keyword">CHARACTER SET</span> <span class="operator">=</span> utf8 <span class="keyword">COLLATE</span> <span class="operator">=</span> utf8_general_ci ROW_FORMAT <span class="operator">=</span> <span class="keyword">Dynamic</span>;</span><br></pre></td></tr></table></figure>
+<p>商品表里，有这些行数据：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745570126359.png" alt="1745570126359"></p>
+<p>主键索引的 B+Tree 如图所示(图中画的叶子节点用单向链表连接，但是有问题，实际上其实是一个 <code>&lt;font color=&quot;red&quot;&gt;</code>双向链表 <code>&lt;/font&gt;</code>)：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745570433361.png" alt="1745570433361"></p>
+<h5 id="通过主键查询数据的过程">通过主键查询数据的过程</h5>
+<p>比如我们执行了下面这条 SQL 语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> product <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">5</span>;</span><br></pre></td></tr></table></figure>
+<p>这条语句使用了主键索引查询 id 号为 5 的商品。查询过程是这样的，B+Tree 会自顶向下逐层进行查找：</p>
+<ul>
+<li>将 5 与根节点的索引数据 (1，10，20) 比较，5 在 1 和 10 之间，所以根据 B+Tree 的搜索逻辑，找到第二层的索引数据 (1，4，7)；</li>
+<li>在第二层的索引数据 (1，4，7) 中进行查找，因为 5 在 4 和 7 之间，所以找到第三层的索引数据（4，5，6）；</li>
+<li>在叶子节点的索引数据（4，5，6）中进行查找，然后我们找到了索引值为 5 的行数据。</li>
+</ul>
+<p>数据库的索引和数据都是存储在硬盘的，我们可以把读取一个节点当作一次磁盘 I/O 操作。那么上面的整个查询过程一共经历了 3 个节点，也就是进行了 3 次 I/O 操作。</p>
+<p>B+Tree 存储千万级的数据只需要 3-4 层高度就可以满足，这意味着从千万级的表查询目标数据最多需要 3-4 次磁盘 I/O，所以<strong>B+Tree 相比于 B 树和二叉树来说，最大的优势在于查询效率很高，因为即使在数据量很大的情况，查询一个数据的磁盘 I/O 依然维持在 3-4 次。</strong></p>
+<h5 id="通过二级索引查询数据的过程">通过二级索引查询数据的过程</h5>
+<blockquote>
+<p>主键索引的 B+Tree 和二级索引的 B+Tree 的主要区别在于：</p>
+<ul>
+<li>主键索引的 B+Tree 的叶子节点存放的是实际数据</li>
+<li>二级索引的 B+Tree 的叶子节点存放的是主键值</li>
+</ul>
+</blockquote>
+<p>假设我们将先前的商品表的 <code>product_no</code> 字段创建一个二级索引，如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> INDEX idx_product_no <span class="keyword">ON</span> product(product_no);</span><br></pre></td></tr></table></figure>
+<p>那么，二级索引的 B+Tree 如图所示(图中画的叶子节点用单向链表连接，但是有问题，实际上其实是一个 <code>&lt;font color=&quot;red&quot;&gt;</code>双向链表 <code>&lt;/font&gt;</code>)：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745671468072.png" alt="1745671468072"></p>
+<p>其中非叶子节点的 <code>key</code>值是 <code>product_no</code>(图中橙色部分),叶子节点存储的数据是 <code>主键值</code>(图中绿色部分)</p>
+<p>如果我用 <code>product_no</code>二级索引查询，如下查询语句:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> product <span class="keyword">where</span> product_no <span class="operator">=</span> <span class="string">&#x27;0002&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<p>上面的语句可以先检查二级索引中的 B+Tree 的索引值 <code>product_no</code>，找到对应的叶子节点，获取到主键值，然后拿着主键值去主键索引的 B+Tree 中查找，获取到完整的数据行。这个过程就叫做<strong>回表</strong>，也就是说要查两个 B+Tree 才能查到数据，如图所示(图中画的叶子节点用单向链表连接，但是有问题，实际上其实是一个 <code>&lt;font color=&quot;red&quot;&gt;</code>双向链表 <code>&lt;/font&gt;</code>)。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745680784703.png" alt="1745680784703"></p>
+<hr>
+<p>不过，如果我执行的查询语句是：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> id <span class="keyword">from</span> product <span class="keyword">where</span> product_no <span class="operator">=</span> <span class="string">&#x27;0002&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<p>那么，因为二级索引的叶子节点存储的是主键值，所以其实只需要查一个 B+Tree 就可以获取到数据，那就可以避免回表，这个过程就叫做<strong>覆盖索引</strong>，也就是只需要查一个 B+Tree 就可以获取到数据。</p>
+<blockquote>
+<p>因此，有时候我们可以利用覆盖索引，来避免回表，从而提高查询效率，比如对经常需要查询的列和查询条件建立联合索引，就可以利用覆盖索引，从而提高查询效率。</p>
+</blockquote>
+<h5 id="为什么-InnoDB-存储引擎选择使用-B-Tree-作为索引的数据结构？">为什么 InnoDB 存储引擎选择使用 B+Tree 作为索引的数据结构？</h5>
+<p>前面已经讲了 B+Tree 的索引原理，现在就来回答一下 B+Tree 相比于 B 树、二叉树或 Hash 索引结构的优势在哪儿？</p>
+<p><strong><em>1、B+Tree vs B Tree</em></strong></p>
+<p>B+Tree 只在叶子节点存储数据，而 B 树 的非叶子节点也要存储数据，所以 B+Tree 的单个节点的数据量更小，在相同的磁盘 I/O 次数下，就能查询更多的节点。</p>
+<p>另外，B+Tree 叶子节点采用的是双链表连接，适合 MySQL 中常见的基于范围的顺序查找，而 B 树无法做到这一点。</p>
+<p><strong><em>2、B+Tree vs 二叉树</em></strong></p>
+<p>对于存储了 M 条数据记录的 B+Tree（其叶子节点数量 N 与 M 相关），其搜索复杂度约为 <code>O(logdN)</code>，其中 d 是节点允许的最大子节点个数（阶数）。</p>
+<p>在实际应用中，d 值通常远大于 2（例如大于 100）。这保证了即使数据量 M 达到千万级别，B+Tree 的高度依然能维持在 3~4 层左右。这意味着一次数据查询操作通常只需要 3~4 次磁盘 I/O 即可完成。</p>
+<p>相比之下，一个存储相同 M 条数据的平衡二叉搜索树，其节点总数也约为 M，搜索复杂度为 <code>O(logM)</code>（以 2 为底）。由于其分支因子固定为 2，树的高度会显著高于 B+Tree，导致检索目标数据需要经历更多的磁盘 I/O 次数。</p>
+<p><strong><em>3, B+Tree vs Hash</em></strong></p>
+<p>Hash 在做等值查询的时候效率贼快，搜索复杂度为 O(1)。但也有其局限性：</p>
+<ul>
+<li><strong>数据顺序性</strong>：哈希表无法提供数据的顺序访问，更适合做等值的查询。很多查询不仅需要找到特定的键值，还需要根据键值排序来返回结果，或者执行范围查询。B+Tree 可以很好地支持，Hash 表则无法做到。</li>
+<li><strong>空间效率</strong>：可能导致空间利用效率不高，特别是在处理大量数据时。数据量变大时冲突也会增加。</li>
+<li><strong>需要重新构建</strong>：哈希索引通常只存储在内存中，当数据库重启或发生崩溃时，需要重新构建。</li>
+</ul>
+<p>因此，B+Tree 索引要比 Hash 表索引有着更广泛的适用场景。</p>
+<h4 id="Full-text-索引">Full-text 索引</h4>
+<p>Full Text 索引（全文索引）是 MySQL 中专门用于高效处理大文本字段（如文章、描述等）内容检索的一种索引类型。它主要用于在大量文本数据中进行复杂的关键词搜索，支持模糊匹配、相关性排序等功能，远比传统的 LIKE 语句效率高，尤其适合需要全文检索的场景（如搜索引擎、商品描述搜索等）。</p>
+<h5 id="工作原理">工作原理</h5>
+<p>Full Text 索引通常基于倒排索引（inverted index）实现。倒排索引会将文本内容分词后，建立&quot;单词 → 文档 ID&quot;的映射关系，从而能快速定位包含某个关键词的所有记录。这种结构极大提升了模糊查询和多关键词检索的效率。</p>
+<h5 id="主要特性">主要特性</h5>
+<ul>
+<li>适用于 <code>CHAR</code>、<code>VARCHAR</code>、<code>TEXT</code>等文本类型字段</li>
+<li>仅支持 InnoDB 和 MyISAM 存储引擎（MySQL 5.6 及以上 InnoDB 支持）</li>
+<li>支持三种检索模式：自然语言模式、布尔模式、查询扩展模式</li>
+<li>典型用法：<code>MATCH(column) AGAINST('keyword' IN NATURAL LANGUAGE MODE)</code></li>
+</ul>
+<h5 id="示例">示例</h5>
+<p>创建全文索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> FULLTEXT INDEX idx_content <span class="keyword">ON</span> articles(content);</span><br></pre></td></tr></table></figure>
+<p>使用全文检索：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> articles <span class="keyword">WHERE</span> <span class="keyword">MATCH</span>(content) AGAINST(<span class="string">&#x27;数据库 索引&#x27;</span>);</span><br></pre></td></tr></table></figure>
+<h5 id="参考">参考</h5>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/fulltext-search.html">MySQL 官方文档：全文索引</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/yangbindxj/article/details/122868100">CSDN: MySQL 全文索引用途及基本使用方法介绍</a></li>
+</ul>
+<p>简而言之，Full Text 索引让 MySQL 能够像搜索引擎一样高效地在大段文本中查找关键词，是处理复杂文本检索的利器。</p>
+<h3 id="按物理存储分类">按物理存储分类</h3>
+<ul>
+<li><strong>聚集索引</strong>：数据和主键索引存储在一起，一个表只能有一个，通常是主键。聚集索引的叶子节点存储的是数据行。</li>
+<li><strong>二级索引</strong>：又称非聚集索引，存储索引键和主键值，通过主键再查找数据，可以有多个。非聚集索引的叶子节点存储的是主键值，而不是数据行。</li>
+</ul>
+<h3 id="按字段特性分类">按字段特性分类</h3>
+<ul>
+<li>
+<p><strong>主键索引</strong>：主键索引是聚集索引（Clustered Index），一个表只能有一个，通常对应主键。其叶子节点直接存储完整的数据行（即数据和索引在一起）。</p>
+<p>创建主键索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> `table_name` (</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">PRIMARY KEY</span> (`id`) <span class="keyword">USING</span> BTREE</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p><strong>唯一索引</strong>：唯一索引也是二级索引，要求索引列的值唯一。叶子节点同样存储索引键和主键值，通过主键回表查找数据。</p>
+<p>创建唯一索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> `table_name` (</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">UNIQUE</span> KEY `idx_name` (`column1`, `column2`)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<p>或者如果表已经存在，可以通过以下方式创建：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER TABLE</span> `table_name` <span class="keyword">ADD</span> <span class="keyword">UNIQUE</span> KEY `idx_name` (`column1`, `column2`);</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p><strong>普通索引</strong>：普通索引属于二级索引（Secondary/Non-Clustered Index），可以有多个。叶子节点存储的是索引键和主键值（InnoDB），通过主键回表查找完整数据。</p>
+<p>创建普通索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> `table_name` (</span><br><span class="line">  ...</span><br><span class="line">  INDEX `idx_name` (`column1`, `column2`)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<p>或者如果表已经存在，可以通过以下方式创建：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER TABLE</span> `table_name` <span class="keyword">ADD</span> INDEX `idx_name` (`column1`, `column2`);</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p><strong>前缀索引</strong>：前缀索引是一种特殊的二级索引，针对字符串类型字段，只索引字段的前 N 个字符。叶子节点存储前缀、主键值，通过主键回表查找数据。</p>
+<p>创建前缀索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> `table_name` (</span><br><span class="line">  ...</span><br><span class="line">  INDEX `idx_name` (`column_name`(N))</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<p>或者如果表已经存在，可以通过以下方式创建：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER TABLE</span> `table_name` <span class="keyword">ADD</span> INDEX `idx_name` (`column_name`(N));</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<blockquote>
+<p><strong>补充说明</strong>：</p>
+<ul>
+<li>InnoDB 存储引擎下，只有主键索引是聚集索引，其他索引（普通、唯一、前缀）都是二级索引，叶子节点都不直接存储完整数据行，而是存储主键值。</li>
+<li>二级索引查找数据时需要&quot;回表&quot;，即先通过索引定位主键，再通过主键定位数据行。</li>
+</ul>
+</blockquote>
+<h3 id="按字段个数分类">按字段个数分类</h3>
+<ul>
+<li><strong>单列索引</strong>：一个索引只包含一个列。</li>
+<li><strong>联合索引</strong>：一个索引包含多个列。</li>
+</ul>
+<h4 id="联合索引">联合索引</h4>
+<p>通过将多个字段组合成一个索引，该索引就被称为联合索引。</p>
+<p>比如，将商品表中的 product_no 和 name 字段组合成联合索引 <code>(product_no, name)</code>，创建联合索引的方式如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> INDEX index_product_no_name <span class="keyword">ON</span> product(product_no, name);</span><br></pre></td></tr></table></figure>
+<p>联合索引 <code>(product_no, name)</code> 的 B+Tree 示意图如下：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745724743165.png" alt="1745724743165"></p>
+<p>可以看到，联合索引的非叶子节点用两个字段的值作为 B+Tree 的 key 值。当在联合索引查询数据时，先按 product_no 字段比较，在 product_no 相同的情况下再按 name 字段比较。</p>
+<p>也就是说，联合索引查询的 B+Tree 是先按 product_no 进行排序，然后再 product_no 相同的情况再按 name 字段排序。</p>
+<p>因此，使用联合索引时，存在<strong>最左匹配原则</strong>，也就是按照最左优先的方式进行索引的匹配。在使用联合索引进行查询的时候，如果不遵循「最左匹配原则」，联合索引会失效，这样就无法利用到索引快速查询的特性了。</p>
+<p>比如，如果创建了一个 <code>(a, b, c)</code> 联合索引，如果查询条件是以下这几种，就可以匹配上联合索引：</p>
+<ul>
+<li>where a=1.</li>
+<li>where a=1 and b=2 and c=3.</li>
+<li>where a=1 and b=2.</li>
+<li>where a=1 and c=3.</li>
+</ul>
+<p>需要注意的是，因为有查询优化器，所以 a 字段在 where 子句的顺序并不重要。</p>
+<p>但是，如果查询条件是以下这几种，因为不符合最左匹配原则，所以就无法匹配上联合索引，联合索引就会失效：</p>
+<ul>
+<li>where b=2.</li>
+<li>where c=3.</li>
+<li>where b=2 and c=3.</li>
+</ul>
+<p>上面这些查询条件之所以会失效，是因为 <code>(a, b, c)</code> 联合索引，是先按 a 排序，在 a 相同的情况再按 b 排序，在 b 相同的情况再按 c 排序。所以，<strong>b 和 c 是全局无序，局部相对有序的</strong>，这样在没有遵循最左匹配原则的情况下，是无法利用到索引的。</p>
+<p>我这里举联合索引（a，b）的例子，该联合索引的 B+ Tree 如下：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745756546799.png" alt="1745756546799"></p>
+<p>可以看到，a 是全局有序的（1, 2, 2, 3, 4, 5, 6, 7 ,8），而 b 是全局是无序的（12，7，8，2，3，8，10，5，2）。因此，直接执行 <code>where b = 2</code>这种查询条件没有办法利用联合索引的，<strong>利用索引的前提是索引里的 key 是有序的</strong>。</p>
+<p>只有在 a 相同的情况才，b 才是有序的，比如 a 等于 2 的时候，b 的值为（7，8），这时就是有序的，这个有序状态是局部的，因此，执行 <code>where a = 2 and b = 7</code>是 a 和 b 字段能用到联合索引的，也就是联合索引生效了。</p>
+<p>联合索引有一些特殊情况，<strong>并不是查询过程使用了联合索引查询，就代表联合索引中的所有字段都用到了联合索引进行索引查询</strong>，也就是可能存在部分字段用到联合索引的 B+Tree，部分字段没有用到联合索引的 B+Tree 的情况。</p>
+<p>这种特殊情况就发生在范围查询。联合索引的最左匹配原则会一直向右匹配直到遇到「范围查询」就会停止匹配。<strong>也就是范围查询的字段可以用到联合索引，但是在范围查询字段的后面的字段无法用到联合索引</strong>。</p>
+<p>范围查询有很多种，那到底是哪些范围查询会导致联合索引的最左匹配原则会停止匹配呢？</p>
+<p>接下来，举例几个范围查例子。</p>
+<ul>
+<li>
+<p>Q1: <code>select * from t_table where a &gt; 1 and b = 2</code></p>
+<p>由于联合索引（二级索引）是先按照 a 字段的值排序的，所以符合 a &gt; 1 条件的二级索引记录肯定是相邻，于是在进行索引扫描的时候，可以定位到符合 a &gt; 1 条件的第一条记录，然后沿着记录所在的链表向后扫描，直到某条记录不符合 a &gt; 1 条件位置。所以 a 字段可以在联合索引的 B+Tree 中进行索引查询。</p>
+<p><strong>但是在符合 a &gt; 1 条件的二级索引记录的范围里，b 字段的值是无序的</strong>。比如前面图的联合索引的 B+ Tree 里，下面这三条记录的 a 字段的值都符合 a &gt; 1 查询条件，而 b 字段的值是无序的：</p>
+<ul>
+<li>a 字段值为 5 的记录，该记录的 b 字段值为 8；</li>
+<li>a 字段值为 6 的记录，该记录的 b 字段值为 10；</li>
+<li>a 字段值为 7 的记录，该记录的 b 字段值为 5；</li>
+</ul>
+<p>因此，我们不能根据查询条件 b = 2 来进一步减少需要扫描的记录数量（b 字段无法利用联合索引进行索引查询的意思）。</p>
+<p>所以在执行 Q1 这条查询语句的时候，对应的扫描区间是 (2, + ∞)，形成该扫描区间的边界条件是 a &gt; 1，与 b = 2 无关。</p>
+<p>因此，<strong>这条查询语句只有 a 字段用到了联合索引进行索引查询，而 b 字段并没有使用到联合索引</strong>。</p>
+<p>我们也可以在执行计划中的 key_len 知道这一点，在使用联合索引进行查询的时候，通过 key_len 我们可以知道优化器具体使用了多少个字段的搜索条件来形成扫描区间的边界条件。</p>
+<p>举例个例子，a 和 b 都是 int 类型且不为 NULL 的字段，那么这条查询语句执行计划如下，可以看到 key_len 为 4 字节（如果字段允许为 NULL，就在字段类型占用的字节数上加 1，也就是 5 字节），说明只有 a 字段用到了联合索引进行索引查询，而且可以看到，即使 b 字段没用到联合索引，key 为 idx_a_b，说明这条查询语句使用了 idx_a_b 联合索引。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745756736801.png" alt="1745756736801"></p>
+<p>通过这条查询语句我们可以知道，a 字段使用了 &gt; 进行范围查询，联合索引的最左匹配原则在遇到 a 字段的范围查询（ &gt;）后就停止匹配了，因此 b 字段并没有使用到联合索引。</p>
+</li>
+<li>
+<p>Q2: <code>select * from t_table where a &gt;= 1 and b = 2</code></p>
+<p>Q2 和 Q1 的查询语句很像，唯一的区别就是 a 字段的查询条件「大于等于」。</p>
+<p>由于联合索引（二级索引）是先按照 a 字段的值排序的，所以符合 &gt;= 1 条件的二级索引记录肯定是相邻，于是在进行索引扫描的时候，可以定位到符合 &gt;= 1 条件的第一条记录，然后沿着记录所在的链表向后扫描，直到某条记录不符合 a&gt;= 1 条件位置。所以 a 字段可以在联合索引的 B+Tree 中进行索引查询。</p>
+<p>虽然在符合 a&gt;= 1 条件的二级索引记录的范围里，b 字段的值是「无序」的，<strong>但是对于符合 a = 1 的二级索引记录的范围里，b 字段的值是「有序」的</strong>（因为对于联合索引，是先按照 a 字段的值排序，然后在 a 字段的值相同的情况下，再按照 b 字段的值进行排序）。</p>
+<p>于是，在确定需要扫描的二级索引的范围时，当二级索引记录的 a 字段值为 1 时，可以通过 b = 2 条件减少需要扫描的二级索引记录范围（b 字段可以利用联合索引进行索引查询的意思）。也就是说，从符合 a = 1 and b = 2 条件的第一条记录开始扫描，而不需要从第一个 a 字段值为 1 的记录开始扫描。</p>
+<p>所以，<strong>Q2 这条查询语句 a 和 b 字段都用到了联合索引进行索引查询</strong>。</p>
+<p>我们也可以在执行计划中的 key_len 知道这一点。执行计划如下，可以看到 key_len 为 8 字节，说明优化器使用了 2 个字段的查询条件来形成扫描区间的边界条件，也就是 a 和 b 字段都用到了联合索引进行索引查询。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745756833265.png" alt="1745756833265"></p>
+<p>通过 Q2 查询语句我们可以知道，虽然 a 字段使用了 &gt;= 进行范围查询，但是联合索引的最左匹配原则并没有在遇到 a 字段的范围查询（ &gt;=）后就停止匹配了，b 字段还是可以用到了联合索引的。</p>
+</li>
+<li>
+<p>Q3: <code>SELECT * FROM t_table WHERE a BETWEEN 2 AND 8 AND b = 2</code></p>
+<p>Q3 查询条件中 <code>a BETWEEN 2 AND 8</code> 的意思是查询 a 字段的值在 2 和 8 之间的记录。不同的数据库对 BETWEEN … AND 处理方式是有差异的。在 MySQL 中，BETWEEN 包含了 value1 和 value2 边界值，类似于 &gt;= and =&lt;。而有的数据库则不包含 value1 和 value2 边界值（类似于 &gt; and &lt;）。</p>
+<p>这里我们只讨论 MySQL。由于 MySQL 的 BETWEEN 包含 value1 和 value2 边界值，所以类似于 Q2 查询语句，因此 <strong>Q3 这条查询语句 a 和 b 字段都用到了联合索引进行索引查询</strong>。</p>
+<p>我们也可以在执行计划中的 key_len 知道这一点。执行计划如下，可以看到 key_len 为 8 字节，说明优化器使用了 2 个字段的查询条件来形成扫描区间的边界条件，也就是 a 和 b 字段都用到了联合索引进行索引查询。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745757708547.png" alt="1745757708547"></p>
+<p>通过 Q3 查询语句我们可以知道，虽然 a 字段使用了 BETWEEN 进行范围查询，但是联合索引的最左匹配原则并没有在遇到 a 字段的范围查询（BETWEEN）后就停止匹配了，b 字段还是可以用到了联合索引的。</p>
+</li>
+<li>
+<p>Q4: <code>SELECT * FROM t_user WHERE name like 'j%' and age = 22</code></p>
+<p>由于联合索引（二级索引）是先按照 name 字段的值排序的，所以前缀为’j’的 name 字段的二级索引记录都是相邻的，于是在进行索引扫描的时候，可以定位到符合前缀为’j’的 name 字段的第一条记录，然后沿着记录所在的链表向后扫描，直到某条记录的 name 前缀不为’j’为止。</p>
+<p>所以 a 字段可以在联合索引的 B+Tree 中进行索引查询，形成的扫描区间是[‘j’,‘k’)。注意，j 是闭区间。如下图：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745758372073.png" alt="1745758372073"></p>
+<p>虽然在符合前缀为’j’的 name 字段的二级索引记录的范围里，age 字段的值是「无序」的，<strong>但是对于符合 name = j 的二级索引记录的范围里，age 字段的值是「有序」的</strong>（因为对于联合索引，是先按照 name 字段的值排序，然后在 name 字段的值相同的情况下，再按照 age 字段的值进行排序）。</p>
+<p>于是，在确定需要扫描的二级索引的范围时，当二级索引记录的 name 字段值为’j’时，可以通过 age = 22 条件减少需要扫描的二级索引记录范围（age 字段可以利用联合索引进行索引查询的意思）。也就是说，从符合 <code>name = 'j' and age = 22</code> 条件的第一条记录时开始扫描，而不需要从第一个 name 为 j 的记录开始扫描。如下图的右边：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745758388661.png" alt="1745758388661"></p>
+<p>所以，<strong>Q4 这条查询语句 a 和 b 字段都用到了联合索引进行索引查询</strong>。</p>
+<p>我们也可以在执行计划中的 key_len 知道这一点。本次例子中：</p>
+<ul>
+<li>name 字段的类型是 varchar(30) 且不为 NULL，数据库表使用了 utf8mb4 字符集，一个字符集为 utf8mb4 的字符是 4 个字节，因此 name 字段的实际数据最多占用的存储空间长度是 120 字节（30 x 4），然后因为 name 是变长类型的字段，需要再加 2，也就是 name 的 key_len 为 122。</li>
+<li>age 字段的类型是 int 且不为 NULL，key_len 为 4。</li>
+</ul>
+<blockquote>
+<p>可能有的同学对于「因为 name 是变长类型的字段，需要再加 2 字节」这句话有疑问。之前这篇文章说「如果变长字段允许存储的最大字节数小于等于 255 字节，就会用 1 字节表示变长字段的长度」，而这里为什么是 2 字节？</p>
+<p>key_len 的显示比较特殊，行格式是由 InnoDB 存储引擎实现的，而执行计划是在 server 层生成的，所以它不会去问 InnoDB 存储引擎可变字段的长度占用多少字节，而是不管三七二十一都使用 2 字节表示可变字段的长度。毕竟 key_len 的目的只是为了告诉你索引查询中用了哪些索引字段，而不是为了准确告诉这个字段占用多少字节空间。</p>
+</blockquote>
+<p>Q4 查询语句的执行计划如下，可以看到 key_len 为 126 字节，name 的 key_len 为 122，age 的 key_len 为 4，说明优化器使用了 2 个字段的查询条件来形成扫描区间的边界条件，也就是 name 和 age 字段都用到了联合索引进行索引查询。</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745759125926.png" alt="1745759125926"></p>
+<p>通过 Q4 查询语句我们可以知道，虽然 name 字段使用了 like 前缀匹配进行范围查询，但是联合索引的最左匹配原则并没有在遇到 name 字段的范围查询（like ‘j%’）后就停止匹配了，age 字段还是可以用到了联合索引的。</p>
+<p>综上所示，<strong>联合索引的最左匹配原则，在遇到范围查询（如 &gt;、&lt;）的时候，就会停止匹配，也就是范围查询的字段可以用到联合索引，但是在范围查询字段的后面的字段无法用到联合索引。注意，对于 &gt;=、&lt;=、BETWEEN、like 前缀匹配的范围查询，并不会停止匹配，前面我也用了四个例子说明了</strong>。</p>
+</li>
+</ul>
+<h4 id="索引下推">索引下推</h4>
+<p>我们来举个例子，假设有一个联合索引 (a, b)，现在执行这样一条 SQL：<code>select * from table where a &gt; 1 and b = 2</code>。这时候，MySQL 会先用 a &gt; 1 这个条件在联合索引的 B+Tree 上定位到第一个符合条件的主键（比如 ID=2）。但是，b = 2 这个条件要怎么判断呢？是在索引里判断，还是要回表（到主键索引）去判断？</p>
+<ul>
+<li>在 MySQL 5.6 之前，MySQL 只能先通过索引找到所有 a &gt; 1 的主键值，然后每找到一条记录都要回表（到主键索引）去把整行数据取出来，再判断 b 是否等于 2。这样如果 a &gt; 1 的数据很多，回表次数就会很多，效率比较低。</li>
+<li>从 MySQL 5.6 开始，引入了<strong>索引下推优化</strong>（Index Condition Pushdown，简称 ICP）。有了这个优化后，MySQL 在遍历联合索引的时候，就可以直接在索引里判断 b = 2 这个条件。只有当 a &gt; 1 并且 b = 2 都满足时，才会回表取出整行数据。这样可以大大减少回表的次数，提高查询效率。</li>
+</ul>
+<p>你可以在执行计划（explain）里看到 Extra 字段显示 <code>Using index condition</code>，这就说明 MySQL 用上了索引下推优化。</p>
+<h4 id="索引区分度">索引区分度</h4>
+<p>建立联合索引时的字段顺序对索引的效率也有很大影响。越靠前的字段被用于索引过滤的概率越高，实际开发工作中建立索引的时候，要把区分度搞的字段排在前面，这样区分度大的字段越有可能被更多的 SQL 使用到</p>
+<blockquote>
+<p>区分度：某个字段 <code>column</code>不同值的个数除以表的总行数，计算公式如下:</p>
+<p>$$<br>
+区分度=\frac{distinct(column)}{count(*)}<br>
+$$</p>
+<p>比如性别的区分度就很小，不适合建立索引或不适合排在联合索引列的靠前的位置，而 <code>UUID</code>这类字段就比较适合做索引或排在联合索引的靠前的位置</p>
+<p>因为如果索引的区分度很小，假设字段的值分布均匀，那么无论搜索哪个值都可能得到一半的数据。在这些情况下，还不如不要索引，因为 MySQL 还有一个查询优化器，查询优化器发现某个值出现在表的数据行中的百分比（惯用的百分比界线是&quot;30%&quot;）很高的时候，它一般会忽略索引，进行全表扫描。</p>
+</blockquote>
+<h4 id="联合索引进行排序">联合索引进行排序</h4>
+<p>比如针对下面这个 SQL 语句:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">order</span> <span class="keyword">where</span> status <span class="operator">=</span> <span class="number">1</span> <span class="keyword">order</span> <span class="keyword">by</span> create_time <span class="keyword">asc</span></span><br></pre></td></tr></table></figure>
+<p>在实际开发中，如果我们的查询语句既有筛选条件（如 where status = 1），又有排序需求（如 order by create_time asc），那么在为表设计索引时，应该优先考虑建立联合索引。例如，可以为 status 和 create_time 两个字段一起建立联合索引 (status, create_time)。</p>
+<blockquote>
+<p>这里能不能建立为 (create_time, status) 联合索引？</p>
+<p>答: 不推荐这样做，原因如下：</p>
+<ol>
+<li><strong>无法有效利用索引进行过滤</strong>：联合索引 <code>(create_time, status)</code> 是先按 <code>create_time</code> 排序，再按 <code>status</code> 排序。对于查询 <code>where status = 1</code>，由于 <code>status</code> 是索引的第二个字段，不符合最左前缀原则，MySQL 无法直接利用该索引快速定位 <code>status=1</code> 的记录，可能导致需要扫描大量索引数据甚至全表扫描。</li>
+<li><strong>排序优化受限</strong>：虽然索引的第一列是 <code>create_time</code>，看似能满足 <code>order by create_time</code>，但前提是 <code>where</code> 条件能有效利用索引。如果 <code>where status = 1</code> 无法有效过滤，那么即使索引本身按 <code>create_time</code> 有序，优化器也可能无法避免额外的排序操作（filesort），因为需要先筛选出 <code>status=1</code> 的数据。</li>
+</ol>
+<p>而 <code>(status, create_time)</code> 索引则能完美匹配该查询：</p>
+<ul>
+<li><code>where status = 1</code> 可以利用索引的第一列快速定位数据。</li>
+<li>在 <code>status=1</code> 的记录内部，数据已按 <code>create_time</code> 有序，<code>order by create_time</code> 可以直接利用索引顺序，避免 filesort。</li>
+</ul>
+</blockquote>
+<p>这样做的原因是：MySQL 的联合索引本身是有序的，先按照 status 排序，再按照 create_time 排序。当我们执行上述 SQL 时，MySQL 可以直接利用联合索引，先根据 status 过滤数据，再按照 create_time 顺序返回结果，无需额外的排序操作。</p>
+<p>如果只为 status 单独建索引，虽然可以加速 status 的过滤，但由于 create_time 没有参与索引，MySQL 还需要对筛选后的结果进行额外的排序（即 filesort），这会影响查询效率。</p>
+<p>因此，合理设计联合索引，既能满足筛选条件，又能覆盖排序字段，可以充分发挥索引的有序性，避免不必要的文件排序操作，从而提升查询性能。</p>
+<h2 id="索引的适用场景与注意事项">索引的适用场景与注意事项</h2>
+<p>虽然索引能显著<strong>提高查询速度</strong>，但并非没有代价。创建和使用索引需要考虑以下几点：</p>
+<ul>
+<li><strong>空间成本</strong>：索引需要占用物理存储空间，索引越多、越大，占用的空间就越多。</li>
+<li><strong>时间成本</strong>：创建和维护索引（尤其是在数据量大时）需要时间。</li>
+<li><strong>维护成本</strong>：对表进行 <code>INSERT</code>、<code>UPDATE</code>、<code>DELETE</code>操作时，数据库需要<strong>同步更新索引</strong>以维持其有序性（如 B+Tree 的动态维护），这会<strong>降低数据修改操作的效率</strong>。</li>
+</ul>
+<p>因此，是否创建索引需要根据具体应用场景权衡利弊。</p>
+<h4 id="什么时候建议创建索引？">什么时候建议创建索引？</h4>
+<ul>
+<li><strong>唯一性约束的字段</strong>：如主键、唯一键（UNIQUE KEY），数据库通常会自动为这些约束创建索引，以保证数据的唯一性并加速查找。例如商品编码。</li>
+<li><strong>经常作为查询条件的字段</strong>：频繁出现在 <code>WHERE</code> 子句中的字段适合创建索引，以加速数据筛选。如果查询条件涉及多个字段，可以考虑创建<strong>联合索引</strong>。</li>
+<li><strong>经常用于排序和分组的字段</strong>：频繁出现在 <code>ORDER BY</code> 或 <code>GROUP BY</code> 子句中的字段。利用索引的有序性，可以避免额外的排序操作（filesort），提高查询效率。</li>
+</ul>
+<h4 id="什么时候不建议创建索引（或需谨慎）？">什么时候不建议创建索引（或需谨慎）？</h4>
+<ul>
+<li><strong>不用于查询、排序、分组的字段</strong>：如果一个字段从未或很少在 <code>WHERE</code>、<code>ORDER BY</code>、<code>GROUP BY</code> 中使用，那么为其创建索引通常是浪费空间和维护资源。</li>
+<li><strong>区分度低的字段（低基数/低选择性）</strong>：字段中包含大量重复值时（即<strong>区分度</strong>很低，如性别字段）。即使为这类字段创建索引，查询优化器也可能因为扫描索引的成本接近全表扫描而选择<strong>放弃使用索引</strong>。例如，如果性别字段的值均匀分布，查询 <code>WHERE gender = 'male'</code> 可能会匹配接近一半的数据行，此时全表扫描可能更优。（这与前面提到的“索引区分度”概念相关）</li>
+<li><strong>数据量过小的表</strong>：对于行数很少的表，全表扫描的速度可能已经足够快，甚至比通过索引查找更快，此时创建索引意义不大。</li>
+<li><strong>频繁更新的字段</strong>：经常被修改的字段不适合创建索引。例如，电商系统中的用户余额字段，频繁的更新会导致索引树频繁调整，严重影响数据库的写入性能。</li>
+</ul>
+<h2 id="索引优化方法">索引优化方法</h2>
+<p>索引优化主要有以下几种方法：</p>
+<ol>
+<li>前缀索引优化</li>
+<li>覆盖索引优化</li>
+<li>主键索引最好使用自增 ID</li>
+<li>索引最好设置为 <code>NOT NULL</code></li>
+<li>防止索引失效</li>
+</ol>
+<h3 id="前缀索引优化">前缀索引优化</h3>
+<p>前缀索引其实就是使用某个字段的前缀部分来创建索引，而不是使用整个字段。</p>
+<p>使用前缀索引是为了减小索引字段大小，可以增加一个索引页中存储的索引值的数量，从而减少索引树的高度，减少磁盘 IO，提高查询效率。</p>
+<p>前缀索引的缺点：</p>
+<ul>
+<li><code>order by</code> 和 <code>group by</code> 无法使用前缀索引：因为前缀索引只包含原始列值的一部分，MySQL 无法使用它来完成需要完整列值的排序或分组操作。</li>
+<li>无法把前缀索引用作覆盖索引：因为前缀索引只包含原始列值的一部分，当查询需要获取完整的列值时，MySQL 无法仅通过扫描索引就满足查询需求，必须回表查询获取完整数据。</li>
+</ul>
+<h3 id="覆盖索引优化">覆盖索引优化</h3>
+<p>覆盖索引是指 SQL 中 query 的所有字段在索引 B+Tree 的叶子节点中都能找到，因此不需要回表查询。</p>
+<p>假设我们只需要查询商品的名称、价格，有什么办法可以避免回表查询？</p>
+<ul>
+<li>创建一个(name, price)的联合索引</li>
+<li>由于联合索引的最左匹配原则，查询时会优先使用 name 字段进行过滤，然后根据 name 字段排序，最后根据 price 字段排序</li>
+<li>由于覆盖索引，查询时不需要回表查询，直接在联合索引的叶子节点中获取 name 和 price 字段的值</li>
+</ul>
+<p>通过这种方式，我们就可以避免回表查询，减少磁盘 IO，提高查询效率。</p>
+<h3 id="主键索引最好使用自增-ID">主键索引最好使用自增 ID</h3>
+<p>主键索引最好使用自增 ID，因为自增 ID 的插入性能比随机 ID 的插入性能要好。</p>
+<p>InnoDB 创建主键索引的时候默认为聚簇索引，数据会被存储在叶子节点中，同一个叶子节点中的数据是按照主键顺序排序的，因此当有新的数据插入的时候，数据库会根据主键将其插入到对应的叶子节点中。</p>
+<p>如果我们使用自增 ID 作为主键，那么每次插入的新数据都会<strong>按顺序</strong>被添加到当前索引节点的位置，<strong>不需要移动已有数据</strong>，当页面写满就会开辟一个新的页面。因为每次插入一条新纪录都是<strong>追加操作</strong>，不需要移动数据，因此<strong>插入性能很高</strong>。</p>
+<p>相反，如果我们使用非自增 ID 作为主键，那么每次插入的新数据都会<strong>随机</strong>插入到当前索引节点的位置，因此很可能会插入到现有数据页的某个中间位置，导致不得不移动其他数据来满足新数据的插入，甚至需要进行<strong>页分裂</strong>，还要将数据从旧页移动到新页，而且这个过程还有可能会带来大量的内存碎片，导致索引结构不紧凑，从而影响查询效率。</p>
+<p>举个例子，假设某个数据页中的数据是 1、3、5、9，且数据页满了，现在准备插入一个数据 7，则需要把数据页分割为两个数据页：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745832584071.png" alt="1745832584071"></p>
+<p>出现页分裂时，需要将一个页的记录移动到另外一个页，性能会受到影响，同时页空间的利用率下降，造成存储空间的浪费。</p>
+<p>而如果记录是顺序插入的，例如插入数据 11，则只需开辟新的数据页，也就不会发生页分裂：</p>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745832605883.png" alt="1745832605883"></p>
+<p>因此，在使用 InnoDB 存储引擎时，如果没有特别的业务需求，建议使用自增字段作为主键。</p>
+<p>另外，主键字段的长度不要太大，因为<strong>主键字段长度越小，意味着二级索引的叶子节点越小（二级索引的叶子节点存放的数据是主键值），这样二级索引占用的空间也就越小</strong>。</p>
+<h3 id="索引最好设置为-NOT-NULL">索引最好设置为 <code>NOT NULL</code></h3>
+<p>为了更好的利用索引，索引列要设置为 NOT NULL 约束。有两个原因：</p>
+<ul>
+<li>第一原因：索引列存在 NULL 就会导致优化器在做索引选择的时候更加复杂，更加难以优化，因为可为 NULL 的列会使索引、索引统计和值比较都更复杂，比如进行索引统计时，count 会省略值为 NULL 的行。</li>
+<li>第二个原因：NULL 值是一个没意义的值，但是它会占用物理空间，所以会带来的存储空间的问题，会导致更多的存储空间占用，因为 InnoDB 默认行存储格式 <code>COMPACT</code>，会用至少 1 字节空间存储 NULL 值列表，如下图的紫色部分：</li>
+</ul>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745833140573.png" alt="1745833140573"></p>
+<h3 id="防止索引失效">防止索引失效</h3>
+<p>用上了索引并不意味着查询的时候一定会用到索引，所以我们要清楚什么时候索引会失效。从而避免在开发过程中写出索引实效的查询语句，否则这样的查询效率是很低的。</p>
+<blockquote>
+<p>这里留个坑，后面其他文章会详细介绍索引失效的场景。</p>
+</blockquote>
+<p>索引失效主要有以下几种情况：</p>
+<ol>
+<li>当我们使用左或者左右模糊匹配的时候，比如 <code>like '%hello'</code> 或者 <code>like '%hello%'</code>，索引会失效，导致全表扫描。</li>
+<li>当我们在查询条件中对索引进行了<strong>计算</strong>、<strong>函数</strong>、<strong>类型转换</strong>等操作，索引会失效，导致全表扫描。</li>
+<li>联合索引不遵守最左匹配原则。也就是没有从联合索引的最左字段开始匹配，索引会失效，导致全表扫描。</li>
+<li>在 <code>WHERE</code>子句中，如果在 <code>OR</code>前面的条件列是索引列，而在 <code>OR</code>后面的条件列不是索引列，索引会失效，导致全表扫描。</li>
+</ol>
+<p>除此之外，还有很多场景会导致索引失效，这时候需要我们查看执行计划，通过执行计划显示的数据来判断查询语句是否用到了索引。</p>
+<p>比如下面就是全表扫描的执行计划的查询语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> t_user <span class="keyword">WHERE</span> id <span class="operator">+</span> <span class="number">1</span> <span class="operator">=</span> <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745840451803.png" alt="1745840451803"></p>
+<p>对于执行计划，参数主要有：</p>
+<ul>
+<li>
+<p><code>possible_keys</code>：优化器可能选择使用的索引列表。该字段存在的意义在于展示查询中<em>理论上可以被使用</em>的索引（基于 where 条件和表结构），但最终是否使用还要取决于优化器对数据分布、查询成本等因素的判断。当该字段为 NULL 时表示没有适用的索引。</p>
+</li>
+<li>
+<p><code>key</code>：实际使用的索引。如果查询中没有使用索引，则该字段为 NULL。</p>
+</li>
+<li>
+<p><code>key_len</code>：索引中使用的字段长度。</p>
+</li>
+<li>
+<p><code>rows</code>：这个值表示 MySQL 根据表的统计信息和索引的使用情况，<strong>预估需要读取多少行数据</strong>才能找到满足条件的结果。比如 <code>rows=1000</code>，说明 MySQL 认为大约需要扫描 1000 行数据。这个值越小，说明查询效率越高。</p>
+</li>
+<li>
+<p><code>filtered</code>：这个值表示<strong>经过 WHERE 条件过滤后，剩下的行数占总扫描行数的百分比</strong>。比如 <code>filtered=10</code>，表示最终只有 10%的数据能通过 WHERE 条件。它的计算公式是：filtered = (满足 WHERE 条件的行数 / rows) × 100%。这个值越高，说明过滤效果越好，返回的数据更精确。</p>
+</li>
+<li>
+<p><code>type</code>：表示数据扫描的方式</p>
+<p>常见的数据扫描方式有(从上到下，扫描效率从低到高)：</p>
+<ul>
+<li><code>ALL</code>：全表扫描，效率最低，需要遍历整张表的所有行。
+<ul>
+<li>例子：<code>SELECT * FROM users WHERE non_indexed_column = 'some_value';</code></li>
+</ul>
+</li>
+<li><code>index</code>：全索引扫描，遍历整个索引，效率比全表扫描高，但仍需扫描所有索引项。
+<ul>
+<li>例子：<code>SELECT indexed_column FROM users ORDER BY indexed_column;</code> (当只需要扫描索引，不需要访问数据行时)</li>
+</ul>
+</li>
+<li><code>range</code>：范围扫描，只扫描索引中满足条件的部分范围，效率较高。
+<ul>
+<li>例子：<code>SELECT * FROM users WHERE indexed_column &gt; 100;</code> 或 <code>SELECT * FROM users WHERE indexed_column BETWEEN 100 AND 200;</code></li>
+</ul>
+</li>
+<li><code>ref</code>：非唯一索引等值扫描，通过索引查找匹配某个值的多行，效率较高。
+<ul>
+<li>例子：<code>SELECT * FROM users WHERE non_unique_indexed_column = 'some_value';</code></li>
+</ul>
+</li>
+<li><code>eq_ref</code>：唯一索引等值扫描，通常出现在多表连接中，对于前一张表的每一行，在后一张表中只能找到一行。效率更高。
+<ul>
+<li>例子：<code>SELECT * FROM orders JOIN users ON orders.user_id = users.id WHERE orders.id = 123;</code> (假设 <code>users.id</code> 是主键或唯一索引)</li>
+</ul>
+</li>
+<li><code>const</code>：常量扫描，直接通过主键或唯一索引定位到一条记录，效率最高。
+<ul>
+<li>例子：<code>SELECT * FROM users WHERE id = 123;</code> (假设 <code>id</code> 是主键或唯一索引)</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>这些情况里面，<code>ALL</code>是最坏的情况，因为采用了全表扫描，需要遍历整张表的所有行。</p>
+<p><code>index</code>和 <code>ALL</code>的情况其实差不多，只不过 index 只对索引进行全扫描，这样的好处是不再需要对数据进行排序，但是仍然需要对索引进行扫描。</p>
+<p><code>range</code> 表示采用了索引范围扫描，一般在 <code>where</code>子句中使用 <code>&lt;</code>、<code>&gt;</code>、<code>between</code>、<code>in</code>等操作符时会采用这种方式，只扫描索引中满足条件的部分范围，效率较高。<strong>从这一级别开始，索引的作用会越来越明显</strong>，所以我们尽量让 SQL 查询可以使用到 range 这一级别及以上的 type 访问方式。</p>
+<p><code>ref</code> 类型表示采用了非唯一索引，或者是唯一索引的非唯一前缀，返回数据可能是多行，因为虽然使用了索引，但该索引列的值并不唯一，有重复，这样的话即使使用索引快速查找到了第一条数据，仍然不能停止，要进行目标附近的小范围扫描。但是它的好处是它并不需要扫描全表，因为索引是有序的，即使有重复值，也只是出现在目标附近，所以可以快速定位到目标附近，然后进行小范围扫描。</p>
+<p><code>eq_ref</code> 类型是使用主键或者唯一索引时产品的访问方式，通常使用在多表联查中。比如对两张表进行联查，关联条件是两张表的 <code>user_id</code>字段，且 <code>user_id</code>字段是主键或者唯一索引，那么就会采用 <code>eq_ref</code>类型。</p>
+<p><code>const</code> 类型表示通过主键或者唯一索引与常量值进行了比较</p>
+</blockquote>
+<blockquote>
+<p>需要注意的是，虽然 <code>const</code>和 <code>eq_ref</code>都使用了主键或者唯一索引，但是这两个类型有所区别，<code>const</code>类型表示通过主键或者唯一索引与常量值进行了比较，而 <code>eq_ref</code>类型表示通过主键或者唯一索引与非常量值进行了比较（一般为关联查询）。</p>
+</blockquote>
+</li>
+<li>
+<p><code>extra</code>：表示查询的额外信息</p>
+<blockquote>
+<p>这里说几个重要的 extra 信息：</p>
+<ul>
+<li>
+<p><code>Using filesort</code>：当查询语句中包含 <code>order by</code>，而且无法利用索引完成排序操作的时候，这时候就不得部选择相应的排序算法进行，甚至可能会通过文件排序的方式进行，效率很低</p>
+<p>(文件排序：文件排序是 MySQL 中的一种排序方式，它通过创建临时文件来存储排序结果，然后对临时文件进行排序，最后返回排序后的结果。文件排序的效率很低，因为需要创建临时文件，而且需要读取和写入磁盘，所以效率很低。)</p>
+</li>
+<li>
+<p><code>Using temporary</code>：使用了临时表保存中间结果，MySQL 在对查询结果排序的时候使用临时表，常见于 <code>order by</code>和 <code>group by</code>操作，效率很低。</p>
+</li>
+<li>
+<p><code>Using index</code>：表示查询使用了覆盖索引，不需要回表查询。也就是所需的数据在索引中就可以全部获得，不需要再去表中读取数据，效率很高。</p>
+</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<h2 id="总结">总结</h2>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/1745845148865.png" alt="1745845148865"></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io">Adrian Wang</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://adrianwangs.github.io/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/">https://adrianwangs.github.io/2025/04/25/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/MySQL/">MySQL</a><a class="post-meta__tags" href="/tags/%E7%B4%A2%E5%BC%95/">索引</a></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related  no-desc" href="/2025/04/27/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-146-LRU-Cache/" title="LeetCode 146 - LRU 缓存"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">LeetCode 146 - LRU 缓存</div></div></div></a><a class="pagination-related  no-desc" href="/2025/04/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-138-Copy-List-with-Random-Pointer/" title="LeetCode 138 - 随机链表的复制 (Copy List with Random Pointer)"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/25/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-138-Copy-List-with-Random-Pointer/1745570173396.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">LeetCode 138 - 随机链表的复制 (Copy List with Random Pointer)</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88/" title="MySQL索引失效的常见情况详解"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88/1746355645568.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-04</div><div class="info-item-2">MySQL索引失效的常见情况详解</div></div><div class="info-2"><div class="info-item-1">本文通俗易懂地介绍MySQL索引失效的六种常见情况，包括模糊匹配、函数使用、表达式计算、类型转换、联合索引和OR条件，帮助你避免这些陷阱，写出高性能SQL语句。</div></div></div></a><a class="pagination-related" href="/2025/05/05/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/2025-05-05-count-vs-count1/" title="MySQL八股: COUNT(*)与COUNT(1)的区别与性能对比"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/05/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/2025-05-05-count-vs-count1/1746455045381.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-05</div><div class="info-item-2">MySQL八股: COUNT(*)与COUNT(1)的区别与性能对比</div></div><div class="info-2"><div class="info-item-1">深入解析MySQL中COUNT(*)与COUNT(1)的区别，从执行原理到性能对比，分析各种场景下的最佳选择及优化建议，帮助你回答这道经典面试题。</div></div></div></a><a class="pagination-related" href="/2025/05/16/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/update%E6%B2%A1%E5%8A%A0%E7%B4%A2%E5%BC%95%E4%BC%9A%E9%94%81%E5%85%A8%E8%A1%A8/" title="MySQL中update不带索引的危险：全表锁定详解"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/16/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E9%94%81/update%E6%B2%A1%E5%8A%A0%E7%B4%A2%E5%BC%95%E4%BC%9A%E9%94%81%E5%85%A8%E8%A1%A8/1747386813184.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-16</div><div class="info-item-2">MySQL中update不带索引的危险：全表锁定详解</div></div><div class="info-2"><div class="info-item-1">深入剖析MySQL中update语句不带索引的危险性，解释为什么会导致全表锁定，以及如何通过正确使用索引和安全更新模式来避免此类生产事故。</div></div></div></a><a class="pagination-related no-desc" href="/2025/04/28/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/InnoDB%E7%9A%84%E6%95%B0%E6%8D%AE%E9%A1%B5/" title="InnoDB的数据页"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/28/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/InnoDB%E7%9A%84%E6%95%B0%E6%8D%AE%E9%A1%B5/1745856192760.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-04-28</div><div class="info-item-2">InnoDB的数据页</div></div></div></a><a class="pagination-related no-desc" href="/2025/04/29/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9B+%E6%A0%91/" title="为什么 MySQL 采用 B+ 树作为索引？"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/04/29/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9B+%E6%A0%91/1745915426331.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-04-29</div><div class="info-item-2">为什么 MySQL 采用 B+ 树作为索引？</div></div></div></a><a class="pagination-related" href="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/Mysql%E4%B8%AD%E4%BD%BF%E7%94%A8Like%E4%B8%80%E5%AE%9A%E4%BC%9A%E5%AF%BC%E8%87%B4%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88%E5%90%97/" title="MySQL中使用&#39;Like&#39;一定会导致索引失效吗？"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2025/05/04/%E5%85%AB%E8%82%A1%E6%96%87/MYSQL/%E7%B4%A2%E5%BC%95/Mysql%E4%B8%AD%E4%BD%BF%E7%94%A8Like%E4%B8%80%E5%AE%9A%E4%BC%9A%E5%AF%BC%E8%87%B4%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88%E5%90%97/1746413509580.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-04</div><div class="info-item-2">MySQL中使用&#39;Like&#39;一定会导致索引失效吗？</div></div><div class="info-2"><div class="info-item-1">深入探讨MySQL中Like操作对索引的影响，分析什么情况下会导致索引失效，以及如何优化Like查询以充分利用索引，提高查询性能。</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> Comments</span></div></div><div class="comment-wrap"><div><div id="gitalk-container"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://avatars.githubusercontent.com/u/72337244" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Adrian Wang</div><div class="author-info-description">一个完全由AI生成，但是内容高质量的Blog</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">174</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">241</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">48</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/AdrianWangs"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/AdrianWangs" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:wyz17601402786@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">欢迎来到 Adrian Wang 的博客！</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E7%B4%A2%E5%BC%95%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">什么是索引？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E7%9A%84%E5%88%86%E7%B1%BB"><span class="toc-number">2.</span> <span class="toc-text">索引的分类</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%89%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E5%88%86%E7%B1%BB"><span class="toc-number">2.1.</span> <span class="toc-text">按数据结构分类</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#B-tree-%E7%B4%A2%E5%BC%95-InnoDB-%E9%BB%98%E8%AE%A4%E7%B4%A2%E5%BC%95%E7%B1%BB%E5%9E%8B"><span class="toc-number">2.1.1.</span> <span class="toc-text">B+tree 索引(InnoDB 默认索引类型)</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E9%80%9A%E8%BF%87%E4%B8%BB%E9%94%AE%E6%9F%A5%E8%AF%A2%E6%95%B0%E6%8D%AE%E7%9A%84%E8%BF%87%E7%A8%8B"><span class="toc-number">2.1.1.1.</span> <span class="toc-text">通过主键查询数据的过程</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E9%80%9A%E8%BF%87%E4%BA%8C%E7%BA%A7%E7%B4%A2%E5%BC%95%E6%9F%A5%E8%AF%A2%E6%95%B0%E6%8D%AE%E7%9A%84%E8%BF%87%E7%A8%8B"><span class="toc-number">2.1.1.2.</span> <span class="toc-text">通过二级索引查询数据的过程</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-InnoDB-%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E9%80%89%E6%8B%A9%E4%BD%BF%E7%94%A8-B-Tree-%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9F"><span class="toc-number">2.1.1.3.</span> <span class="toc-text">为什么 InnoDB 存储引擎选择使用 B+Tree 作为索引的数据结构？</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Full-text-%E7%B4%A2%E5%BC%95"><span class="toc-number">2.1.2.</span> <span class="toc-text">Full-text 索引</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">2.1.2.1.</span> <span class="toc-text">工作原理</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E4%B8%BB%E8%A6%81%E7%89%B9%E6%80%A7"><span class="toc-number">2.1.2.2.</span> <span class="toc-text">主要特性</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%A4%BA%E4%BE%8B"><span class="toc-number">2.1.2.3.</span> <span class="toc-text">示例</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">2.1.2.4.</span> <span class="toc-text">参考</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%89%E7%89%A9%E7%90%86%E5%AD%98%E5%82%A8%E5%88%86%E7%B1%BB"><span class="toc-number">2.2.</span> <span class="toc-text">按物理存储分类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%89%E5%AD%97%E6%AE%B5%E7%89%B9%E6%80%A7%E5%88%86%E7%B1%BB"><span class="toc-number">2.3.</span> <span class="toc-text">按字段特性分类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%89%E5%AD%97%E6%AE%B5%E4%B8%AA%E6%95%B0%E5%88%86%E7%B1%BB"><span class="toc-number">2.4.</span> <span class="toc-text">按字段个数分类</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%81%94%E5%90%88%E7%B4%A2%E5%BC%95"><span class="toc-number">2.4.1.</span> <span class="toc-text">联合索引</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E4%B8%8B%E6%8E%A8"><span class="toc-number">2.4.2.</span> <span class="toc-text">索引下推</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E5%8C%BA%E5%88%86%E5%BA%A6"><span class="toc-number">2.4.3.</span> <span class="toc-text">索引区分度</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%81%94%E5%90%88%E7%B4%A2%E5%BC%95%E8%BF%9B%E8%A1%8C%E6%8E%92%E5%BA%8F"><span class="toc-number">2.4.4.</span> <span class="toc-text">联合索引进行排序</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF%E4%B8%8E%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">3.</span> <span class="toc-text">索引的适用场景与注意事项</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E5%BB%BA%E8%AE%AE%E5%88%9B%E5%BB%BA%E7%B4%A2%E5%BC%95%EF%BC%9F"><span class="toc-number">3.0.1.</span> <span class="toc-text">什么时候建议创建索引？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%B8%8D%E5%BB%BA%E8%AE%AE%E5%88%9B%E5%BB%BA%E7%B4%A2%E5%BC%95%EF%BC%88%E6%88%96%E9%9C%80%E8%B0%A8%E6%85%8E%EF%BC%89%EF%BC%9F"><span class="toc-number">3.0.2.</span> <span class="toc-text">什么时候不建议创建索引（或需谨慎）？</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E4%BC%98%E5%8C%96%E6%96%B9%E6%B3%95"><span class="toc-number">4.</span> <span class="toc-text">索引优化方法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E7%BC%80%E7%B4%A2%E5%BC%95%E4%BC%98%E5%8C%96"><span class="toc-number">4.1.</span> <span class="toc-text">前缀索引优化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A6%86%E7%9B%96%E7%B4%A2%E5%BC%95%E4%BC%98%E5%8C%96"><span class="toc-number">4.2.</span> <span class="toc-text">覆盖索引优化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BB%E9%94%AE%E7%B4%A2%E5%BC%95%E6%9C%80%E5%A5%BD%E4%BD%BF%E7%94%A8%E8%87%AA%E5%A2%9E-ID"><span class="toc-number">4.3.</span> <span class="toc-text">主键索引最好使用自增 ID</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E6%9C%80%E5%A5%BD%E8%AE%BE%E7%BD%AE%E4%B8%BA-NOT-NULL"><span class="toc-number">4.4.</span> <span class="toc-text">索引最好设置为 NOT NULL</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%98%B2%E6%AD%A2%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88"><span class="toc-number">4.5.</span> <span class="toc-text">防止索引失效</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">总结</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/1770966681983.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透"/></a><div class="content"><a class="title" href="/2026/02/13/AI/%E6%8B%92%E7%BB%9DAI%E5%90%8D%E8%AF%8D%E7%84%A6%E8%99%91-LLM%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%80%E6%AC%A1%E8%AE%B2%E9%80%8F/" title="拒绝 AI 名词焦虑：LLM 核心概念，一次讲透">拒绝 AI 名词焦虑：LLM 核心概念，一次讲透</a><time datetime="2026-02-13T10:00:00.000Z" title="Created 2026-02-13 10:00:00">2026-02-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/image_1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="温故知新——Golang GMP 万字洗髓经"/></a><div class="content"><a class="title" href="/2026/01/18/%E5%85%AB%E8%82%A1%E6%96%87/Go%E8%AF%AD%E8%A8%80/GMP/%E6%B8%A9%E6%95%85%E7%9F%A5%E6%96%B0-Golang-GMP-%E4%B8%87%E5%AD%97%E6%B4%97%E9%AB%93%E7%BB%8F/" title="温故知新——Golang GMP 万字洗髓经">温故知新——Golang GMP 万字洗髓经</a><time datetime="2026-01-18T00:00:00.000Z" title="Created 2026-01-18 00:00:00">2026-01-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/08/03/%E9%9D%A2%E8%AF%95%E9%A2%98/%E4%BA%92%E8%81%94%E7%BD%91%E5%A4%A7%E5%8E%82/%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8/2025-08-03-%E5%AD%97%E8%8A%82%E8%B7%B3%E5%8A%A8-%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91-%E4%B8%80%E9%9D%A2/" title="字节跳动 后端开发工程师 一面">字节跳动 后端开发工程师 一面</a><time datetime="2025-08-03T14:52:52.000Z" title="Created 2025-08-03 14:52:52">2025-08-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-239-%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E6%9C%80%E5%A4%A7%E5%80%BC/" title="LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）">LeetCode 239 - 滑动窗口最大值（Sliding Window Maximum）</a><time datetime="2025-07-26T18:51:43.000Z" title="Created 2025-07-26 18:51:43">2025-07-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/26/%E7%AE%97%E6%B3%95%E5%88%B7%E9%A2%98/LeetCode-560-%E5%92%8C%E4%B8%BAK%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84/" title="LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）">LeetCode 560 - 和为 K 的子数组（Subarray Sum Equals K）</a><time datetime="2025-07-26T15:59:27.000Z" title="Created 2025-07-26 15:59:27">2025-07-26</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2024 - 2026 By Adrian Wang</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="Scroll to Comments"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.9/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', vb[0] + ' ' + vb[1] + ' ' + vb[2] + ' ' + vb[3])
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = '<!doctype html><html><head><meta charset="utf-8" />\n' +
+      '  <style>\n' +
+      '    html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ' + bg + '; }\n' +
+      '    svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }\n' +
+      '  </style>\n' +
+      '  </' + 'head><' + 'body>' + svgSource + '</' + 'body></' + 'html>'
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'forest'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = '%%{init: ' + JSON.stringify(config) + '}%%\n'
+      const mermaidID = 'mermaid-' + index
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const preToMermaid = () => {
+    const preMermaidEle = document.querySelectorAll('pre.mermaid')
+    if (preMermaidEle.length === 0) return
+
+    preMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    preToMermaid()
+    if (true) codeToMermaid()
+    const mermaidNodes = document.querySelectorAll('#article-container .mermaid-wrap')
+    if (mermaidNodes.length === 0) return
+
+    const runMermaidFn = () => runMermaid(mermaidNodes)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"language":"zh-CN","distractionFreeMode":true}
+
+  const commentCount = n => {
+    const isCommentCount = document.querySelector('#post-meta .gitalk-comment-count')
+    if (isCommentCount) {
+      isCommentCount.textContent= n
+    }
+  }
+
+  const initGitalk = (el, path) => {
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGitalk = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    const gitalk = new Gitalk({
+      clientID: 'Ov23ctYPrSZhEEiMSWnG',
+      clientSecret: '868a26bca9ec039212bdc83e05c4420b6077e9f4',
+      repo: 'blog-comments',
+      owner: 'AdrianWangs',
+      admin: ['AdrianWangs'],
+      updateCountCallback: commentCount,
+      ...option,
+      id: isShuoshuo ? path : (option && option.id) || 'cc91e93be22f78d5bbd6111d302448e9'
+    })
+
+    gitalk.render('gitalk-container')
+  }
+
+  const loadGitalk = async(el, path) => {
+    if (typeof Gitalk === 'function') initGitalk(el, path)
+    else {
+      await btf.getCSS('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.css')
+      await btf.getScript('https://cdn.jsdelivr.net/npm/gitalk@1.8.0/dist/gitalk.min.js')
+      initGitalk(el, path)
+    }
+  }
+
+  if (isShuoshuo) {
+    'Gitalk' === 'Gitalk'
+      ? window.shuoshuoComment = { loadComment: loadGitalk }
+      : window.loadOtherComment = loadGitalk
+    return
+  }
+
+  if ('Gitalk' === 'Gitalk' || !false) {
+    if (false) btf.loadComment(document.getElementById('gitalk-container'), loadGitalk)
+    else loadGitalk()
+  } else {
+    window.loadOtherComment = loadGitalk
+  }
+})()</script></div><script defer src="/js/echarts-theme-adapter.js"></script><script defer src="/js/category-tree.js"></script><script defer src="/js/reading-progress.js"></script><script defer src="/js/wide-mode.js"></script><script defer src="/js/font-size-toggle.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">Search</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  Loading Database</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div><script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const heatmapChartDom = document.getElementById('heatmapChart');
+                if(heatmapChartDom){
+                    const heatmapChart = echarts.init(heatmapChartDom, 'dark');
+                    const cellSize = [18, 18];
+                    
+                    const groupByYear = (data) => {
+                        const result = {};
+                        data.forEach(([date, value]) => {
+                            const [year] = date.split('-').map(Number);
+                            if (!result[year]) {
+                                result[year] = [];
+                            }
+                            result[year].push([date, value]);
+                        });
+                        return result;
+                    };
+                    
+                    const groupedData = groupByYear([["2024-07-30",1],["2025-04-18",2],["2025-04-19",2],["2025-04-20",3],["2025-04-21",2],["2025-04-22",3],["2025-04-23",2],["2025-04-24",4],["2025-04-25",2],["2025-04-27",1],["2025-04-28",2],["2025-04-29",5],["2025-04-30",3],["2025-05-02",1],["2025-05-03",1],["2025-05-04",3],["2025-05-05",4],["2025-05-06",5],["2025-05-07",3],["2025-05-08",4],["2025-05-10",8],["2025-05-11",4],["2025-05-12",1],["2025-05-13",3],["2025-05-14",2],["2025-05-15",1],["2025-05-16",5],["2025-05-17",4],["2025-05-18",4],["2025-05-20",2],["2025-05-21",6],["2025-05-22",2],["2025-05-24",2],["2025-05-25",4],["2025-05-26",2],["2025-05-27",4],["2025-05-28",1],["2025-05-30",4],["2025-05-31",1],["2025-06-01",1],["2025-06-02",1],["2025-06-03",3],["2025-06-04",1],["2025-06-05",1],["2025-06-06",2],["2025-06-07",1],["2025-06-08",6],["2025-06-09",1],["2025-06-13",1],["2025-06-15",3],["2025-06-16",9],["2025-06-17",3],["2025-06-18",1],["2025-06-20",1],["2025-06-21",5],["2025-06-22",4],["2025-06-23",1],["2025-06-25",1],["2025-06-29",2],["2025-07-01",1],["2025-07-02",1],["2025-07-03",1],["2025-07-06",1],["2025-07-09",1],["2025-07-20",3],["2025-07-26",2],["2025-08-03",1],["2026-01-18",1],["2026-02-13",1]]);
+                    const years = Object.keys(groupedData).reverse();
+                    
+                    var initYear = parseInt(heatmapChartDom.getAttribute('year')) || new Date().getFullYear();
+                    const minYear = years[years.length - 1];
+                    const maxYear = years[0];
+                    if (initYear < minYear || initYear > maxYear) {
+                        initYear = maxYear;
+                    }
+                    console.log('[hexo-graph]generateHeatmapChart|initYear:', initYear, 'minYear:', minYear, 'maxYear:', maxYear);
+                    
+                    heatmapChart.setOption({
+                        grid: {},
+                        tooltip: { 
+                            position: 'top', 
+                            formatter: params => `${params.value[0]}: ${params.value[1]} Articles` 
+                        },
+                        calendar: { 
+                            top: '10%',
+                            left: 'left', 
+                            right: '8%',
+                            range: initYear,
+                            cellSize: cellSize, 
+                            splitLine: { lineStyle: { color: '#E0E0E0', width: 1 } }, 
+                            itemStyle: { borderWidth: 1, borderColor: '#E0E0E0' }, 
+                            dayLabel: { show: false },
+                            monthLabel: { show: true },
+                            yearLabel: { show: false },
+                        },
+                        visualMap: { 
+                            show: true,
+                            right: '8%',
+                            bottom: '5%',
+                            type: 'piecewise',
+                            orient: 'horizontal',
+                            text: ['More', 'Less'],
+                            min: 0,
+                            max: Math.max(...groupedData[initYear].map(item => item[1])),
+                            inRange: { color: ["#ACE7AE","#69C16D","#549F57"] }
+                        },
+                        legend: {
+                            type: 'scroll',
+                            icon: 'none',
+                            data: years,
+                            orient: 'vertical',
+                            top: '5%',
+                            right: 'right',
+                            itemWidth: 20,
+                            itemHeight: 20,
+                            itemGap: 10,
+                            pageIconSize: 10,
+                            pageTextStyle: { fontSize: 14 },
+                            selectedMode: 'single',
+                        },
+                        series: years.map(year => ({
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            data: groupedData[year],
+                            name: year,
+                            emphasis: {
+                                disabled: true,
+                            },
+                            silent: year !== initYear,
+                        })),
+                    });
+                    
+                    // init selected year
+                    heatmapChart.dispatchAction({
+                        type: 'legendSelect',
+                        name: initYear,
+                    });
+                    
+                    heatmapChart.on('legendselectchanged', function(params) {
+                        console.log('[hexo-graph]generateHeatmapChart|legendselectchanged:', params);
+                        const selectedYear = Object.keys(params.selected).find(key => params.selected[key]);
+                        if (selectedYear && groupedData[selectedYear]) {
+                            heatmapChart.setOption({
+                                calendar: {
+                                    range: selectedYear,
+                                },
+                                visualMap: {
+                                    max: Math.max(...groupedData[selectedYear].map(item => item[1])),
+                                },
+                                series: years.map(year => ({
+                                    type: 'heatmap',
+                                    coordinateSystem: 'calendar',
+                                    data: groupedData[year],
+                                    name: year,
+                                    emphasis: {
+                                        disabled: true,
+                                    },
+                                    silent: year !== selectedYear,
+                                })),
+                            });
+                        }
+                    });
+                    
+                    heatmapChart.on('click', function (params) {
+                        if (params.componentType === 'series') {
+                            const [year, month] = params.value[0].split('-');
+                            window.location.href = '/archives/' + year + '/' + month;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const monthlyChartDom = document.getElementById('monthlyChart');
+                if(monthlyChartDom){
+                    const monthlyChart = echarts.init(monthlyChartDom, 'dark');
+                    monthlyChart.setOption({
+                        xAxis: { 
+                            type: 'category', 
+                            data: ["2024-07","2025-04","2025-05","2025-06","2025-07","2025-08","2026-01","2026-02"], 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        series: [{
+                            name: 'Articles',
+                            type: 'line',
+                            data: [1,31,81,48,10,1,1,1],
+                            smooth: true,
+                            lineStyle: { color: '#5470C6', width: 2 },
+                            itemStyle: { color: '#5470C6' },
+                            areaStyle: { color: 'rgba(84, 112, 198, 0.4)' },
+                            symbolSize: 10,
+                            label: {
+                                show: true,
+                                position: 'top',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            }
+                        }]
+                    });
+
+                    monthlyChart.on('click', function (params) {
+                        const [year, month] = params.name.split('-');
+                        window.location.href = '/archives/' + year + '/' + month;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const tagsChartDom = document.getElementById('tagsChart');
+                if(tagsChartDom){
+                    const tagsChart = echarts.init(tagsChartDom, 'dark');
+                    tagsChart.setOption({
+                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}],
+                            label: {
+                                position: 'outside',
+                                formatter: '{b} {c} ({d}%)',
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            color: ["#5470C6","#91CC75","#FAC858","#EE6666","#73C0DE","#3BA272","#FC8452","#9A60B4"],
+                            labelLine: { show: true }
+                        }],
+                        legend: {
+                            bottom: '0',
+                            left: 'center',
+                            data: [{"name":"LeetCode","value":88},{"name":"Medium","value":70},{"name":"Hot100","value":58},{"name":"数组","value":34},{"name":"面试经典150","value":32},{"name":"八股文","value":25},{"name":"Redis","value":25},{"name":"❌错题集","value":25}].map(tag => tag.name),
+                            textStyle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        }
+                    });
+
+                    tagsChart.on('click', function (params) {
+                        window.location.href = '/tags/' + params.name;
+                    });
+                }
+            })
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesChartDom = document.getElementById('categoriesChart');
+                if(categoriesChartDom){
+                    const categoriesChart = echarts.init(categoriesChartDom, 'dark');
+                    categoriesChart.setOption({
+                        xAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#ccc' } } },
+                        yAxis: { 
+                            type: 'category', 
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.name).reverse(), 
+                            axisLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'Microsoft YaHei, SimSun, serif' }
+                        },
+                        series: [{
+                            name: 'Category Count',
+                            type: 'bar',
+                            data: [{"name":"算法刷题","value":101},{"name":"LeetCode","value":99},{"name":"八股文","value":61},{"name":"Redis","value":25},{"name":"MySQL","value":22}].map(category => category.value).reverse(),
+                            label: {
+                                show: true,
+                                position: 'right',
+                                formatter: params => params.value,
+                                fontSize: 14,
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontFamily: 'Microsoft YaHei, SimSun, serif'
+                            },
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#91CC75' },
+                                    { offset: 1, color: '#73C0DE' }
+                                ])
+                            }
+                        }]
+                    });
+
+                    categoriesChart.on('click', function (params) {
+                        window.location.href = '/categories/' + params.name;
+                    });
+                }
+            });
+        </script>
+    
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const categoriesTreeChartDom = document.getElementById('categoriesTreeChart');
+                if(categoriesTreeChartDom){
+                    const treeChart = echarts.init(categoriesTreeChartDom, 'dark');
+                    treeChart.setOption({
+                        title: {
+                            text: '操作提示：单击展开分类，双击进入具体分类页面',
+                            textStyle: {
+                                fontSize: 12,
+                                color: '#999',
+                                fontWeight: 'normal'
+                            },
+                            bottom: 0,
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove'
+                        },
+                        series: [{
+                            type: 'tree',
+                            data: [{"name":"Categories","children":[{"name":"AI","children":[{"name":"LLM","children":[],"count":1,"path":"AI/LLM"}],"count":1,"path":"AI"},{"name":"八股文","children":[{"name":"Go语言","children":[{"name":"GMP","children":[],"count":2,"path":"八股文/Go语言/GMP"},{"name":"垃圾回收","children":[],"count":1,"path":"八股文/Go语言/垃圾回收"},{"name":"Map","children":[],"count":7,"path":"八股文/Go语言/Map"}],"count":10,"path":"八股文/Go语言"},{"name":"操作系统","children":[],"count":2,"path":"八股文/操作系统"},{"name":"计算机网络","children":[],"count":2,"path":"八股文/计算机网络"},{"name":"Redis","children":[{"name":"分布式锁","children":[],"count":1,"path":"八股文/Redis/分布式锁"},{"name":"缓存","children":[],"count":2,"path":"八股文/Redis/缓存"},{"name":"高可用","children":[],"count":3,"path":"八股文/Redis/高可用"},{"name":"内存管理","children":[],"count":1,"path":"八股文/Redis/内存管理"},{"name":"持久化","children":[],"count":3,"path":"八股文/Redis/持久化"},{"name":"数据结构","children":[],"count":8,"path":"八股文/Redis/数据结构"},{"name":"基础知识","children":[],"count":2,"path":"八股文/Redis/基础知识"},{"name":"数据类型","children":[],"count":5,"path":"八股文/Redis/数据类型"}],"count":25,"path":"八股文/Redis"},{"name":"MySQL","children":[{"name":"内存","children":[],"count":1,"path":"八股文/MySQL/内存"},{"name":"存储原理","children":[],"count":5,"path":"八股文/MySQL/存储原理"},{"name":"日志","children":[],"count":1,"path":"八股文/MySQL/日志"},{"name":"锁","children":[],"count":6,"path":"八股文/MySQL/锁"},{"name":"事务","children":[],"count":2,"path":"八股文/MySQL/事务"},{"name":"索引","children":[],"count":7,"path":"八股文/MySQL/索引"}],"count":22,"path":"八股文/MySQL"}],"count":61,"path":"八股文"},{"name":"面试经验","children":[],"count":8,"path":"面试经验"},{"name":"算法刷题","children":[{"name":"LeetCode","children":[{"name":"数组与哈希","children":[],"count":20,"path":"算法刷题/LeetCode/数组与哈希"},{"name":"数学","children":[],"count":3,"path":"算法刷题/LeetCode/数学"},{"name":"位运算","children":[],"count":2,"path":"算法刷题/LeetCode/位运算"},{"name":"链表","children":[],"count":9,"path":"算法刷题/LeetCode/链表"},{"name":"回溯","children":[],"count":5,"path":"算法刷题/LeetCode/回溯"},{"name":"模拟","children":[{"name":"错题集","children":[],"count":1,"path":"算法刷题/LeetCode/模拟/错题集"}],"count":7,"path":"算法刷题/LeetCode/模拟"},{"name":"图论","children":[],"count":4,"path":"算法刷题/LeetCode/图论"},{"name":"树","children":[],"count":13,"path":"算法刷题/LeetCode/树"},{"name":"二分查找","children":[],"count":5,"path":"算法刷题/LeetCode/二分查找"},{"name":"栈","children":[],"count":5,"path":"算法刷题/LeetCode/栈"},{"name":"贪心","children":[],"count":4,"path":"算法刷题/LeetCode/贪心"},{"name":"字符串","children":[],"count":5,"path":"算法刷题/LeetCode/字符串"},{"name":"双指针","children":[],"count":1,"path":"算法刷题/LeetCode/双指针"},{"name":"动态规划","children":[],"count":14,"path":"算法刷题/LeetCode/动态规划"},{"name":"堆","children":[],"count":2,"path":"算法刷题/LeetCode/堆"}],"count":99,"path":"算法刷题/LeetCode"}],"count":101,"path":"算法刷题"},{"name":"AI工程","children":[{"name":"AI Coding","children":[],"count":1,"path":"AI工程/AI Coding"},{"name":"MCP","children":[],"count":1,"path":"AI工程/MCP"}],"count":2,"path":"AI工程"},{"name":"系统设计","children":[],"count":1,"path":"系统设计"}],"count":0,"path":""}],
+                            initialTreeDepth: -1,
+                            top: '5%',
+                            bottom: '10%',
+                            left: '0%',
+                            right: '0%',
+                            symbolSize: 15,
+                            layout: 'orthogonal',
+                            orient: 'TB',
+                            itemStyle: {
+                                color: '#91CC75',
+                                borderColor: '#73C0DE'
+                            },
+                            label: {
+                                position: 'bottom',
+                                verticalAlign: 'middle',
+                                align: 'center',
+                                fontSize: 14,
+                                distance: 28,
+                                formatter: function(params) {
+                                    return params.data.name + (params.data.count ? ' (' + params.data.count + ')' : '');
+                                }
+                            },
+                            leaves: {
+                                label: {
+                                    position: 'top',
+                                    verticalAlign: 'middle',
+                                    align: 'center'
+                                }
+                            },
+                            emphasis: {
+                                focus: 'descendant'
+                            },
+                            expandAndCollapse: true
+                        }]
+                    });
+
+                    treeChart.on('dblclick', function (params) {
+                        if (params.data && params.data.path) {
+                            window.location.href = '/categories/' + params.data.path;
+                        }
+                    });
+                }
+            });
+        </script>
+    
+    </body></html>
